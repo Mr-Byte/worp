@@ -1,5 +1,9 @@
 [workspace]
 members = [
-    "worp-client"
+    "worp-client",
+    "worp-core",
+    "worp-gui",
+    "worp-renderer",
+    "worp-net"
 ]
 default-members = ["worp-client"]
