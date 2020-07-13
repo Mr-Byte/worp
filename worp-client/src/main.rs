@@ -1,4 +1,6 @@
 use anyhow::Result;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -6,6 +8,8 @@ use winit::{
 };
 
 fn main() -> Result<()> {
+    FmtSubscriber::builder().with_max_level(Level::INFO).init();
+
     let event_loop = EventLoop::new();
     let _window = WindowBuilder::new().with_title("WORP").build(&event_loop)?;
 
@@ -16,7 +20,10 @@ fn main() -> Result<()> {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
-            } => *control_flow = ControlFlow::Exit,
+            } => {
+                *control_flow = ControlFlow::Exit;
+                info!("Closing application.");
+            }
             _ => (),
         }
     });
