@@ -1,5 +1,5 @@
 [package]
-name = "worp-net"
+name = "net"
 version = "0.1.0"
 authors = ["Joshua Rodgers <bytemr@gmail.com>"]
 edition = "2018"
