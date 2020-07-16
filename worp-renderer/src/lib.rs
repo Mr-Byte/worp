@@ -1,9 +1,11 @@
 use anyhow::{Context as _, Result};
-use wgpu::{Adapter, Device, Instance, Queue, Surface, SwapChain, SwapChainDescriptor};
+use wgpu::{
+    Adapter, BackendBit, Color, Device, DeviceDescriptor, Features, Instance, LoadOp, Operations, Queue, RenderPassColorAttachmentDescriptor,
+    Surface, SwapChain, SwapChainDescriptor,
+};
 use winit::window::Window;
 
 pub struct Renderer {
-    _instance: Instance,
     window_surface: Surface,
     _adapter: Adapter,
     device: Device,
@@ -15,7 +17,7 @@ pub struct Renderer {
 impl Renderer {
     pub async fn new(window: &Window) -> Result<Self> {
         let size = window.inner_size();
-        let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+        let instance = Instance::new(BackendBit::PRIMARY);
         let window_surface = unsafe { instance.create_surface(window) };
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -27,8 +29,8 @@ impl Renderer {
 
         let (device, queue) = adapter
             .request_device(
-                &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
+                &DeviceDescriptor {
+                    features: Features::empty(),
                     limits: wgpu::Limits::default(),
                     shader_validation: true,
                 },
@@ -48,7 +50,6 @@ impl Renderer {
         let swap_chain = device.create_swap_chain(&window_surface, &swap_chain_descriptor);
 
         Ok(Self {
-            _instance: instance,
             window_surface,
             _adapter: adapter,
             device,
@@ -58,6 +59,10 @@ impl Renderer {
         })
     }
 
+    pub fn device(&mut self) -> &mut Device {
+        &mut self.device
+    }
+
     pub fn resize(&mut self, width: u32, height: u32) {
         self.swap_chain_descriptor.width = width;
         self.swap_chain_descriptor.height = height;
@@ -65,15 +70,15 @@ impl Renderer {
     }
 
     pub fn draw_frame(&mut self) -> Result<()> {
-        let frame = self.swap_chain.get_next_frame().map_err(|_| SwapChainError)?.output;
+        let frame = self.swap_chain.get_next_frame().map_err(|_| SwapChainError)?;
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
         let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                attachment: &frame.view,
+            color_attachments: &[RenderPassColorAttachmentDescriptor {
+                attachment: &frame.output.view,
                 resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
+                ops: Operations {
+                    load: LoadOp::Clear(Color::BLACK),
                     store: true,
                 },
             }],
@@ -87,9 +92,9 @@ impl Renderer {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("Failed to create device.")]
-pub struct RequestDeviceError;
-
-#[derive(thiserror::Error, Debug)]
 #[error("Failed to acquire next swap chain framebuffer.")]
 pub struct SwapChainError;
+
+#[derive(thiserror::Error, Debug)]
+#[error("Failed to request device.")]
+pub struct RequestDeviceError;
