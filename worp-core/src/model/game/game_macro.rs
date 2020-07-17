@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+key!(Macro::id as MacroKey: String);
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Macro {
     id: String,
 }
-
-key!(MacroKey, Macro => id);
 
 pub type MacroHotbar = [MacroKey; 12];

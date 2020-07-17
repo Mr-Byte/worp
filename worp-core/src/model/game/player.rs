@@ -1,16 +1,18 @@
 use super::{
     game_macro::MacroKey,
-    key::Key as _,
-    map::instance::MapInstanceKey,
+    map::MapKey,
     token::{Token, TokenKey},
 };
+use crate::model::key::Key as _;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+
+key!(Player::id as PlayerKey: String);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Player {
     id: String,
-    pub current_map_instance: Option<MapInstanceKey>,
+    pub current_map_instance: Option<MapKey>,
     pub macros: Vec<MacroKey>,
     #[serde(serialize_with = "toml::ser::tables_last")]
     pub owned_tokens: BTreeMap<TokenKey, Token>,
@@ -26,8 +28,6 @@ impl Player {
         }
     }
 }
-
-key!(PlayerKey, Player => id);
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
 pub struct PlayerTokenKey {

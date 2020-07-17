@@ -1,4 +1,6 @@
-key!(TokenTemplateKey);
+use serde::{Deserialize, Serialize};
+
+key!(TokenTemplate::id as TokenTemplateKey: String);
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TokenTemplate {
@@ -10,5 +12,3 @@ impl TokenTemplate {
         TokenTemplateKey(self.id.clone())
     }
 }
-
-pub type TokenTemplateMap = BTreeMap<TokenTemplateKey, TokenTemplate>;

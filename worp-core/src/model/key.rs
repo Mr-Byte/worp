@@ -1,13 +1,13 @@
 use std::{fmt::Debug, hash::Hash};
 
 macro_rules! key {
-    ($key: ident, $source: ident => $target: ident) => {
+    ($source: ident :: $target: ident as $key: ident: $typ: ty) => {
         #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
-        pub struct $key(String);
+        pub struct $key($typ);
 
-        impl<T: AsRef<str>> From<T> for $key {
+        impl<T: Into<$typ>> From<T> for $key {
             fn from(value: T) -> Self {
-                $key(String::from(value.as_ref()))
+                $key(value.into())
             }
         }
 
@@ -22,7 +22,7 @@ macro_rules! key {
 }
 
 pub trait Key {
-    type Key: for<'de> Clone + Debug + Hash + Eq + PartialEq + Ord + PartialOrd;
+    type Key: Clone + Debug + Hash + Eq + PartialEq + Ord + PartialOrd;
 
     fn key(&self) -> Self::Key;
 }

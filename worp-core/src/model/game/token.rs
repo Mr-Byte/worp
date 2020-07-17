@@ -2,7 +2,7 @@ use super::game_macro::{MacroHotbar, MacroKey};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-key!(TokenKey, Token => id);
+key!(Token::id as TokenKey: String);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Token {
