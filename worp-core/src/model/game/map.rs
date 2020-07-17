@@ -1,5 +1,7 @@
-use super::player;
-use super::token;
+use super::{
+    player::PlayerTokenKey,
+    token::{TokenKey, TokenPosition},
+};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -14,8 +16,7 @@ pub enum MapType {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Map {
     id: String,
-    pub map: MapKey,
-    pub map_type: MapType,
-    pub player_tokens: BTreeMap<player::PlayerTokenKey, token::TokenPosition>,
-    pub tokens: BTreeMap<token::TokenKey, token::TokenPosition>,
+    map_type: MapType,
+    player_tokens: BTreeMap<PlayerTokenKey, TokenPosition>,
+    tokens: BTreeMap<TokenKey, TokenPosition>,
 }

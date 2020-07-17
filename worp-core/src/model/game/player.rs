@@ -1,5 +1,5 @@
 use super::{
-    game_macro::MacroKey,
+    action::MacroKey,
     map::MapKey,
     token::{Token, TokenKey},
 };
@@ -12,34 +12,38 @@ key!(Player::id as PlayerKey: String);
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Player {
     id: String,
-    pub current_map_instance: Option<MapKey>,
-    pub macros: Vec<MacroKey>,
+    current_map: Option<MapKey>,
+    macros: Vec<MacroKey>,
     #[serde(serialize_with = "toml::ser::tables_last")]
-    pub owned_tokens: BTreeMap<TokenKey, Token>,
+    owned_tokens: BTreeMap<TokenKey, Token>,
 }
 
 impl Player {
     pub fn new(id: impl Into<String>, owned_tokens: Vec<Token>) -> Self {
         Self {
             id: id.into(),
-            current_map_instance: None,
+            current_map: None,
             owned_tokens: owned_tokens.into_iter().map(|token| (token.key(), token)).collect(),
             macros: Vec::new(),
         }
     }
 }
 
+impl Player {
+    #[inline]
+    pub fn token(&self, key: &TokenKey) -> Option<&Token> {
+        self.owned_tokens.get(&key)
+    }
+}
+
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
 pub struct PlayerTokenKey {
-    pub(super) player: PlayerKey,
-    pub(super) token: TokenKey,
+    pub(in crate::model::game) player: PlayerKey,
+    pub(in crate::model::game) token: TokenKey,
 }
 
 impl PlayerTokenKey {
-    // TODO: Should this enforce the existence of the given token on the given player?
     pub fn new(player: PlayerKey, token: TokenKey) -> Self {
         Self { player, token }
     }
 }
-
-pub type PlayerMap = BTreeMap<PlayerKey, Player>;
