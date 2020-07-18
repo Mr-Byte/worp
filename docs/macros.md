@@ -1,7 +1,29 @@
-# NOTE
+<!-- TOC orderedList:true -->
+
+1. [Draft Note](#draft-note)
+2. [Introduction](#introduction)
+3. [Syntax](#syntax)
+    1. [Text Formatting](#text-formatting)
+    2. [Macro Comments](#macro-comments)
+    3. [Sub-macros](#sub-macros)
+4. [Nested Macro Calls](#nested-macro-calls)
+    1. [Macro Links](#macro-links)
+    2. [Substitution Expressions](#substitution-expressions)
+5. [Expressions](#expressions)
+    1. [Pre-defined Tables](#pre-defined-tables)
+    2. [Local Variables](#local-variables)
+    3. [Dice Operator](#dice-operator)
+6. [Range Operators](#range-operators)
+    1. [Functions](#functions)
+7. [Examples](#examples)
+
+<!-- /TOC -->
+
+# Draft Note
 This is draft documentation and may change.  This exists mostly to start better documenting the ideas for the macro system.
 
 # Introduction
+
 All macros must have a name.  There will be three types of macros.
 * Sub-macros (Named macros nested within another macro)
 * Token macros (Macros attached to a token that are specific to that token)
@@ -32,9 +54,9 @@ Comments can be added to macros using the following syntax
 Sub-macros can be specified within a parent macro using the following syntax.
 
 ```
-{macro #name}
-// Macro body
-{/macro}
+{#name [
+    // Macro body
+]}
 ```
 
 These macros are not executed when the parent macro is executed, but instead exist as a method of nesting macros within a parent macro that can be executed later.
@@ -104,6 +126,20 @@ There are two special tables
 * The `global` table which is a string keyed table that can be used to lookup values globally within a game.  This is most useful for referencing other tables or commonly used values within a game.
 * The `self` table which is a string keyed table that references the currently selected token, that can be used to look up values attached to the token.  This is useful for looking up values like ability scores of the token
 
+## Local Variables
+
+Local variables can be declared with the following syntax
+
+```
+{$variable_name {expression}}
+```
+
+Where `expression` is some value that can be evaluated as an expression.  This will declare a local variable in scope to the macro and all sub-macros that can be referenced in other expressions, for example
+
+```
+{{1d20 + $charisma_mod}}
+```
+
 ## Dice Operator
 *Draft syntax, not final*
 
@@ -116,7 +152,7 @@ Dice can be rolled using the `d` operator, which is an infix operator with the h
 * `6d(global.value)` - Roll six dice with sides equivalent to the value of `global.value`
 * `1d(2=..=6)` - Roll one die that produces a value in the inclusive range of 2 to 6
 * `1d[1, 3, 5, 7, 9]` - Roll one die that produces a value from the specified list
-* `1d[2=..=4, 8=..=10]` - Roll one that produces a value in the inclusive ranges 2 to 4 or 8 to 10.
+* `1d[2=..=4, 8=..=10]` - Roll one die that produces a value in the inclusive ranges 2 to 4 or 8 to 10.
 
 All dice values return a list of all dice rolled as a part of the expression.  Special functions are provided to operate on these lists, such as showing the total sum of the list, keeping the highest N values of the list, etc. and are further documented in the functions section.
 
@@ -133,3 +169,18 @@ In all cases `n` must be less than `m`.
 *Draft, not final*
 
 This section is not yet completed.
+
+
+# Examples
+
+```
+{$charisma_mod {global.ability_mods[self.charisma]}}
+{{self.name}} casts Eldritch Blast!
+Attack *{{1d20 + $charisma_mod}}*
+
+[Roll Damage](#roll_damage)
+
+{#roll_damage [
+    {{1d10 + $charisma_mod}} Force Damage
+]}
+```
