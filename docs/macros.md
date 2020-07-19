@@ -54,9 +54,9 @@ Comments can be added to macros using the following syntax
 Sub-macros can be specified within a parent macro using the following syntax.
 
 ```
-{#name [
+{#name {%
     // Macro body
-]}
+%}}
 ```
 
 These macros are not executed when the parent macro is executed, but instead exist as a method of nesting macros within a parent macro that can be executed later.

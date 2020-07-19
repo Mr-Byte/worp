@@ -1,19 +1,21 @@
-WHITESPACE = _{ " " | "\t" }
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
-// Define all the evaluator rules.
+// Define all the expression rules.
 ident = ${ (ASCII_ALPHA | "_") ~ ASCII_ALPHANUMERIC* }
 variable_name = ${ "$" ~ ident }
 macro_name = ${ "#" ~ ident }
 
-expression = { "{" ~ (!"}" ~ ANY)+ ~ "}" }
-eval_expression = _{ "{" ~ expression ~ "}" }
+expression_body = ${ (!"}" ~ ANY)+ }
+expression = _{ "{" ~ expression_body  ~ "}" }
+eval_expression = { "{" ~ expression ~ "}" }
 
 variable_decl = { variable_name ~ expression }
-sub_text_macro_decl = { macro_name ~ ("[" ~ (!"]" ~ ANY)+ ~ "]") }
+sub_macro_body = ${ (!"%}" ~ ANY)+ }
+sub_text_macro_decl = { macro_name ~ ("{%" ~ sub_macro_body ~ "%}") }
 decl_expression = _{ "{" ~ (variable_decl | sub_text_macro_decl) ~ "}" }
 
 // Define all the text rules.
-reserved = @{ "{" | "[" | "*" | "~" | "_" | "-" | ("/" ~ "/") }
+reserved = @{ "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" | "//" }
 escape = @{ "\\" ~ reserved }
 raw_text = ${ (escape | !reserved ~ ANY)+ }
 
@@ -42,8 +44,8 @@ macro_link = {
     "[" ~ (!"]" ~ ANY)+ ~ "]" ~ "(" ~ "#" ~ ident ~ ")"
 }
 
-comment_start = ${ "/" ~ "/" }
-comment = _{ comment_start ~ (!("\r" | "\n") ~ ANY)+ }
+comment_body = ${ "//" ~ (!("\r\n" | "\n" | "\r") ~ ANY)+ }
+comment = _{ comment_body  }
 
 text_macro_part = _{
     (
@@ -54,11 +56,12 @@ text_macro_part = _{
         underline_text |
         strike_through_text |
         macro_link |
+        variable_name |
         eval_expression
     )*
 }
 
-text_macro = _{ 
+text_macro_document = _{ 
     (
         raw_text |
         comment |
@@ -67,6 +70,8 @@ text_macro = _{
         underline_text |
         strike_through_text |
         macro_link |
+        variable_name |
+        macro_name |
         eval_expression |
         decl_expression
     )* ~
