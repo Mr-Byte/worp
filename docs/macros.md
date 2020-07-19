@@ -8,7 +8,8 @@
     3. [Sub-macros](#sub-macros)
 4. [Nested Macro Calls](#nested-macro-calls)
     1. [Macro Links](#macro-links)
-    2. [Substitution Expressions](#substitution-expressions)
+    2. [Macro Links with Options](#macro-links-with-options)
+    3. [Substitution Expressions](#substitution-expressions)
 5. [Expressions](#expressions)
     1. [Pre-defined Tables](#pre-defined-tables)
     2. [Local Variables](#local-variables)
@@ -61,6 +62,8 @@ Sub-macros can be specified within a parent macro using the following syntax.
 
 These macros are not executed when the parent macro is executed, but instead exist as a method of nesting macros within a parent macro that can be executed later.
 
+Sub-macros and variable declarations cannot nested inside sub-macros.
+
 # Nested Macro Calls
 
 Macros can be called by another macro using the syntax
@@ -75,11 +78,27 @@ The macro called will be resolved according the named macro evaluation order.
 ## Macro Links
 
 Macros can contain clickable links to execute other, named macros.
+
 ```
 [Link Text](#target_macro)
 ```
 
 This will produce link text that when clicked by the player who executed the original macro, will execute the specified named macro.
+
+The macro called will be resolved according the named macro evaluation order.
+
+## Macro Links with Options
+Macros can contain clickable links to execute one of a set of other, named macros.
+
+```
+[Link Text](
+    #target_macro > "Label"
+    #target_macro2 > "Label 2"
+)
+```
+
+This will produce link text that when clicked by the player who executed the original macro, will present the player with a list of options.
+Selecting one of the options will execute the specified named macro.
 
 The macro called will be resolved according the named macro evaluation order.
 

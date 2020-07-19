@@ -9,58 +9,59 @@ expression_body = ${ (!"}" ~ ANY)+ }
 expression = _{ "{" ~ expression_body  ~ "}" }
 eval_expression = { "{" ~ expression ~ "}" }
 
+// Define the rules for sub-macro and variable declarations.
 variable_decl = { variable_name ~ expression }
-sub_macro_body = ${ (!"%}" ~ ANY)+ }
+sub_macro_body = ${ (!"%}" ~ text_macro_part)+ }
 sub_text_macro_decl = { macro_name ~ ("{%" ~ sub_macro_body ~ "%}") }
 decl_expression = _{ "{" ~ (variable_decl | sub_text_macro_decl) ~ "}" }
 
 // Define all the text rules.
-reserved = @{ "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" | "//" }
+reserved = @{ "//" | "{%" | "%}" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" }
 escape = @{ "\\" ~ reserved }
 raw_text = ${ (escape | !reserved ~ ANY)+ }
-
 bold_text = {
     PUSH ("*")
-    ~ text_macro_part
+    ~ text_macro_stmnt
     ~ POP
 }
 italic_text = {
     PUSH ("~")
-    ~ text_macro_part
+    ~ text_macro_stmnt
     ~ POP
 }
 underline_text = {
     PUSH ("_")
-    ~ text_macro_part
+    ~ text_macro_stmnt
     ~ POP
 }
 strike_through_text = {
     PUSH("-")
-    ~ text_macro_part
+    ~ text_macro_stmnt
     ~ POP
 }
 
+// Define the rules for macro links
+macro_link_option_label = @{ "\"" ~ ("\\\"" | !"\"" ~ ANY)+ ~ "\"" }
+macro_link_option = { macro_name ~ ">" ~ macro_link_option_label }
 macro_link = {
-    "[" ~ (!"]" ~ ANY)+ ~ "]" ~ "(" ~ "#" ~ ident ~ ")"
+    "[" ~ (!"]" ~ ANY)+ ~ "]" ~ "(" ~ (macro_link_option_label+ | macro_name) ~ ")"
 }
 
 comment_body = ${ "//" ~ (!("\r\n" | "\n" | "\r") ~ ANY)+ }
 comment = _{ comment_body  }
 
 text_macro_part = _{
-    (
-        raw_text |
-        comment |
-        bold_text |
-        italic_text |
-        underline_text |
-        strike_through_text |
-        macro_link |
-        variable_name |
-        eval_expression
-    )*
+    raw_text |
+    comment |
+    bold_text |
+    italic_text |
+    underline_text |
+    strike_through_text |
+    macro_link |
+    variable_name |
+    eval_expression
 }
-
+text_macro_stmnt = _{ text_macro_part* }
 text_macro_document = _{ 
     (
         raw_text |

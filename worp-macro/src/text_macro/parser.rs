@@ -26,7 +26,10 @@ mod test {
 
     #[test]
     fn sub_macro_decl_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
-        TextMacroDocumentParser::parse(Rule::text_macro_document, "{#macro {% abc %}}")?;
+        if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, "{#macro {% abc %}}") {
+            eprintln!("{}", err);
+            return Err(err)?;
+        }
 
         Ok(())
     }
@@ -38,7 +41,6 @@ mod test {
             #macro {%\n\
                 *test*\n\
                 {{1d20+10}}\n\
-                {$var {}}\n\
                 % % % % % %\n\
             %}\n\
         }
@@ -65,6 +67,16 @@ mod test {
     #[test]
     fn macro_link_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
         if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, "[Test](#test)") {
+            eprintln!("{}", err);
+            return Err(err)?;
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn macro_link_with_options_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
+        if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, r#"[Test](#test > "test" #test2 > "test2")"#) {
             eprintln!("{}", err);
             return Err(err)?;
         }
