@@ -1,0 +1,74 @@
+WHITESPACE = _{ " " | "\t" }
+
+// Define all the evaluator rules.
+ident = ${ (ASCII_ALPHA | "_") ~ ASCII_ALPHANUMERIC* }
+variable_name = ${ "$" ~ ident }
+macro_name = ${ "#" ~ ident }
+
+expression = { "{" ~ (!"}" ~ ANY)+ ~ "}" }
+eval_expression = _{ "{" ~ expression ~ "}" }
+
+variable_decl = { variable_name ~ expression }
+sub_text_macro_decl = { macro_name ~ ("[" ~ (!"]" ~ ANY)+ ~ "]") }
+decl_expression = _{ "{" ~ (variable_decl | sub_text_macro_decl) ~ "}" }
+
+// Define all the text rules.
+reserved = @{ "{" | "[" | "*" | "~" | "_" | "-" | ("/" ~ "/") }
+escape = @{ "\\" ~ reserved }
+raw_text = ${ (escape | !reserved ~ ANY)+ }
+
+bold_text = {
+    PUSH ("*")
+    ~ text_macro_part
+    ~ POP
+}
+italic_text = {
+    PUSH ("~")
+    ~ text_macro_part
+    ~ POP
+}
+underline_text = {
+    PUSH ("_")
+    ~ text_macro_part
+    ~ POP
+}
+strike_through_text = {
+    PUSH("-")
+    ~ text_macro_part
+    ~ POP
+}
+
+macro_link = {
+    "[" ~ (!"]" ~ ANY)+ ~ "]" ~ "(" ~ "#" ~ ident ~ ")"
+}
+
+comment_start = ${ "/" ~ "/" }
+comment = _{ comment_start ~ (!("\r" | "\n") ~ ANY)+ }
+
+text_macro_part = _{
+    (
+        raw_text |
+        comment |
+        bold_text |
+        italic_text |
+        underline_text |
+        strike_through_text |
+        macro_link |
+        eval_expression
+    )*
+}
+
+text_macro = _{ 
+    (
+        raw_text |
+        comment |
+        bold_text |
+        italic_text |
+        underline_text |
+        strike_through_text |
+        macro_link |
+        eval_expression |
+        decl_expression
+    )* ~
+    EOI
+}
