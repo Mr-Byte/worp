@@ -3,7 +3,8 @@ members = [
     "worp-client",
     "worp-core",
     "worp-gui",
+    "worp-macro",
+    "worp-net",
     "worp-renderer",
-    "worp-net"
 ]
 default-members = ["worp-client"]
