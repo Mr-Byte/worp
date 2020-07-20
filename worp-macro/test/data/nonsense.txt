@@ -1,0 +1,11 @@
+raw text
+with newlines
+abc *abc {{55+5}}* more raw text {#test {%a%}}
+{{8d6}}
+\\*
+// Commented section
+[Test Macro](#test)
+{$var {8d6}}
+$var
+#test
+*test ~test _test_~*

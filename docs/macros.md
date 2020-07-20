@@ -92,8 +92,8 @@ Macros can contain clickable links to execute one of a set of other, named macro
 
 ```
 [Link Text](
-    #target_macro > "Label"
-    #target_macro2 > "Label 2"
+    "Label": #target_macro,
+    "Label 2": #target_macro2
 )
 ```
 

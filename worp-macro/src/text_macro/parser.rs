@@ -10,98 +10,190 @@ mod test {
     use super::*;
     use pest::Parser as _;
 
-    #[test]
-    fn parse_ident() -> Result<(), Box<dyn std::error::Error>> {
-        TextMacroDocumentParser::parse(Rule::ident, "_abcdef123")?;
+    macro_rules! assert_all_rule {
+        ($rule:expr, $in:expr) => {
+            for input in $in {
+                let len = match TextMacroDocumentParser::parse($rule, input) {
+                    Ok(rule) => rule.last().unwrap().as_span().end(),
+                    Err(err) => panic!(format!("{}", err)),
+                };
 
-        Ok(())
+                assert_eq!(len, input.len(), "Failed to assert that rules match for: {}", input);
+            }
+        };
+    }
+
+    macro_rules! assert_all_not_rule {
+        ($rule:expr, $in:expr) => {
+            assert!($in.iter().all(|input| {
+                TextMacroDocumentParser::parse($rule, input).is_err()
+                    || TextMacroDocumentParser::parse($rule, input)
+                        .unwrap()
+                        .last()
+                        .unwrap()
+                        .as_span()
+                        .end()
+                        != input.len()
+            }));
+        };
     }
 
     #[test]
-    fn expression_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
-        TextMacroDocumentParser::parse(Rule::text_macro_document, "{{ abc }}")?;
+    fn parse_accepted_idents() {
+        let inputs = &["_", "_1", "a", "_a", "abc1234"];
 
-        Ok(())
+        assert_all_rule!(Rule::ident, inputs);
     }
 
     #[test]
-    fn sub_macro_decl_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
-        if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, "{#macro {% abc %}}") {
-            eprintln!("{}", err);
-            return Err(err)?;
-        }
+    fn parse_rejected_idents() {
+        let inputs = &["1", "💩"];
 
-        Ok(())
+        assert_all_not_rule!(Rule::ident, inputs);
     }
 
     #[test]
-    fn complex_sub_macro_decl_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
-        let complex = "\
-        {\n\
+    fn parse_accepted_expressions() {
+        let inputs = &["{{abc}}", "{{123}}"];
+
+        assert_all_rule!(Rule::eval_expression, inputs);
+    }
+
+    #[test]
+    fn parse_rejected_expressions() {
+        let inputs = &["{{}}", "{{ }}", "{{", "{{ }"];
+
+        assert_all_not_rule!(Rule::eval_expression, inputs);
+    }
+
+    #[test]
+    fn parse_accepted_sub_text_macro_decls() {
+        let inputs = &[
+            "#macro {% abc %}",
+            "#macro {% *test* %}",
+            "#macro {% ~test~ %}",
+            "#macro {% -test- %}",
+            "#macro {% _test_ %}",
+            "#macro {% {{abc}} %}",
+            "#macro_name {% abc %}",
+        ];
+
+        assert_all_rule!(Rule::sub_text_macro_decl, inputs);
+    }
+
+    #[test]
+    fn parse_rejected_sub_text_macro_decls() {
+        let inputs = &[
+            "#macro {% {#macro {% abc %}} %}",
+            "#macro {% {$var 123}} %}",
+            "#macro abc",
+            "#macro {% abc",
+            "#💩 {% a %}",
+        ];
+
+        assert_all_not_rule!(Rule::sub_text_macro_decl, inputs);
+    }
+
+    #[test]
+    fn parse_accepted_complex_sub_text_macro_decl() {
+        let input = &["\
             #macro {%\n\
                 *test*\n\
                 {{1d20+10}}\n\
                 % % % % % %\n\
-            %}\n\
-        }
-        ";
+            %}"];
 
-        if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, complex) {
-            println!("{}", err);
-            panic!("Test failed.")
-        }
-
-        Ok(())
+        assert_all_rule!(Rule::sub_text_macro_decl, input);
     }
 
     #[test]
-    fn variable_decl_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
-        if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, "{$var {abc}}") {
-            eprintln!("{}", err);
-            return Err(err)?;
-        }
+    fn parse_accepted_variable_decls() {
+        let inputs = &[
+            "$var {abc}",
+            "$var { abc }",
+            "$var { 123 }",
+            "$var { 1 + 2 + b}",
+            "$var { x + y / z }",
+            "$var_long { x + 2 + 2d2 }",
+        ];
 
-        Ok(())
+        assert_all_rule!(Rule::variable_decl, inputs);
     }
 
     #[test]
-    fn macro_link_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
-        if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, "[Test](#test)") {
-            eprintln!("{}", err);
-            return Err(err)?;
-        }
+    fn parse_rejected_variable_decls() {
+        let inputs = &["$💩 {abc}", "$var { abc", "$var abc }", "$var {{ $var { x }}", "$var abc"];
 
-        Ok(())
+        assert_all_not_rule!(Rule::variable_decl, inputs);
     }
 
     #[test]
-    fn macro_link_with_options_parse_succeeds() -> Result<(), Box<dyn std::error::Error>> {
-        if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, r#"[Test](#test > "test" #test2 > "test2")"#) {
-            eprintln!("{}", err);
-            return Err(err)?;
-        }
+    fn parse_accepted_text_macro_links() {
+        let inputs = &["[Test](#test)", "[Test Test](#test_test)"];
 
-        Ok(())
+        assert_all_rule!(Rule::text_macro_link, inputs);
     }
 
     #[test]
-    fn text_macro_document_parse_succeeds() {
-        let input = "\
-        raw text\n\
-        with newlines\n\
-        abc *abc {{55+5}}* more raw text {#test {%a%}}\n\
-        {{8d6}}\n\
-        \\* \n\
-        // Commented section\n\
-        [Test Macro](#test)\n\
-        {$var {8d6}}\n\
-        $var\n\
-        #test\n\
-        *test ~test _test_~*";
+    fn parse_rejected_text_macro_links() {
+        let inputs = &[
+            "[Test(test)",
+            "[Test Test]($test_test)",
+            "[Test Test] test)",
+            "[Test Test]",
+            "[Test Test] (test",
+        ];
 
-        if let Err(err) = TextMacroDocumentParser::parse(Rule::text_macro_document, input) {
-            println!("{}", err);
-            panic!("Test failed.")
-        }
+        assert_all_not_rule!(Rule::text_macro_link, inputs);
+    }
+
+    #[test]
+    fn parse_accepted_text_macro_links_with_options() {
+        let inputs = &[
+            r#"[Test]("test": #test)"#,
+            r#"[Test]("test": #test, "test2": #test2)"#,
+            r#"[Test]("test": #test, "test2": #test2, "test test": #test3)"#,
+        ];
+
+        assert_all_rule!(Rule::text_macro_link, inputs);
+    }
+
+    #[test]
+    fn parse_rejected_text_macro_links_with_options() {
+        let inputs = &[
+            r#"[Test]("test": )"#,
+            r#"[Test]("test": #)"#,
+            r#"[Test]("test": #2)"#,
+            r#"[Test]("test": #t2, "test": #)"#,
+            r#"[Test]("test": #t2, "test": #2)"#,
+            r#"[Test]("test": #t2 "test": #t3)"#,
+            r#"[Test]("test: #t2)"#,
+            r#"[Test](test: #t2)"#,
+            r#"[Test]("test": #t2, "test")"#,
+        ];
+
+        assert_all_not_rule!(Rule::text_macro_link, inputs);
+    }
+
+    #[test]
+    fn parse_rejected_simple_macros() {
+        let inputs = &[
+            "Attack *{{1d20 + $self.strength}}",
+            "Attack *{{1d20 + $self.strength}*",
+            "Attack *{1d20 + $self.strength}*",
+        ];
+
+        assert_all_not_rule!(Rule::text_macro_document, inputs);
+    }
+
+    #[test]
+    fn parse_accepted_complex_macros() {
+        let inputs = &[
+            include_str!("../../test/data/nonsense.txt"),
+            include_str!("../../test/data/long_sword_basic_attack.txt"),
+            include_str!("../../test/data/long_sword_multiple_attack.txt"),
+        ];
+
+        assert_all_rule!(Rule::text_macro_document, inputs);
     }
 }
