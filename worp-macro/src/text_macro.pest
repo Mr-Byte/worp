@@ -19,25 +19,25 @@ decl_expression = _{ "{" ~ (variable_decl | sub_text_macro_decl) ~ "}" }
 reserved = @{ "//" | "{%" | "%}" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" }
 escape = @{ "\\" ~ reserved }
 raw_text = ${ (escape | !reserved ~ ANY)+ }
-bold_text = {
-    PUSH ("*")
+bold_text = ${
+    "*"
     ~ text_macro_stmnt
-    ~ POP
+    ~ "*"
 }
-italic_text = {
-    PUSH ("~")
+italic_text = ${
+    "~"
     ~ text_macro_stmnt
-    ~ POP
+    ~ "~"
 }
-underline_text = {
-    PUSH ("_")
+underline_text = ${
+    "_"
     ~ text_macro_stmnt
-    ~ POP
+    ~ "_"
 }
-strike_through_text = {
-    PUSH("-")
+strike_through_text = ${
+    "-"
     ~ text_macro_stmnt
-    ~ POP
+    ~ "-"
 }
 
 // Define the rules for macro links
@@ -60,6 +60,7 @@ text_macro_part = _{
     strike_through_text |
     text_macro_link |
     variable_name |
+    text_macro_name |
     eval_expression
 }
 text_macro_stmnt = _{ text_macro_part* }

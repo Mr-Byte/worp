@@ -1,0 +1,10 @@
+{$charisma_mod {global.ability_mods[self.charisma]}}
+{{self.name}} casts E\-Blast!
+//Test
+Attack *{{1d20 + $charisma_mod}}*
+
+[Roll Damage](#roll_damage)
+
+{#roll_damage {%
+    {{1d10 + $charisma_mod}} Force Damage
+%}}

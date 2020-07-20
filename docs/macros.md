@@ -199,7 +199,7 @@ Attack *{{1d20 + $charisma_mod}}*
 
 [Roll Damage](#roll_damage)
 
-{#roll_damage [
+{#roll_damage {%
     {{1d10 + $charisma_mod}} Force Damage
-]}
+%}}
 ```

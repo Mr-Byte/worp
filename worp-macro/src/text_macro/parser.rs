@@ -190,8 +190,10 @@ mod test {
     fn parse_accepted_complex_macros() {
         let inputs = &[
             include_str!("../../test/data/nonsense.txt"),
+            include_str!("../../test/data/more_nonsense.txt"),
             include_str!("../../test/data/long_sword_basic_attack.txt"),
             include_str!("../../test/data/long_sword_multiple_attack.txt"),
+            include_str!("../../test/data/eblast.txt"),
         ];
 
         assert_all_rule!(Rule::text_macro_document, inputs);
