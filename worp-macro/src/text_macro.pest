@@ -16,29 +16,13 @@ sub_text_macro_decl = { text_macro_name ~ ("{%" ~ sub_text_macro_body ~ "%}") }
 decl_expression = _{ "{" ~ (variable_decl | sub_text_macro_decl) ~ "}" }
 
 // Define all the text rules.
-reserved = @{ "//" | "{%" | "%}" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" }
+reserved = @{ "//" | "{%" | "%}" | "[" | "]" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" }
 escape = @{ "\\" ~ reserved }
 raw_text = ${ (escape | !reserved ~ ANY)+ }
-bold_text = ${
-    "*"
-    ~ text_macro_stmnt
-    ~ "*"
-}
-italic_text = ${
-    "~"
-    ~ text_macro_stmnt
-    ~ "~"
-}
-underline_text = ${
-    "_"
-    ~ text_macro_stmnt
-    ~ "_"
-}
-strike_through_text = ${
-    "-"
-    ~ text_macro_stmnt
-    ~ "-"
-}
+bold_text = ${ "*" ~ text_macro_stmnt ~ "*" }
+italic_text = ${ "~" ~ text_macro_stmnt ~ "~" }
+underline_text = ${ "_" ~ text_macro_stmnt ~ "_" }
+strike_through_text = ${ "-" ~ text_macro_stmnt ~ "-" }
 
 // Define the rules for macro links
 text_macro_link_option_label = @{ "\"" ~ ("\\\"" | !"\"" ~ ANY)+ ~ "\"" }
@@ -47,7 +31,7 @@ text_macro_link_list = { text_macro_link_option ~ ("," ~ text_macro_link_option)
 text_macro_link = { "[" ~ (!"]" ~ ANY)+ ~ "]" ~ "(" ~ (text_macro_link_list | text_macro_name) ~ ")" }
 
 // Define the rules for comments
-comment_body = ${ "//" ~ (!("\r\n" | "\n" | "\r") ~ ANY)+ }
+comment_body = @{ "//" ~ (!("\r\n" | "\n" | "\r") ~ ANY)+ }
 comment = _{ comment_body  }
 
 // Define the rules for parsing top-level components of a text macro.
