@@ -1,10 +1,9 @@
-{$strength_mod {global.ability_mods[self.strength]}}
-{{self.name}} attacks with their long sword!
+{$strength_mod {% global.ability_mods[self.strength] %}}
+{{% self.name %}} attacks with their long sword!
 //Long sword is enchanted to do +2 damage but includes no bonus to hit
-Attack *{{1d20 + $strength_mod}}*
+Attack *{{% 1d20 + $strength_mod %}}*
 
 [Roll Damage](#roll_damage)
 
-{#roll_damage {%
-    {{1d8 + 2 + $strength_mod}} Slashing Damage
-%}}
+== #roll_damage ==
+{{% 1d8 + 2 + $strength_mod %}} Slashing Damage

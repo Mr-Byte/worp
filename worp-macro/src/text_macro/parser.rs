@@ -53,78 +53,44 @@ mod test {
     }
 
     #[test]
-    fn parse_accepted_expressions() {
-        let inputs = &["{{abc}}", "{{123}}"];
+    fn parse_accepted_expression_placeholders() {
+        let inputs = &["{{% abc %}}", "{{% 123 %}}"];
 
-        assert_all_rule!(Rule::eval_expression, inputs);
+        assert_all_rule!(Rule::placeholder, inputs);
     }
 
     #[test]
-    fn parse_rejected_expressions() {
-        let inputs = &["{{}}", "{{ }}", "{{", "{{ }"];
+    fn parse_rejected_expression_placeholders() {
+        let inputs = &["{{%%}}", "{{% %}}", "{{%", "{{% }"];
 
-        assert_all_not_rule!(Rule::eval_expression, inputs);
+        assert_all_not_rule!(Rule::placeholder, inputs);
     }
 
     #[test]
-    fn parse_accepted_sub_text_macro_decls() {
+    fn parse_accepted_variable_placeholders() {
         let inputs = &[
-            "#macro {% abc %}",
-            "#macro {% *test* %}",
-            "#macro {% ~test~ %}",
-            "#macro {% -test- %}",
-            "#macro {% _test_ %}",
-            "#macro {% {{abc}} %}",
-            "#macro_name {% abc %}",
+            "{$var {%abc%}}",
+            "{$var {% abc %}}",
+            "{$var {% 123 %}}",
+            "{$var {% 1 + 2 + b %}}",
+            "{$var {% x + y / z %}}",
+            "{$var_long {% x + 2 + 2d2 %}}",
         ];
 
-        assert_all_rule!(Rule::sub_text_macro_decl, inputs);
+        assert_all_rule!(Rule::placeholder, inputs);
     }
 
     #[test]
-    fn parse_rejected_sub_text_macro_decls() {
+    fn parse_reject_variable_placeholders() {
         let inputs = &[
-            "#macro {% {#macro {% abc %}} %}",
-            "#macro {% {$var 123}} %}",
-            "#macro abc",
-            "#macro {% abc",
-            "#💩 {% a %}",
+            "{$💩 {%abc%}}",
+            "{$var {% abc",
+            "{$var abc %}",
+            "{$var {% {$var {% x %}} %}}",
+            "{$var abc}",
         ];
 
-        assert_all_not_rule!(Rule::sub_text_macro_decl, inputs);
-    }
-
-    #[test]
-    fn parse_accepted_complex_sub_text_macro_decl() {
-        let input = &["\
-            #macro {%\n\
-                *test*\n\
-                {{1d20+10}}\n\
-                % % % % % %\n\
-            %}"];
-
-        assert_all_rule!(Rule::sub_text_macro_decl, input);
-    }
-
-    #[test]
-    fn parse_accepted_variable_decls() {
-        let inputs = &[
-            "$var {abc}",
-            "$var { abc }",
-            "$var { 123 }",
-            "$var { 1 + 2 + b}",
-            "$var { x + y / z }",
-            "$var_long { x + 2 + 2d2 }",
-        ];
-
-        assert_all_rule!(Rule::variable_decl, inputs);
-    }
-
-    #[test]
-    fn parse_rejected_variable_decls() {
-        let inputs = &["$💩 {abc}", "$var { abc", "$var abc }", "$var {{ $var { x }}", "$var abc"];
-
-        assert_all_not_rule!(Rule::variable_decl, inputs);
+        assert_all_not_rule!(Rule::placeholder, inputs);
     }
 
     #[test]
@@ -178,9 +144,9 @@ mod test {
     #[test]
     fn parse_rejected_simple_macros() {
         let inputs = &[
-            "Attack *{{1d20 + $self.strength}}",
-            "Attack *{{1d20 + $self.strength}*",
-            "Attack *{1d20 + $self.strength}*",
+            "Attack *{{% 1d20 + $self.strength %}}",
+            "Attack *{{% 1d20 + $self.strength %}*",
+            "Attack *{ 1d20 + $self.strength}*",
         ];
 
         assert_all_not_rule!(Rule::text_macro_document, inputs);

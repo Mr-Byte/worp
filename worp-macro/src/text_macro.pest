@@ -9,20 +9,23 @@ expression_body = ${ (!"}" ~ ANY)+ }
 expression = _{ "{" ~ expression_body  ~ "}" }
 eval_expression = { "{" ~ expression ~ "}" }
 
-// Define the rules for sub-macro and variable declarations.
-variable_decl = { variable_name ~ expression }
-sub_text_macro_body = ${ (!"%}" ~ text_macro_part)+ }
-sub_text_macro_decl = { text_macro_name ~ ("{%" ~ sub_text_macro_body ~ "%}") }
-decl_expression = _{ "{" ~ (variable_decl | sub_text_macro_decl) ~ "}" }
+// Define the rules for placeholders.
+placeholder = { "{" ~ variable_name? ~ placeholder_body ~ "}" }
+placeholder_body = _{ "{%" ~ (!"%}" ~ ANY)+ ~ "%}" }
+
+// variable_decl = { variable_name ~ expression }
+// sub_text_macro_body = ${ (!"%}" ~ text_macro_part)+ }
+// sub_text_macro_decl = { text_macro_name ~ ("{%" ~ sub_text_macro_body ~ "%}") }
+// decl_expression = _{ "{" ~ (variable_decl | sub_text_macro_decl) ~ "}" }
 
 // Define all the text rules.
-reserved = @{ "//" | "{%" | "%}" | "[" | "]" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" }
+reserved = @{ "//" | "[" | "]" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" | "%}" }
 escape = @{ "\\" ~ reserved }
 raw_text = ${ (escape | !reserved ~ ANY)+ }
-bold_text = ${ "*" ~ text_macro_stmnt ~ "*" }
-italic_text = ${ "~" ~ text_macro_stmnt ~ "~" }
-underline_text = ${ "_" ~ text_macro_stmnt ~ "_" }
-strike_through_text = ${ "-" ~ text_macro_stmnt ~ "-" }
+bold_text = ${ "*" ~ text_macro_part ~ "*" }
+italic_text = ${ "~" ~ text_macro_part ~ "~" }
+underline_text = ${ "_" ~ text_macro_part ~ "_" }
+strike_through_text = ${ "-" ~ text_macro_part ~ "-" }
 
 // Define the rules for macro links
 text_macro_link_option_label = @{ "\"" ~ ("\\\"" | !"\"" ~ ANY)+ ~ "\"" }
@@ -36,19 +39,6 @@ comment = _{ comment_body  }
 
 // Define the rules for parsing top-level components of a text macro.
 text_macro_part = _{
-    raw_text |
-    comment |
-    bold_text |
-    italic_text |
-    underline_text |
-    strike_through_text |
-    text_macro_link |
-    variable_name |
-    text_macro_name |
-    eval_expression
-}
-text_macro_stmnt = _{ text_macro_part* }
-text_macro_document = _{ 
     (
         raw_text |
         comment |
@@ -58,9 +48,12 @@ text_macro_document = _{
         strike_through_text |
         text_macro_link |
         variable_name |
-        text_macro_name |
-        eval_expression |
-        decl_expression
-    )* ~
-    EOI
+        text_macro_name | 
+        placeholder
+    )*
+}
+
+text_macro_document = _{ 
+    text_macro_part
+    ~ EOI
 }
