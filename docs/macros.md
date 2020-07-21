@@ -87,7 +87,7 @@ The macro called will be resolved according the named macro evaluation order.
 In almost all cases it is necessary to perform text substitutions, such as for dice rolls.  These expressions can be embedded into macros using the syntax
 
 ```
-{{% expression %}}
+{% expression %}
 ```
 
 Which will evaluate the provided expression at execution time for a macro each time.  Some examples of this are as follows:
@@ -104,17 +104,17 @@ These are just a limited number of examples.  The expression syntax will be furt
 
 ## Variable Placeholders
 
-Variables can be declared inside a macro.  Variables declared in a top-level macro are available to that macro and all sub-macros, but variables declared in a sub-macro are only available in that sub-macro.
+Variables can be declared at the start of a macro or sub-macro, before the body of the macro begins.  Variables declared in a top-level macro are available to that macro and all sub-macros, but variables declared in a sub-macro are only available in that sub-macro.
 
 The syntax is as follows:
 
 ```
-{$var_name {% some_expression %}}
+$var_name := {% some_expression %}}
 ```
 
 These variables are evaluated at the time the macro is executed, in the order they are declared.  The result of the expression is then stored in the variable for the remainder of the macro execution, including any further interactions that trigger associated sub-macros.
 
-Variables can be referenced by other expressions such as `{{% $some_variable + 1 %}}` or can be used directly within a macro like `$some_variable` which will print out the contents of the variable as text.
+Variables can be referenced by other expressions such as `{% $some_variable + 1 %}` or can be used directly within a macro like `$some_variable` which will print out the contents of the variable as text.
 
 # Sub-macros
 
@@ -131,12 +131,13 @@ These macros are not executed when the parent macro is executed, but instead are
 # Examples
 
 ```
-{$charisma_mod {global.ability_mods[self.charisma]}}
-{{self.name}} casts Eldritch Blast!
-Attack *{{1d20 + $charisma_mod}}*
+$charisma_mod := {% global.ability_mods[self.charisma] %}
+
+{%self.name%} casts Eldritch Blast!
+Attack *{% 1d20 + $charisma_mod %}*
 
 [Roll Damage](#roll_damage)
 
 == #roll_damage ==
-{{1d10 + $charisma_mod}} Force Damage
+{% 1d10 + $charisma_mod %} Force Damage
 ```
