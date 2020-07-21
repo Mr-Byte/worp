@@ -70,7 +70,7 @@ impl Renderer {
     }
 
     pub fn draw_frame(&mut self) -> Result<()> {
-        let frame = self.swap_chain.get_next_frame().map_err(|_| SwapChainError)?;
+        let frame = self.swap_chain.get_current_frame().map_err(|_| SwapChainError)?;
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
         let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

@@ -1,59 +1,65 @@
-WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+ws = _{ (" " | "\t")* }
+nl = _{ ("\r" | "\n")+ }
+wsnl = _{ (" " | "\t" | "\r" | "\n")* }
 
-// Define all the expression rules.
+// Define identifier/name rules.
 ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
 variable_name = ${ "$" ~ ident }
 text_macro_name = ${ "#" ~ ident }
 
-expression_body = ${ (!"}" ~ ANY)+ }
-expression = _{ "{" ~ expression_body  ~ "}" }
-eval_expression = { "{" ~ expression ~ "}" }
-
 // Define the rules for placeholders.
-placeholder = { "{" ~ variable_name? ~ placeholder_body ~ "}" }
-placeholder_body = _{ "{%" ~ (!"%}" ~ ANY)+ ~ "%}" }
-
-// variable_decl = { variable_name ~ expression }
-// sub_text_macro_body = ${ (!"%}" ~ text_macro_part)+ }
-// sub_text_macro_decl = { text_macro_name ~ ("{%" ~ sub_text_macro_body ~ "%}") }
-// decl_expression = _{ "{" ~ (variable_decl | sub_text_macro_decl) ~ "}" }
+placeholder_body = { (!"%}" ~ ANY)* }
+placeholder = { "{" ~ wsnl ~ variable_name? ~ wsnl ~ "{%" ~ placeholder_body ~ "%}" ~ wsnl ~ "}" }
 
 // Define all the text rules.
-reserved = @{ "//" | "[" | "]" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" | "%}" }
-escape = @{ "\\" ~ reserved }
-raw_text = ${ (escape | !reserved ~ ANY)+ }
+reserved = _{ "//" | "[" | "]" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" | (nl ~ "==") }
+raw_text = ${ (!reserved ~ ANY)+ }
 bold_text = ${ "*" ~ text_macro_part ~ "*" }
 italic_text = ${ "~" ~ text_macro_part ~ "~" }
 underline_text = ${ "_" ~ text_macro_part ~ "_" }
 strike_through_text = ${ "-" ~ text_macro_part ~ "-" }
 
 // Define the rules for macro links
-text_macro_link_option_label = @{ "\"" ~ ("\\\"" | !"\"" ~ ANY)+ ~ "\"" }
-text_macro_link_option = { text_macro_link_option_label ~ ":" ~ text_macro_name }
-text_macro_link_list = { text_macro_link_option ~ ("," ~ text_macro_link_option)* }
+text_macro_link_option_label = @{ wsnl ~ "\"" ~ ("\\\"" | !"\"" ~ ANY)+ ~ "\"" ~ wsnl }
+text_macro_link_option = { text_macro_link_option_label ~ wsnl ~ ":" ~ wsnl ~ text_macro_name }
+text_macro_link_list = { text_macro_link_option ~ (wsnl ~ "," ~ wsnl ~ text_macro_link_option)* }
 text_macro_link = { "[" ~ (!"]" ~ ANY)+ ~ "]" ~ "(" ~ (text_macro_link_list | text_macro_name) ~ ")" }
 
 // Define the rules for comments
-comment_body = @{ "//" ~ (!("\r\n" | "\n" | "\r") ~ ANY)+ }
-comment = _{ comment_body  }
+comment = _{ "//" ~ (!("\r\n" | "\n" | "\r") ~ ANY)+ }
 
-// Define the rules for parsing top-level components of a text macro.
-text_macro_part = _{
+// Define the rules for parsing top-level components of a text macro or sub-text macro.
+text_macro_part = _{ 
     (
-        raw_text |
-        comment |
-        bold_text |
-        italic_text |
-        underline_text |
-        strike_through_text |
-        text_macro_link |
-        variable_name |
-        text_macro_name | 
-        placeholder
+        !sub_text_macro_begin ~
+        (
+            raw_text |
+            comment |
+            bold_text |
+            italic_text |
+            underline_text |
+            strike_through_text |
+            text_macro_link |
+            variable_name |
+            text_macro_name | 
+            placeholder
+        )
     )*
 }
 
-text_macro_document = _{ 
+// Define the rules for pasing sub-text macros
+sub_text_macro_begin = _{ nl ~ "==" ~ ws }
+sub_text_macro_end = _{ ws ~ "==" ~ nl }
+sub_text_macro_body = { text_macro_part }
+sub_text_macro = {
+    sub_text_macro_begin
+    ~ text_macro_name
+    ~ sub_text_macro_end
+    ~ sub_text_macro_body
+}
+
+text_macro_document = { 
     text_macro_part
+    ~ sub_text_macro*
     ~ EOI
 }

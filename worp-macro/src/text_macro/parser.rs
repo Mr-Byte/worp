@@ -61,7 +61,7 @@ mod test {
 
     #[test]
     fn parse_rejected_expression_placeholders() {
-        let inputs = &["{{%%}}", "{{% %}}", "{{%", "{{% }"];
+        let inputs = &["{{%", "{{% }"];
 
         assert_all_not_rule!(Rule::placeholder, inputs);
     }
@@ -153,7 +153,7 @@ mod test {
     }
 
     #[test]
-    fn parse_accepted_complex_macros() {
+    fn parse_accepted_complex_text_macros() {
         let inputs = &[
             include_str!("../../test/data/nonsense.txt"),
             include_str!("../../test/data/more_nonsense.txt"),
