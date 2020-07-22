@@ -1,13 +1,16 @@
-{$strength_mod {% global.ability_mods[self.strength] %}}
-{{% self.name %}} attacks with their long sword!
-//Long sword is enchanted to do +2 damage against undead
-Attack *{{% 1d20 + $strength_mod %}}*
+> Long sword is enchanted to do +2 damage against undead
+
+$strength_mod := {% global.ability_mods[self.strength] %}
+
+{% self.name %} attacks with their long sword!
+
+Attack *{% 1d20 + $strength_mod %}*
 
 [Roll Damage](#roll_damage)
 [Roll Damage vs Undead](#roll_damage_ud)
 
 == #roll_damage ==
-{{% 1d8 + $strength_mod %}} Slashing Damage
+{% 1d8 + $strength_mod %} Slashing Damage
 
 == #roll_damage_ud ==
-{{% 1d8 + 2 + $strength_mod %}} Holy Slashing Damage
+{% 1d8 + 2 + $strength_mod %} Holy Slashing Damage

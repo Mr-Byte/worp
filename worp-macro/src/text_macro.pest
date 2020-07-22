@@ -1,65 +1,92 @@
+// Whitespace rules
 ws = _{ (" " | "\t")* }
-nl = _{ ("\r" | "\n")+ }
-wsnl = _{ (" " | "\t" | "\r" | "\n")* }
+nl = _{ "\r\n" | "\r" | "\n" }
+quote = _{ "\"" }
 
-// Define identifier/name rules.
-ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
-variable_name = ${ "$" ~ ident }
-text_macro_name = ${ "#" ~ ident }
+// Rules for documenting macros
+docs = { (">" ~ ws ~ (!nl ~ ANY)+ ~ nl+)* }
 
-// Define the rules for placeholders.
-placeholder_body = { (!"%}" ~ ANY)* }
-placeholder = { "{" ~ wsnl ~ variable_name? ~ wsnl ~ "{%" ~ placeholder_body ~ "%}" ~ wsnl ~ "}" }
+// Identifier naming rules
+identifier = _{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
 
-// Define all the text rules.
-reserved = _{ "//" | "[" | "]" | "{" | "}" | "*" | "~" | "_" | "-" | "$" | "#" | (nl ~ "==") }
-raw_text = ${ (!reserved ~ ANY)+ }
-bold_text = ${ "*" ~ text_macro_part ~ "*" }
-italic_text = ${ "~" ~ text_macro_part ~ "~" }
-underline_text = ${ "_" ~ text_macro_part ~ "_" }
-strike_through_text = ${ "-" ~ text_macro_part ~ "-" }
+// Rules around variable names and variable assignment
+variable_name_indicator = _{ "$" }
+variable_name = { variable_name_indicator ~ identifier }
+variable_assignment = _{ ":="}
+variable_declaration = { variable_name ~ ws ~ variable_assignment ~ ws ~ expression }
+variable_header = { (variable_declaration ~ nl+)* }
 
-// Define the rules for macro links
-text_macro_link_option_label = @{ wsnl ~ "\"" ~ ("\\\"" | !"\"" ~ ANY)+ ~ "\"" ~ wsnl }
-text_macro_link_option = { text_macro_link_option_label ~ wsnl ~ ":" ~ wsnl ~ text_macro_name }
-text_macro_link_list = { text_macro_link_option ~ (wsnl ~ "," ~ wsnl ~ text_macro_link_option)* }
-text_macro_link = { "[" ~ (!"]" ~ ANY)+ ~ "]" ~ "(" ~ (text_macro_link_list | text_macro_name) ~ ")" }
+// Rules around macro names
+macro_name_indicator = _{ "#" }
+macro_name = { macro_name_indicator ~ identifier }
 
-// Define the rules for comments
-comment = _{ "//" ~ (!("\r\n" | "\n" | "\r") ~ ANY)+ }
+// Rules around expression placeholders
+expression_open = { "{%" }
+expression_close = { "%}" }
+expression_body = { (!expression_close ~ ANY)* }
+expression = { expression_open ~ expression_body ~ expression_close }
 
-// Define the rules for parsing top-level components of a text macro or sub-text macro.
-text_macro_part = _{ 
-    (
-        !sub_text_macro_begin ~
-        (
-            raw_text |
-            comment |
-            bold_text |
-            italic_text |
-            underline_text |
-            strike_through_text |
-            text_macro_link |
-            variable_name |
-            text_macro_name | 
-            placeholder
-        )
-    )*
+// Macro link rules
+macro_link_target_open = { "(" }
+macro_link_target_close = { ")" }
+macro_link_label_open = { "[" }
+macro_link_label_close = { "]" }
+macro_link_label = { (!(macro_link_label_close | nl) ~ ANY)* }
+macro_link_target_label = { (!(quote | nl) ~ ANY)+ }
+macro_link_target_with_label = { quote ~ macro_link_target_label ~ quote ~ ws ~ ":" ~ ws ~ macro_name }
+macro_link_target_set = { macro_link_target_with_label ~ (ws ~ "," ~ ws ~ macro_link_target_with_label)* }
+macro_link_target = { macro_name | macro_link_target_set }
+macro_link = { 
+	macro_link_label_open 
+	~ macro_link_label 
+	~ macro_link_label_close 
+	~ macro_link_target_open
+	~ macro_link_target
+	~ macro_link_target_close
 }
 
-// Define the rules for pasing sub-text macros
-sub_text_macro_begin = _{ nl ~ "==" ~ ws }
-sub_text_macro_end = _{ ws ~ "==" ~ nl }
-sub_text_macro_body = { text_macro_part }
-sub_text_macro = {
-    sub_text_macro_begin
-    ~ text_macro_name
-    ~ sub_text_macro_end
-    ~ sub_text_macro_body
+// Text span rules
+reserved = _{
+	sub_macro_start | 
+	nl |
+	expression_open |
+	macro_name_indicator |
+	variable_name_indicator |
+	macro_link_label_open |
+	bold_text_indicator |
+	italic_text_indicator |
+	underline_text_indicator |
+	strike_through_text_indicator
 }
+text_span = _{ (!reserved ~ ANY)+ | expression | macro_name | variable_name | macro_link | bold_text | italic_text | underline_text | strike_through_text }
 
-text_macro_document = { 
-    text_macro_part
-    ~ sub_text_macro*
-    ~ EOI
+// Text formatting rules
+bold_text_indicator = { "*" }
+bold_text = { bold_text_indicator ~ (!bold_text_indicator ~ text_span)+ ~ bold_text_indicator }
+italic_text_indicator = { "~" }
+italic_text = { italic_text_indicator ~ (!italic_text_indicator ~ text_span)+ ~ italic_text_indicator }
+underline_text_indicator = { "_" }
+underline_text = { underline_text_indicator ~ (!underline_text_indicator ~ text_span)+ ~ underline_text_indicator }
+strike_through_text_indicator = { "-" }
+strike_through_text = { strike_through_text_indicator ~ (!strike_through_text_indicator ~ text_span)+ ~ strike_through_text_indicator }
+
+// Rules around declarations of sub-macros
+sub_macro_start = _{ nl+ ~ "==" }
+sub_macro_end = _{ "==" ~ nl+ }
+sub_macro_header = { sub_macro_start ~ ws ~ macro_name ~ ws ~ sub_macro_end }
+sub_macro = { sub_macro_header ~ docs ~ variable_header ~ macro_body }
+
+// Rule for defining the primary macro of the document
+main_macro = { docs ~ variable_header ~ macro_body }
+
+// Rules for the text body of macros
+macro_span = { (!sub_macro_start ~ (nl | text_span)) }
+macro_body = { macro_span+ }
+
+// The root document of the macro
+document = { 
+	nl*
+	~ main_macro
+    ~ sub_macro*
+	~ EOI
 }

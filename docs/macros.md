@@ -1,143 +1,72 @@
 <!-- TOC orderedList:true -->
 
-1. [Draft Note](#draft-note)
-2. [Introduction](#introduction)
-3. [Syntax](#syntax)
-    1. [Text Formatting](#text-formatting)
-    2. [Macro Comments](#macro-comments)
-    3. [Nested Macro Calls](#nested-macro-calls)
-    4. [Macro Links](#macro-links)
-    5. [Macro Links with Options](#macro-links-with-options)
-    6. [Expression Placeholders](#expression-placeholders)
-    7. [Variable Placeholders](#variable-placeholders)
-4. [Sub-macros](#sub-macros)
-5. [Examples](#examples)
+1. [Introduction](#introduction)
+    1. [Who Scroll is For](#who-scroll-is-for)
+        1. [Game Masters](#game-masters)
+        2. [Players](#players)
+        3. [Module and Map Designers](#module-and-map-designers)
+        4. [Table Top Designers](#table-top-designers)
+    2. [The Scroll Documentation](#the-scroll-documentation)
+2. [Macro Document Sections](#macro-document-sections)
+    1. [Documentation](#documentation)
+    2. [Variables](#variables)
+        1. [Variable Scopes](#variable-scopes)
+    3. [Body](#body)
+        1. [Text formatting](#text-formatting)
+        2. [Substitution Expressions](#substitution-expressions)
+        3. [Calling Other Macros](#calling-other-macros)
+        4. [Macro Links](#macro-links)
+    4. [Sub-macros](#sub-macros)
+3. [Macro Execution](#macro-execution)
+    1. [Macro Scopes](#macro-scopes)
 
 <!-- /TOC -->
 
-# Draft Note
-This is draft documentation and may change.  This exists mostly to start better documenting the ideas for the macro system.
-
 # Introduction
 
-All macros must have a name.  There will be three types of macros.
-* Sub-macros (Named macros nested within another macro)
-* Token macros (Macros attached to a token that are specific to that token)
-* Global macros (Macros in a global namespace)
+Worp uses a custom text processing and templating language called Scroll for evaluating and running macros within the table top environment.
+It is one of the core components of the Worp Virtual Table Top and acts as a method of automating the various actions performed in a game.
+It is targeted towards various groups of individuals interacting with Worp over the course of developing and play a table top game.
 
-Execution of a named macro is resolved in the order of Sub-macros, Token macros, Global macros.
+## Who Scroll is For
 
-# Syntax
+Scroll targets a wide audience of Game Masters, players, module and map designers, and people designing their own table top games and systems.
 
-Macros are written in a special text templating language.  This section contains information on that language's syntax.
+### Game Masters
 
-## Text Formatting
+Game Masters will find themselves frequently interacting with and possibly writing Scroll macros over the course of a game.
+They're made available through various context menus and hot bars associated with the tokens on the field.
+Game Masters can also access and run macros that aren't related to any specific token.
+Scroll allows Game Masters to quickly execute actions they need to perform throughout the course of a game, such as actions performed by NPCs, monsters, environmental interactions, etc.
 
-Macros will have the following formatting options
-* `*bold*` for **bold** text
-* `~italic~` for _italic_ text
-* `_underline_` for underlined text
-* `-strike through-` for ~~strike through~~ text
+### Players
+Players will frequently use Scroll macros from their own tokens to perform actions throughout the course of a game.
+They're made available through various context menus and hot bars associated with the tokens owned by a player.
 
-## Macro Comments
-Comments can be added to macros using the following syntax
-```
-// This is a comment in a macro
-```
+### Module and Map Designers
+Module and map designers will likely find themselves writing Scroll macros to give their world life and to provide actions for Game Masters and players to interact with.
 
-## Nested Macro Calls
+### Table Top Designers
+Table Top Designers will leverage Scroll to model their table top system by using it to encode all the rules and actions of their system as macros.
+In this case Scroll will be frequently used to create the basic templates needed for the other groups mentioned above to play a table top system.
 
-Macros can be called by another macro using the syntax
+## The Scroll Documentation
 
-```
-// Other macro bits
-#macro_name
-```
+The Scroll documentation is broken down into various sections, reflecting the individual sections of a Scroll macro.
+These sections include the [documentation section](#documentation) used to help macro authors document their macros.
+The [variables section](#variables) which is used to predefine common variables used throughout the body of a macro.
+The [body](#body) section which contains all the text, text formatting, and substitution expressions used to produce the final output of the macro.
+Finally the [sub-macro](#sub-macros) section is a special section for defining named, nested macros within a Scroll macro that are only accessible from inside the Scroll macro document itself.
 
-The macro called will be resolved according the named macro evaluation order.
-
-## Macro Links
-
-Macros can contain clickable links to execute other, named macros.
-
-```
-[Link Text](#target_macro)
-```
-
-This will produce link text that when clicked by the player who executed the original macro, will execute the specified named macro.
-
-The macro called will be resolved according the named macro evaluation order.
-
-## Macro Links with Options
-Macros can contain clickable links to execute one of a set of other, named macros.
-
-```
-[Link Text](
-    "Label": #target_macro,
-    "Label 2": #target_macro2
-)
-```
-
-This will produce link text that when clicked by the player who executed the original macro, will present the player with a list of options.
-Selecting one of the options will execute the specified named macro.
-
-The macro called will be resolved according the named macro evaluation order.
-
-## Expression Placeholders
-In almost all cases it is necessary to perform text substitutions, such as for dice rolls.  These expressions can be embedded into macros using the syntax
-
-```
-{% expression %}
-```
-
-Which will evaluate the provided expression at execution time for a macro each time.  Some examples of this are as follows:
-
-```
-Damage {{% 3d6 %}}
-```
-
-```
-Wisdom {{% self.wisdom %}}
-```
-
-These are just a limited number of examples.  The expression syntax will be further documented in the future.
-
-## Variable Placeholders
-
-Variables can be declared at the start of a macro or sub-macro, before the body of the macro begins.  Variables declared in a top-level macro are available to that macro and all sub-macros, but variables declared in a sub-macro are only available in that sub-macro.
-
-The syntax is as follows:
-
-```
-$var_name := {% some_expression %}}
-```
-
-These variables are evaluated at the time the macro is executed, in the order they are declared.  The result of the expression is then stored in the variable for the remainder of the macro execution, including any further interactions that trigger associated sub-macros.
-
-Variables can be referenced by other expressions such as `{% $some_variable + 1 %}` or can be used directly within a macro like `$some_variable` which will print out the contents of the variable as text.
-
-# Sub-macros
-
-Sub-macros can be specified within a parent macro using the following syntax.
-
-```
-== #macro_name ==
-```
-
-This syntax must be on a line of its own and any text following it, until the next sub-macro definition, is parsed as a part of the sub-macro.
-
-These macros are not executed when the parent macro is executed, but instead are added to the "local macro" listing and can be executed later by some macro-interaction.
-
-# Examples
-
-```
-$charisma_mod := {% global.ability_mods[self.charisma] %}
-
-{%self.name%} casts Eldritch Blast!
-Attack *{% 1d20 + $charisma_mod %}*
-
-[Roll Damage](#roll_damage)
-
-== #roll_damage ==
-{% 1d10 + $charisma_mod %} Force Damage
-```
+# Macro Document Sections
+## Documentation
+## Variables
+### Variable Scopes
+## Body
+### Text formatting
+### Substitution Expressions
+### Calling Other Macros
+### Macro Links
+## Sub-macros
+# Macro Execution
+## Macro Scopes

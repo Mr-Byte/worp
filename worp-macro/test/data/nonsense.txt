@@ -1,13 +1,13 @@
 raw text
 with newlines
-abc *abc {{%55+5%}}* more raw text
-{{% 8d6 %}}
-// Commented section
+abc *abc {%55+5%}* more raw text
+{% 8d6 %}
+
 [Test Macro](#test)
-{$var {% 8d6 %}}
+
 $var
 #test
 *test ~test _test_~*
 
 == #sub ==
-{{% 55 %}}
+{% 55 %}

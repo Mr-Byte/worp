@@ -1,4 +1,4 @@
-*test* {{% x %}}
-*test* {{% x %}}
-*_test_* {{% x %}} #test
-test {{% x %}}
+*test* {% x %}
+*test* {% x %}
+*_test_* {% x %} #test
+test {% x %}
