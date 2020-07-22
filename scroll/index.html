@@ -89,7 +89,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded "><a href="../scroll/index.html" class="active"><strong aria-hidden="true">1.</strong> The Scroll Macro Language</a></li><li><ol class="section"><li class="chapter-item expanded "><strong aria-hidden="true">1.1.</strong> Macro Sections</li><li><ol class="section"><li class="chapter-item expanded "><strong aria-hidden="true">1.1.1.</strong> Documentation Section</li><li class="chapter-item expanded "><strong aria-hidden="true">1.1.2.</strong> Variables Section</li><li><ol class="section"><li class="chapter-item expanded "><strong aria-hidden="true">1.1.2.1.</strong> Variable Scopes</li></ol></li><li class="chapter-item expanded "><strong aria-hidden="true">1.1.3.</strong> Body Section</li><li><ol class="section"><li class="chapter-item expanded "><strong aria-hidden="true">1.1.3.1.</strong> Text Formatting</li><li class="chapter-item expanded "><strong aria-hidden="true">1.1.3.2.</strong> Substitution Expressions</li><li class="chapter-item expanded "><strong aria-hidden="true">1.1.3.3.</strong> Embedding Other Macros</li><li class="chapter-item expanded "><strong aria-hidden="true">1.1.3.4.</strong> Macro Links</li></ol></li><li class="chapter-item expanded "><strong aria-hidden="true">1.1.4.</strong> Sub-Macros</li></ol></li><li class="chapter-item expanded "><strong aria-hidden="true">1.2.</strong> Macro Execution</li></ol></li><li class="chapter-item expanded "><a href="../dice/index.html"><strong aria-hidden="true">2.</strong> The Dice Language</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded "><a href="../scroll/index.html" class="active"><strong aria-hidden="true">1.</strong> The Scroll Macro Language</a></li><li><ol class="section"><li class="chapter-item expanded "><strong aria-hidden="true">1.1.</strong> Macro Documents</li><li class="chapter-item expanded "><strong aria-hidden="true">1.2.</strong> Documentation Section</li><li class="chapter-item expanded "><strong aria-hidden="true">1.3.</strong> Variables Section</li><li><ol class="section"><li class="chapter-item expanded "><strong aria-hidden="true">1.3.1.</strong> Variable Scopes</li></ol></li><li class="chapter-item expanded "><strong aria-hidden="true">1.4.</strong> Body Section</li><li><ol class="section"><li class="chapter-item expanded "><strong aria-hidden="true">1.4.1.</strong> Text Formatting</li><li class="chapter-item expanded "><strong aria-hidden="true">1.4.2.</strong> Substitution Expressions</li><li class="chapter-item expanded "><strong aria-hidden="true">1.4.3.</strong> Embedding Other Macros</li><li class="chapter-item expanded "><strong aria-hidden="true">1.4.4.</strong> Macro Links</li></ol></li><li class="chapter-item expanded "><strong aria-hidden="true">1.5.</strong> Sub-Macros</li><li class="chapter-item expanded "><strong aria-hidden="true">1.6.</strong> Macro Execution</li></ol></li><li class="chapter-item expanded "><a href="../dice/index.html"><strong aria-hidden="true">2.</strong> The Dice Language</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -155,7 +155,26 @@
 
                 <div id="content" class="content">
                     <main>
-                        
+                        <h1><a class="header" href="#the-scroll-macro-language" id="the-scroll-macro-language">The Scroll Macro Language</a></h1>
+<p>Worp uses a custom text processing and templating language called Scroll for evaluating and running macros within the table top environment.
+It is one of the core components of the Worp Virtual Table Top and acts as a method of automating the various actions performed in a game.
+It is targeted towards various groups of individuals interacting with Worp over the course of developing and play a table top game.</p>
+<h2><a class="header" href="#who-scroll-is-for" id="who-scroll-is-for">Who Scroll is For</a></h2>
+<p>Scroll targets a wide audience of Game Masters, players, module and map designers, and people designing their own table top games and systems.</p>
+<h3><a class="header" href="#game-masters" id="game-masters">Game Masters</a></h3>
+<p>Game Masters will find themselves frequently interacting with and possibly writing Scroll macros over the course of a game.
+They're made available through various context menus and hot bars associated with the tokens on the field.
+Game Masters can also access and run macros that aren't related to any specific token.
+Scroll allows Game Masters to quickly execute actions they need to perform throughout the course of a game, such as actions performed by NPCs, monsters, environmental interactions, etc.</p>
+<h3><a class="header" href="#players" id="players">Players</a></h3>
+<p>Players will frequently use Scroll macros from their own tokens to perform actions throughout the course of a game.
+They're made available through various context menus and hot bars associated with the tokens owned by a player.</p>
+<h3><a class="header" href="#module-and-map-designers" id="module-and-map-designers">Module and Map Designers</a></h3>
+<p>Module and map designers will likely find themselves writing Scroll macros to give their world life and to provide actions for Game Masters and players to interact with.</p>
+<h3><a class="header" href="#table-top-designers" id="table-top-designers">Table Top Designers</a></h3>
+<p>Table Top Designers will leverage Scroll to model their table top system by using it to encode all the rules and actions of their system as macros.
+In this case Scroll will be frequently used to create the basic templates needed for the other groups mentioned above to play a table top system.</p>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
