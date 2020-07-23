@@ -3,9 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Worp Book</title>
-        
-        <meta name="robots" content="noindex" />
+        <title>Body Section - Worp Book</title>
         
         
 
@@ -19,23 +17,23 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
         
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
         
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="highlight.css">
-        <link rel="stylesheet" href="tomorrow-night.css">
-        <link rel="stylesheet" href="ayu-highlight.css">
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
         
@@ -45,7 +43,7 @@
     <body>
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
-            var path_to_root = "";
+            var path_to_root = "../";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
@@ -91,7 +89,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Introduction</a></li><li class="chapter-item expanded "><a href="scroll/index.html"><strong aria-hidden="true">1.</strong> The Scroll Macro Language</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="scroll/macro-documents.html"><strong aria-hidden="true">1.1.</strong> Macro Documents</a></li><li class="chapter-item expanded "><a href="scroll/documentation-section.html"><strong aria-hidden="true">1.2.</strong> Documentation Section</a></li><li class="chapter-item expanded "><a href="scroll/variables-section.html"><strong aria-hidden="true">1.3.</strong> Variables Section</a></li><li class="chapter-item expanded "><a href="scroll/body-section.html"><strong aria-hidden="true">1.4.</strong> Body Section</a></li><li class="chapter-item expanded "><a href="scroll/sub-macros.html"><strong aria-hidden="true">1.5.</strong> Sub-Macros</a></li><li class="chapter-item expanded "><a href="scroll/macro-execution.html"><strong aria-hidden="true">1.6.</strong> Macro Execution</a></li></ol></li><li class="chapter-item expanded "><a href="dice/index.html"><strong aria-hidden="true">2.</strong> The Dice Language</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded "><a href="../scroll/index.html"><strong aria-hidden="true">1.</strong> The Scroll Macro Language</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../scroll/macro-documents.html"><strong aria-hidden="true">1.1.</strong> Macro Documents</a></li><li class="chapter-item expanded "><a href="../scroll/documentation-section.html"><strong aria-hidden="true">1.2.</strong> Documentation Section</a></li><li class="chapter-item expanded "><a href="../scroll/variables-section.html"><strong aria-hidden="true">1.3.</strong> Variables Section</a></li><li class="chapter-item expanded "><a href="../scroll/body-section.html" class="active"><strong aria-hidden="true">1.4.</strong> Body Section</a></li><li class="chapter-item expanded "><a href="../scroll/sub-macros.html"><strong aria-hidden="true">1.5.</strong> Sub-Macros</a></li><li class="chapter-item expanded "><a href="../scroll/macro-execution.html"><strong aria-hidden="true">1.6.</strong> Macro Execution</a></li></ol></li><li class="chapter-item expanded "><a href="../dice/index.html"><strong aria-hidden="true">2.</strong> The Dice Language</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -126,7 +124,7 @@
                     <h1 class="menu-title">Worp Book</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
                         
@@ -157,67 +155,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#introduction" id="introduction">Introduction</a></h1>
-<p>Worp is what's known as a Virtual Tabletop.
-It can be used to play role playing games, war games, strategy games, and even board games.</p>
-<p>This book will introduce you to the concepts of Worp, to help you get the most out of the system as a Game Master, player, map designer, module designer, or even game designer.</p>
-<h1><a class="header" href="#the-scroll-macro-language" id="the-scroll-macro-language">The Scroll Macro Language</a></h1>
-<p>Worp uses a custom text processing and templating language called Scroll for evaluating and running macros within the table top environment.
-It is one of the core components of the Worp Virtual Table Top and acts as a method of automating the various actions performed in a game.
-It is targeted towards various groups of individuals interacting with Worp over the course of developing and play a table top game.</p>
-<h2><a class="header" href="#who-scroll-is-for" id="who-scroll-is-for">Who Scroll is For</a></h2>
-<p>Scroll targets a wide audience of Game Masters, players, module and map designers, and people designing their own table top games and systems.</p>
-<h3><a class="header" href="#game-masters" id="game-masters">Game Masters</a></h3>
-<p>Game Masters will find themselves frequently interacting with and possibly writing Scroll macros over the course of a game.
-They're made available through various context menus and hot bars associated with the tokens on the field.
-Game Masters can also access and run macros that aren't related to any specific token.
-Scroll allows Game Masters to quickly execute actions they need to perform throughout the course of a game, such as actions performed by NPCs, monsters, environmental interactions, etc.</p>
-<h3><a class="header" href="#players" id="players">Players</a></h3>
-<p>Players will frequently use Scroll macros from their own tokens to perform actions throughout the course of a game.
-They're made available through various context menus and hot bars associated with the tokens owned by a player.</p>
-<h3><a class="header" href="#module-and-map-designers" id="module-and-map-designers">Module and Map Designers</a></h3>
-<p>Module and map designers will likely find themselves writing Scroll macros to give their world life and to provide actions for Game Masters and players to interact with.</p>
-<h3><a class="header" href="#table-top-designers" id="table-top-designers">Table Top Designers</a></h3>
-<p>Table Top Designers will leverage Scroll to model their table top system by using it to encode all the rules and actions of their system as macros.
-In this case Scroll will be frequently used to create the basic templates needed for the other groups mentioned above to play a table top system.</p>
-<h1><a class="header" href="#macro-documents" id="macro-documents">Macro Documents</a></h1>
-<p>This chapter covers the concepts that appear in a Scroll macro, known as a macro document.  These concepts are crucial to writing macros for Worp.</p>
-<p>Specifically, you'll learn about the different sections of a macro document, which is composed of the documentation section, the variables section, the document body, and named sub-macros.
-These sections are the core of every macro in Worp, and learning them will give you strong foundation for successful macro authoring.</p>
-<h1><a class="header" href="#documentation-section" id="documentation-section">Documentation Section</a></h1>
-<p>The first section of a Scroll macro document is an optional section for documenting a macro.
-This section always come first within a document and looks like this:</p>
-<pre><code>&gt; This is documentation on my super cool macro!
-&gt; This macro will perform an attack that does 8d6 + Strength Mod damage.
-</code></pre>
-<p>Each line in the document section must start with the <code>&gt;</code> character and can be followed by any other character.
-An example of this fact looks like this:</p>
-<pre><code>&gt; I ❤ Macros!
-</code></pre>
-<p>The document section can be as long as you like, as long as this format is followed.</p>
-<h1><a class="header" href="#variables-section" id="variables-section">Variables Section</a></h1>
-<p>The second section of a Scroll macro document is an optional section for declaring variables that can be used in the body section.
-If this section is included must either follow the documentation section or by the first section of a document, if no documentation section is included.</p>
-<p>If there's no documentation section, the variable section would look like:</p>
-<pre><code>$str_mod := {% global.ability_mods[self.str] %}
-</code></pre>
-<p>If a documentation section is included, the document would look like:</p>
-<pre><code>&gt; This is documentation on my super cool macro!
-&gt; This macro will perform an attack that does 8d6 + Strength Mod damage.
-
-$str_mod := {% global.ability_mods[self.str] %}
-</code></pre>
-<p>There's two major components of a variable declaration.  Those are the variable's name and the expression body that's evaluated and assigned to the variable for the remainder of the macro.</p>
-<p>Names all start with the <code>$</code> character to denote that a variable is being declared (or used) in the document.  The name itself can then either start with <code>_</code> or any upper or lower case letter from A to Z.  Then can be proceeded by any number of <code>_</code>, letters, or numbers.</p>
-<p>To indicate that a variable is being declared and simply not being used, its name must be followed by <code>:= {% ... %}</code> to indicate that an expression is being assigned to the variable.  The exact format of the expressions that can be used in place of the <code>...</code> is covered in a later chapter on the <a href="scroll/../dice/index.html">Dice language</a>.</p>
-<p>You can declare zero or more variables in this section.  Those variables declared later can use the results of the previously declared variables, for example:</p>
-<pre><code>$x = {% 8d6 %}
-$y = {% x + 2 %}
-$z = {% y * 2 %}
-</code></pre>
-<h2><a class="header" href="#scopes" id="scopes">Scopes</a></h2>
-<p>A variable scope is defined as the region where a named variable is able to be used.  In a Scroll macro document, any variables declared in the variables section are available in the body section of the macro itself and in the bodies of any <a href="scroll/./sub-macros.html">sub-macros</a>.  Any variables declared in a sub-macro are only available to that specific sub-macro and cannot be used outside that sub-macro's definition.</p>
-<h1><a class="header" href="#body-section" id="body-section">Body Section</a></h1>
+                        <h1><a class="header" href="#body-section" id="body-section">Body Section</a></h1>
 <p>The third, and only required section, of a Scroll macro document is the body.
 The body defines the actual text and actions to be performed by a macro.</p>
 <p>It must either start a document or follow the document and variable sections, both of which are optional.
@@ -273,7 +211,7 @@ An example of this looks like:</p>
 <blockquote>
 <p>Roll a d20! 12</p>
 </blockquote>
-<p>The syntax of the inside of a substitution expression is defined in the chapter on the <a href="scroll/../dice/index.html">Dice</a> language.</p>
+<p>The syntax of the inside of a substitution expression is defined in the chapter on the <a href="../dice/index.html">Dice</a> language.</p>
 <h3><a class="header" href="#variable-substitutions" id="variable-substitutions">Variable Substitutions</a></h3>
 <p>A second form of substitution expression is the direct reference to a variable, such as:</p>
 <pre><code>$str_mod := {% global.ability_mods[self.str] %}
@@ -305,7 +243,7 @@ An example of this is:</p>
 <p>This is the calling macro.</p>
 <p>This is the called macro.</p>
 </blockquote>
-<p>How macro names get resolved for execution is covered in the section on <a href="scroll/./macro-execution.html">macro execution</a>.</p>
+<p>How macro names get resolved for execution is covered in the section on <a href="./macro-execution.html">macro execution</a>.</p>
 <h2><a class="header" href="#macro-links" id="macro-links">Macro Links</a></h2>
 <p>Finally, it is possible to create interactive links to other macros that will run the other macro whenever the link is clicked.
 There's two forms of this macro.
@@ -342,15 +280,21 @@ They take on a form like:</p>
 </blockquote>
 <p>Clicking on the link produces a context menu with the options <code>First Option</code> and <code>Second Option</code>.
 Clicking one of the options will execute the corresponding macro.</p>
-<h1><a class="header" href="#sub-macros" id="sub-macros">Sub-Macros</a></h1>
-<h1><a class="header" href="#macro-execution" id="macro-execution">Macro Execution</a></h1>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
+                            <a rel="prev" href="../scroll/variables-section.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
 
+                        
+                            <a rel="next" href="../scroll/sub-macros.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         
 
                         <div style="clear: both"></div>
@@ -360,7 +304,15 @@ Clicking one of the options will execute the corresponding macro.</p>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
+                    <a rel="prev" href="../scroll/variables-section.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
 
+                
+                    <a rel="next" href="../scroll/sub-macros.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
                 
             </nav>
 
@@ -381,26 +333,18 @@ Clicking one of the options will execute the corresponding macro.</p>
         
 
         
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
         
 
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
         
 
-        
-        
-        <script type="text/javascript">
-        window.addEventListener('load', function() {
-            window.setTimeout(window.print, 100);
-        });
-        </script>
-        
         
 
     </body>
