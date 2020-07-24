@@ -5,7 +5,7 @@ This section always come first within a document and looks like this:
 
 ```
 > This is documentation on my super cool macro!
-> This macro will perform an attack that does 8d6 + Strength Mod damage.
+> Roll an attack for 1d20 + strength modifier
 ```
 
 Each line in the document section must start with the `>` character and can be followed by any other character.

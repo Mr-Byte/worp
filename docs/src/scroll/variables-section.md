@@ -13,7 +13,7 @@ If a documentation section is included, the document would look like:
 
 ```
 > This is documentation on my super cool macro!
-> This macro will perform an attack that does 8d6 + Strength Mod damage.
+> Roll an attack for 1d20 + strength modifier
 
 $str_mod := {% global.ability_mods[self.str] %}
 ```
