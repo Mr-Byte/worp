@@ -164,11 +164,11 @@ A simple macro with only a body might look like:</p>
 </code></pre>
 <p>A more complex example using the other document sections would look like:</p>
 <pre><code>&gt; This is documentation on my super cool macro!
-&gt; This macro will perform an attack that does 8d6 + Strength Mod damage.
+&gt; Roll an attack for 1d20 + strength modifier
 
 $str_mod := {% global.ability_mods[self.str] %}
 
-{% self.name %} attacks and rolls *{% 1d20 %}*!
+{% self.name %} attacks and rolls *{% 1d20 + str_mod %}*!
 </code></pre>
 <p>Both of these macros would produce an output similar to:</p>
 <blockquote>
@@ -261,11 +261,11 @@ These links take on a form like:</p>
 This is useful if you want to write macros that can be executed in multiple stages. 
 An example of such a macro would be:</p>
 <pre><code>&gt; This is documentation on my super cool macro!
-&gt; This macro will perform an attack that does 8d6 + Strength Mod damage.
+&gt; Roll an attack for 1d20 + strength modifier
 
 $str_mod := {% global.ability_mods[self.str] %}
 
-{% self.name %} attacks and rolls *{% 1d20 %}*!
+{% self.name %} attacks and rolls *{% 1d20 + str_mod %}*!
 
 [Roll Damage](#roll_damage)
 </code></pre>

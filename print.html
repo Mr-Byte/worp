@@ -188,7 +188,7 @@ These sections are the core of every macro in Worp, and learning them will give 
 <p>The first section of a Scroll macro document is an optional section for documenting a macro.
 This section always come first within a document and looks like this:</p>
 <pre><code>&gt; This is documentation on my super cool macro!
-&gt; This macro will perform an attack that does 8d6 + Strength Mod damage.
+&gt; Roll an attack for 1d20 + strength modifier
 </code></pre>
 <p>Each line in the document section must start with the <code>&gt;</code> character and can be followed by any other character.
 An example of this fact looks like this:</p>
@@ -203,7 +203,7 @@ If this section is included must either follow the documentation section or by t
 </code></pre>
 <p>If a documentation section is included, the document would look like:</p>
 <pre><code>&gt; This is documentation on my super cool macro!
-&gt; This macro will perform an attack that does 8d6 + Strength Mod damage.
+&gt; Roll an attack for 1d20 + strength modifier
 
 $str_mod := {% global.ability_mods[self.str] %}
 </code></pre>
@@ -226,11 +226,11 @@ A simple macro with only a body might look like:</p>
 </code></pre>
 <p>A more complex example using the other document sections would look like:</p>
 <pre><code>&gt; This is documentation on my super cool macro!
-&gt; This macro will perform an attack that does 8d6 + Strength Mod damage.
+&gt; Roll an attack for 1d20 + strength modifier
 
 $str_mod := {% global.ability_mods[self.str] %}
 
-{% self.name %} attacks and rolls *{% 1d20 %}*!
+{% self.name %} attacks and rolls *{% 1d20 + str_mod %}*!
 </code></pre>
 <p>Both of these macros would produce an output similar to:</p>
 <blockquote>
@@ -323,11 +323,11 @@ These links take on a form like:</p>
 This is useful if you want to write macros that can be executed in multiple stages. 
 An example of such a macro would be:</p>
 <pre><code>&gt; This is documentation on my super cool macro!
-&gt; This macro will perform an attack that does 8d6 + Strength Mod damage.
+&gt; Roll an attack for 1d20 + strength modifier
 
 $str_mod := {% global.ability_mods[self.str] %}
 
-{% self.name %} attacks and rolls *{% 1d20 %}*!
+{% self.name %} attacks and rolls *{% 1d20 + str_mod %}*!
 
 [Roll Damage](#roll_damage)
 </code></pre>
@@ -343,6 +343,28 @@ They take on a form like:</p>
 <p>Clicking on the link produces a context menu with the options <code>First Option</code> and <code>Second Option</code>.
 Clicking one of the options will execute the corresponding macro.</p>
 <h1><a class="header" href="#sub-macros" id="sub-macros">Sub-Macros</a></h1>
+<p>Scroll macro documents can contain sub-macros that can only be executed by other macros inside the Scroll macro document.
+These are useful for creating macros with multiple interaction steps.  Such as:</p>
+<pre><code>&gt; This is documentation on my super cool macro!
+&gt; Roll an attack for 1d20 + strength modifier
+
+$str_mod := {% global.ability_mods[self.str] %}
+
+{% self.name %} attacks and rolls *{% 1d20 + str_mod %}*!
+
+[Roll Damage](#roll_damage)
+
+== #roll_damage ==
+{% self.name %} deals {% 8d6 + str_mod %} slashing damage!
+</code></pre>
+<p>This creates a macro that contains a named sub-macro <code>#roll_damage</code> that can only be accessed by other macros defined in the document.
+As noted all sub-macros are denoted by a header like <code>== #... ==</code> where <code>...</code> is the name being given to the sub-macro.
+This header must appear on a line of its own.</p>
+<p>Sub-macros have some special rules:</p>
+<ul>
+<li>They contain all the same sections as other macros, including the documentation section, variables section, and the body section.</li>
+<li>They can access all variables declared by the main macro of the document, but not variables declared by other sub-macros.</li>
+</ul>
 <h1><a class="header" href="#macro-execution" id="macro-execution">Macro Execution</a></h1>
 
                     </main>

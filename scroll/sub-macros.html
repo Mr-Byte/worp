@@ -156,6 +156,28 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#sub-macros" id="sub-macros">Sub-Macros</a></h1>
+<p>Scroll macro documents can contain sub-macros that can only be executed by other macros inside the Scroll macro document.
+These are useful for creating macros with multiple interaction steps.  Such as:</p>
+<pre><code>&gt; This is documentation on my super cool macro!
+&gt; Roll an attack for 1d20 + strength modifier
+
+$str_mod := {% global.ability_mods[self.str] %}
+
+{% self.name %} attacks and rolls *{% 1d20 + str_mod %}*!
+
+[Roll Damage](#roll_damage)
+
+== #roll_damage ==
+{% self.name %} deals {% 8d6 + str_mod %} slashing damage!
+</code></pre>
+<p>This creates a macro that contains a named sub-macro <code>#roll_damage</code> that can only be accessed by other macros defined in the document.
+As noted all sub-macros are denoted by a header like <code>== #... ==</code> where <code>...</code> is the name being given to the sub-macro.
+This header must appear on a line of its own.</p>
+<p>Sub-macros have some special rules:</p>
+<ul>
+<li>They contain all the same sections as other macros, including the documentation section, variables section, and the body section.</li>
+<li>They can access all variables declared by the main macro of the document, but not variables declared by other sub-macros.</li>
+</ul>
 
                     </main>
 
