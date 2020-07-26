@@ -26,22 +26,19 @@ impl TryFrom<Pairs<'_, Rule>> for Span {
     type Error = DocumentError;
 
     fn try_from(mut span_pairs: Pairs<'_, Rule>) -> Result<Self, Self::Error> {
-        let rule = span_pairs
-            .peek()
-            .map(|pair| pair.as_rule())
-            .ok_or_else(DocumentError::malformed("Unexpected end of document."))?;
+        let rule = span_pairs.peek().map(|pair| pair.as_rule()).unwrap_or_else(|| unreachable!());
 
         let result = match rule {
             Rule::raw_text => {
-                let raw_text = next_pair!(span_pairs => Rule::raw_text)?.as_str().to_owned();
+                let raw_text = next_pair!(span_pairs => Rule::raw_text).as_str().to_owned();
                 Span::RawText(raw_text)
             }
             Rule::macro_name => {
-                let reference = next_pair!(span_pairs => Rule::macro_name)?.as_str().to_owned();
+                let reference = next_pair!(span_pairs => Rule::macro_name).as_str().to_owned();
                 Span::MacroReference(reference)
             }
             Rule::variable_name => {
-                let reference = next_pair!(span_pairs => Rule::variable_name)?.as_str().to_owned();
+                let reference = next_pair!(span_pairs => Rule::variable_name).as_str().to_owned();
                 Span::VariableReference(reference)
             }
             Rule::expression => {
@@ -49,23 +46,23 @@ impl TryFrom<Pairs<'_, Rule>> for Span {
                 Span::Expression(expression)
             }
             Rule::bold_text => {
-                let bold_text = next_pair!(span_pairs => Rule::bold_text)?.into_inner().try_into()?;
+                let bold_text = next_pair!(span_pairs => Rule::bold_text).into_inner().try_into()?;
                 Span::BoldText(bold_text)
             }
             Rule::italic_text => {
-                let bold_text = next_pair!(span_pairs => Rule::italic_text)?.into_inner().try_into()?;
+                let bold_text = next_pair!(span_pairs => Rule::italic_text).into_inner().try_into()?;
                 Span::ItalicText(bold_text)
             }
             Rule::underline_text => {
-                let bold_text = next_pair!(span_pairs => Rule::underline_text)?.into_inner().try_into()?;
+                let bold_text = next_pair!(span_pairs => Rule::underline_text).into_inner().try_into()?;
                 Span::UnderlineText(bold_text)
             }
             Rule::strike_through_text => {
-                let bold_text = next_pair!(span_pairs => Rule::strike_through_text)?.into_inner().try_into()?;
+                let bold_text = next_pair!(span_pairs => Rule::strike_through_text).into_inner().try_into()?;
                 Span::StrikeThroughText(bold_text)
             }
             Rule::macro_link => {
-                let link = next_pair!(span_pairs => Rule::macro_link)?.into_inner().try_into()?;
+                let link = next_pair!(span_pairs => Rule::macro_link).into_inner().try_into()?;
                 Span::Link(link)
             }
             _ => unreachable!(),

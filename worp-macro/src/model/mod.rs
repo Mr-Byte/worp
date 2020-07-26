@@ -22,11 +22,7 @@ mod macros {
             $input
                 .next()
                 .filter(|token| token.as_rule() == $rule)
-                .ok_or_else($crate::model::error::DocumentError::malformed(concat!(
-                    "Unexpected rule. Expected ",
-                    stringify!($rule),
-                    "."
-                )))
+                .unwrap_or_else(|| unreachable!())
         };
     }
 }
