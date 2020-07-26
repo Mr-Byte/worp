@@ -74,14 +74,14 @@ impl Renderer {
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
         let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[RenderPassColorAttachmentDescriptor {
+            color_attachments: std::borrow::Cow::Borrowed(&[RenderPassColorAttachmentDescriptor {
                 attachment: &frame.output.view,
                 resolve_target: None,
                 ops: Operations {
                     load: LoadOp::Clear(Color::BLACK),
                     store: true,
                 },
-            }],
+            }]),
             depth_stencil_attachment: None,
         });
 
