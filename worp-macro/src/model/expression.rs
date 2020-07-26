@@ -3,6 +3,7 @@ use crate::{next_pair, parser::Rule};
 use pest::iterators::Pairs;
 use std::convert::TryFrom;
 
+// TODO: Figure out how to handle this.  Should this be parsed to a Dice expression here?
 #[derive(Debug)]
 pub struct Expression(String);
 

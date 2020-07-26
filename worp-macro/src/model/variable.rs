@@ -1,12 +1,15 @@
 use super::{error::DocumentError, Expression};
 use crate::{next_pair, parser::Rule};
 use pest::iterators::Pairs;
-use std::convert::{TryFrom, TryInto as _};
+use std::{
+    convert::{TryFrom, TryInto as _},
+    ops::{Deref, DerefMut},
+};
 
 #[derive(Debug)]
 pub struct Variable {
-    name: String,
-    expression: Expression,
+    pub name: String,
+    pub expression: Expression,
 }
 
 impl TryFrom<Pairs<'_, Rule>> for Variable {
@@ -23,6 +26,20 @@ impl TryFrom<Pairs<'_, Rule>> for Variable {
 
 #[derive(Debug)]
 pub struct VariableList(Vec<Variable>);
+
+impl Deref for VariableList {
+    type Target = [Variable];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for VariableList {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl TryFrom<Pairs<'_, Rule>> for VariableList {
     type Error = DocumentError;

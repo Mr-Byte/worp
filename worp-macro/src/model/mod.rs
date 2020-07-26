@@ -37,6 +37,16 @@ mod test {
 
     #[test]
     fn test() {
-        let _result = Document::try_from_str(include_str!("../../test/data/long_sword_basic_attack.txt")).unwrap();
+        let inputs = &[
+            include_str!("../../test/data/nonsense.txt"),
+            include_str!("../../test/data/more_nonsense.txt"),
+            include_str!("../../test/data/long_sword_basic_attack.txt"),
+            include_str!("../../test/data/long_sword_multiple_attack.txt"),
+            include_str!("../../test/data/eblast.txt"),
+        ];
+
+        for input in inputs {
+            let _result = Document::try_from_str(input).unwrap();
+        }
     }
 }

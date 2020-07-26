@@ -2,12 +2,17 @@ use super::{error::DocumentError, Expression, Link};
 use crate::next_pair;
 use crate::parser::Rule;
 use pest::iterators::Pairs;
-use std::convert::{TryFrom, TryInto as _};
+use std::{
+    convert::{TryFrom, TryInto as _},
+    ops::{Deref, DerefMut},
+};
 
 #[derive(Debug)]
 pub enum Span {
     RawText(String),
     Expression(Expression),
+    // TODO: Should there be types to represent variable names and macro names?
+    // If so, do they belong in here or a more generic model crate?
     VariableReference(String),
     MacroReference(String),
     BoldText(SpanList),
@@ -72,6 +77,20 @@ impl TryFrom<Pairs<'_, Rule>> for Span {
 
 #[derive(Debug)]
 pub struct SpanList(Vec<Span>);
+
+impl Deref for SpanList {
+    type Target = [Span];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SpanList {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl TryFrom<Pairs<'_, Rule>> for SpanList {
     type Error = DocumentError;

@@ -1,13 +1,16 @@
 use super::{error::DocumentError, variable::VariableList, SpanList};
 use crate::{next_pair, parser::Rule};
 use pest::iterators::Pairs;
-use std::convert::{TryFrom, TryInto as _};
+use std::{
+    convert::{TryFrom, TryInto as _},
+    ops::{Deref, DerefMut},
+};
 
 #[derive(Debug)]
 pub struct Definition {
-    name: Option<String>,
-    variables: VariableList,
-    body: SpanList,
+    pub name: Option<String>,
+    pub variables: VariableList,
+    pub body: SpanList,
 }
 
 impl TryFrom<Pairs<'_, Rule>> for Definition {
@@ -38,6 +41,20 @@ impl TryFrom<Pairs<'_, Rule>> for Definition {
 
 #[derive(Debug)]
 pub struct DefinitionList(Vec<Definition>);
+
+impl Deref for DefinitionList {
+    type Target = [Definition];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for DefinitionList {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl TryFrom<Pairs<'_, Rule>> for DefinitionList {
     type Error = DocumentError;

@@ -1,12 +1,15 @@
 use super::error::DocumentError;
 use crate::{next_pair, parser::Rule};
 use pest::iterators::Pairs;
-use std::convert::{TryFrom, TryInto};
+use std::{
+    convert::{TryFrom, TryInto},
+    ops::{Deref, DerefMut},
+};
 
 #[derive(Debug)]
 pub struct Link {
-    label: String,
-    target: LinkTarget,
+    pub label: String,
+    pub target: LinkTarget,
 }
 
 impl TryFrom<Pairs<'_, Rule>> for Link {
@@ -24,7 +27,7 @@ impl TryFrom<Pairs<'_, Rule>> for Link {
 #[derive(Debug)]
 pub enum LinkTarget {
     Target(String),
-    TargetSet(Vec<LabeledTarget>),
+    TargetList(TargetList),
 }
 
 impl TryFrom<Pairs<'_, Rule>> for LinkTarget {
@@ -59,12 +62,29 @@ impl TryFrom<Pairs<'_, Rule>> for LinkTarget {
                     }
                 }
 
-                LinkTarget::TargetSet(labeled_targets)
+                LinkTarget::TargetList(TargetList(labeled_targets))
             }
             _ => unreachable!(),
         };
 
         Ok(target)
+    }
+}
+
+#[derive(Debug)]
+pub struct TargetList(pub Vec<LabeledTarget>);
+
+impl Deref for TargetList {
+    type Target = [LabeledTarget];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for TargetList {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
