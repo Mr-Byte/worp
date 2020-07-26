@@ -3,7 +3,7 @@ members = [
     "worp-client",
     "worp-core",
     "worp-gui",
-    "worp-macro",
+    "worp-scroll",
     "worp-net",
     "worp-renderer",
 ]

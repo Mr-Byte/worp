@@ -18,7 +18,7 @@ impl Document {
     /// Fails if there's any parsing errors encountered.
     ///
     /// ```
-    /// # use worp_macro::model::{Document, error::DocumentError};
+    /// # use worp_scroll::model::{Document, error::DocumentError};
     /// let document = Document::try_from_str("*test*")?;
     /// # Ok::<(), DocumentError>(())
     /// ```
