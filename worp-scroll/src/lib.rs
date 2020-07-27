@@ -5,6 +5,7 @@ mod expression;
 mod link;
 mod parser;
 mod span;
+mod symbol;
 mod variable;
 
 pub use definition::{Definition, DefinitionList};
@@ -12,6 +13,7 @@ pub use document::Document;
 pub use expression::Expression;
 pub use link::{LabeledTarget, Link, LinkTarget};
 pub use span::{Span, SpanList};
+pub use symbol::Symbol;
 pub use variable::{Variable, VariableList};
 
 #[macro_use]
@@ -19,10 +21,13 @@ pub use variable::{Variable, VariableList};
 mod macros {
     #[macro_export]
     macro_rules! next_pair {
-        ($input:expr => $rule:expr) => {
+        ($input:expr => $($rule:pat)|+) => {
             $input
                 .next()
-                .filter(|token| token.as_rule() == $rule)
+                .filter(|token| match token.as_rule() {
+                    $($rule)|+ => true,
+                    _ => false,
+                })
                 .unwrap_or_else(|| unreachable!())
         };
     }
@@ -44,6 +49,7 @@ mod test {
 
         for input in inputs {
             let _result = Document::try_from_str(input).unwrap();
+            println!("{:?}", _result);
         }
     }
 }

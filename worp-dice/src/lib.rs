@@ -70,13 +70,20 @@ pub enum RangeOperator {
 }
 
 #[derive(Debug)]
+pub enum FieldAccessType {
+    Direct,
+    Safe,
+}
+
+#[derive(Debug)]
 pub enum Expression {
     Literal(Literal),
     /// Symbols represent some named item (variables, etc) within an expression
     Symbol(Symbol),
+
     //Primary operators
     /// Access to a field, (e.g. `x.y`)
-    FieldAccess(Box<Expression>, Box<Expression>),
+    FieldAccess(FieldAccessType, Box<Expression>, Box<Expression>), // TODO: Figure out if this should be expr -> ident, or expr -> expr
     /// Function call (e.g. `y(1, 2)`
     /// First part evaluates to a function, second part is the parameters
     FunctionCall(Box<Expression>, Vec<Expression>),

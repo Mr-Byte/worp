@@ -7,17 +7,17 @@ quote = _{ "\"" }
 docs = _{ (">" ~ ws ~ (!nl ~ ANY)+ ~ nl+)* }
 
 // Identifier naming rules
-identifier = _{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+identifier = { (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
 
 // Rules around variable names and variable assignment
-variable_name_indicator = _{ "$" }
+variable_name_indicator = { "$" }
 variable_name = { variable_name_indicator ~ identifier }
-variable_assignment = _{ ":="}
+variable_assignment = _{ ":=" }
 variable_declaration = { variable_name ~ ws ~ variable_assignment ~ ws ~ expression }
 variable_header = { (variable_declaration ~ nl+)* }
 
 // Rules around macro names
-macro_name_indicator = _{ "#" }
+macro_name_indicator = { "#" }
 macro_name = { macro_name_indicator ~ identifier }
 
 // Rules around expression placeholders

@@ -1,5 +1,5 @@
 use super::{error::DocumentError, variable::VariableList, SpanList};
-use crate::{next_pair, parser::Rule};
+use crate::{next_pair, parser::Rule, Symbol};
 use pest::iterators::Pairs;
 use std::{
     convert::{TryFrom, TryInto as _},
@@ -8,7 +8,7 @@ use std::{
 
 #[derive(Debug)]
 pub struct Definition {
-    pub name: Option<String>,
+    pub name: Option<Symbol>,
     pub variables: VariableList,
     pub body: SpanList,
 }
@@ -20,7 +20,9 @@ impl TryFrom<Pairs<'_, Rule>> for Definition {
         let name = match macro_definition_pairs.peek() {
             Some(pair) if pair.as_rule() == Rule::sub_macro_header => {
                 let sub_macro_header_pair = next_pair!(macro_definition_pairs => Rule::sub_macro_header);
-                let sub_macro_name = next_pair!(sub_macro_header_pair.into_inner() => Rule::macro_name).as_str().to_owned();
+                let sub_macro_name = next_pair!(sub_macro_header_pair.into_inner() => Rule::macro_name)
+                    .into_inner()
+                    .try_into()?;
 
                 Some(sub_macro_name)
             }

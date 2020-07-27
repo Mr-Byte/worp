@@ -1,6 +1,6 @@
 use super::{error::DocumentError, Expression, Link};
 use crate::next_pair;
-use crate::parser::Rule;
+use crate::{parser::Rule, Symbol};
 use pest::iterators::Pairs;
 use std::{
     convert::{TryFrom, TryInto as _},
@@ -13,14 +13,15 @@ pub enum Span {
     Expression(Expression),
     // TODO: Should there be types to represent variable names and macro names?
     // If so, do they belong in here or a more generic model crate?
-    VariableReference(String),
-    MacroReference(String),
+    Reference(Symbol),
     BoldText(SpanList),
     ItalicText(SpanList),
     UnderlineText(SpanList),
     StrikeThroughText(SpanList),
     Link(Link),
 }
+
+// TODO: Write types and names for Macro and Variable names.
 
 impl TryFrom<Pairs<'_, Rule>> for Span {
     type Error = DocumentError;
@@ -33,13 +34,9 @@ impl TryFrom<Pairs<'_, Rule>> for Span {
                 let raw_text = next_pair!(span_pairs => Rule::raw_text).as_str().to_owned();
                 Span::RawText(raw_text)
             }
-            Rule::macro_name => {
-                let reference = next_pair!(span_pairs => Rule::macro_name).as_str().to_owned();
-                Span::MacroReference(reference)
-            }
-            Rule::variable_name => {
-                let reference = next_pair!(span_pairs => Rule::variable_name).as_str().to_owned();
-                Span::VariableReference(reference)
+            Rule::macro_name | Rule::variable_name => {
+                let reference = next_pair!(span_pairs => Rule::macro_name | Rule::variable_name).into_inner().try_into()?;
+                Span::Reference(reference)
             }
             Rule::expression => {
                 let expression = span_pairs.try_into()?;
