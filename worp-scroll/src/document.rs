@@ -1,7 +1,7 @@
 use super::{error::DocumentError, Definition, DefinitionList};
 use crate::{
     next_pair,
-    parser::{MacroDocumentParser, Rule},
+    parser::{DocumentParser, Rule},
 };
 use pest::iterators::Pairs;
 use pest::Parser as _;
@@ -18,12 +18,12 @@ impl Document {
     /// Fails if there's any parsing errors encountered.
     ///
     /// ```
-    /// # use worp_scroll::model::{Document, error::DocumentError};
+    /// # use worp_scroll::{Document, error::DocumentError};
     /// let document = Document::try_from_str("*test*")?;
     /// # Ok::<(), DocumentError>(())
     /// ```
     pub fn try_from_str(input: &str) -> Result<Document, DocumentError> {
-        let mut parsed_input = MacroDocumentParser::parse(Rule::document, input)?;
+        let mut parsed_input = DocumentParser::parse(Rule::document, input)?;
         let document_pair = next_pair!(parsed_input => Rule::document);
 
         document_pair.into_inner().try_into()

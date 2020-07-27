@@ -2,9 +2,10 @@
 members = [
     "worp-client",
     "worp-core",
+    "worp-dice",
     "worp-gui",
-    "worp-scroll",
     "worp-net",
     "worp-renderer",
+    "worp-scroll",
 ]
 default-members = ["worp-client"]

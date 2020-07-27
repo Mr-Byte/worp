@@ -3,8 +3,8 @@
 #![allow(unused_macros)]
 
 #[derive(pest_derive::Parser)]
-#[grammar = "macro.pest"]
-pub struct MacroDocumentParser;
+#[grammar = "scroll.pest"]
+pub struct DocumentParser;
 
 #[cfg(test)]
 mod test {
@@ -14,7 +14,7 @@ mod test {
     macro_rules! assert_all_rule {
         ($rule:expr, $in:expr) => {
             for input in $in {
-                let len = match MacroDocumentParser::parse($rule, input) {
+                let len = match DocumentParser::parse($rule, input) {
                     Ok(rule) => rule.last().unwrap().as_span().end(),
                     Err(err) => panic!(format!("{}", err)),
                 };
@@ -27,8 +27,8 @@ mod test {
     macro_rules! assert_all_not_rule {
         ($rule:expr, $in:expr) => {
             assert!($in.iter().all(|input| {
-                MacroDocumentParser::parse($rule, input).is_err()
-                    || MacroDocumentParser::parse($rule, input).unwrap().last().unwrap().as_span().end() != input.len()
+                DocumentParser::parse($rule, input).is_err()
+                    || DocumentParser::parse($rule, input).unwrap().last().unwrap().as_span().end() != input.len()
             }));
         };
     }
