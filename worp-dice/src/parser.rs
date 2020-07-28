@@ -1,7 +1,7 @@
 // Remove once the parser is used via a public export.
 #![allow(dead_code)]
 
-use crate::expression::{BinaryOperator, Expression, Literal, RangeOperator, Symbol, UnaryOperator};
+use crate::expression::{AccessType, BinaryOperator, Expression, Literal, RangeOperator, Symbol, UnaryOperator};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till},
@@ -13,6 +13,10 @@ use nom::{
     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
+
+fn none_literal(input: &str) -> IResult<&str, Literal> {
+    map(delimited(space0, tag("None"), space0), |_| Literal::None)(input)
+}
 
 fn float_literal(input: &str) -> IResult<&str, Literal> {
     map(delimited(space0, terminated(float, char('f')), space0), Literal::Float)(input)
@@ -55,7 +59,7 @@ fn list(input: &str) -> IResult<&str, Literal> {
 
 fn literal(input: &str) -> IResult<&str, Expression> {
     map(
-        alt((float_literal, int_literal, string_literal, boolean_literal, list)),
+        alt((none_literal, float_literal, int_literal, string_literal, boolean_literal, list)),
         Expression::Literal,
     )(input)
 }
@@ -86,18 +90,54 @@ fn parens(input: &str) -> IResult<&str, Expression> {
 }
 
 fn primary(input: &str) -> IResult<&str, Expression> {
-    alt((symbol, literal, parens))(input)
+    alt((literal, symbol, parens))(input)
+}
+
+fn access(input: &str) -> IResult<&str, Expression> {
+    let (input, init) = primary(input)?;
+
+    enum CallType<'a> {
+        Function(Vec<Expression>),
+        ArrayIndex(&'a str, Expression),
+        FieldAccess(&'a str, Expression),
+    }
+
+    let function_call = map(
+        delimited(space0, delimited(tag("("), separated_list0(tag(","), expression), tag(")")), space0),
+        CallType::Function,
+    );
+    let array_index = map(
+        delimited(space0, pair(alt((tag("["), tag("?["))), terminated(expression, tag("]"))), space0),
+        |(op, symbol)| CallType::ArrayIndex(op, symbol),
+    );
+    let field_access = map(delimited(space0, pair(alt((tag("."), tag("?."))), symbol), space0), |(op, symbol)| {
+        CallType::FieldAccess(op, symbol)
+    });
+
+    let call = alt((function_call, array_index, field_access));
+
+    fold_many0(call, init, |acc, call_type| match call_type {
+        CallType::Function(args) => Expression::FunctionCall(Box::new(acc), args),
+        CallType::ArrayIndex("[", arg) => Expression::Index(AccessType::Direct, Box::new(acc), Box::new(arg)),
+        CallType::ArrayIndex("?[", arg) => Expression::Index(AccessType::Safe, Box::new(acc), Box::new(arg)),
+        CallType::FieldAccess(".", field) => Expression::FieldAccess(AccessType::Direct, Box::new(acc), Box::new(field)),
+        CallType::FieldAccess("?.", field) => Expression::FieldAccess(AccessType::Safe, Box::new(acc), Box::new(field)),
+        _ => unreachable!(),
+    })(input)
 }
 
 // TODO: Fix the bug here where unaries don't seem to parse correctly in scenarios like `!true && !true`
 fn unary(input: &str) -> IResult<&str, Expression> {
-    let unary_rule = map(pair(alt((char('-'), char('!'))), unary), |(op, expr)| match op {
-        '-' => Expression::Unary(UnaryOperator::Negate, Box::new(expr)),
-        '!' => Expression::Unary(UnaryOperator::Not, Box::new(expr)),
-        _ => unreachable!(),
-    });
+    let unary_rule = map(
+        delimited(space0, pair(alt((char('-'), char('!'))), unary), space0),
+        |(op, expr)| match op {
+            '-' => Expression::Unary(UnaryOperator::Negate, Box::new(expr)),
+            '!' => Expression::Unary(UnaryOperator::Not, Box::new(expr)),
+            _ => unreachable!(),
+        },
+    );
 
-    alt((unary_rule, primary))(input)
+    alt((access, unary_rule))(input)
 }
 
 fn dice_roll(input: &str) -> IResult<&str, Expression> {
@@ -239,7 +279,7 @@ mod test {
 
     #[test]
     fn test() {
-        let output = parse(r#"[5, 6..=9, 7..8]"#).unwrap();
-        println!("{:?}", output);
+        let output = parse(r#"[None, None]?[1]?.xyz"#).unwrap();
+        println!("{:#?}", output);
     }
 }

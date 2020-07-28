@@ -5,6 +5,8 @@ pub struct Symbol(pub String);
 
 #[derive(Debug, Clone)]
 pub enum Literal {
+    /// None values
+    None,
     /// Integer values such as `-1`, `0`, `1`, etc
     Integer(i32),
     /// Floating point decimals such as `-1.0, `0.0`, `1.1`, etc
@@ -74,7 +76,7 @@ pub enum RangeOperator {
 }
 
 #[derive(Debug, Clone)]
-pub enum FieldAccessType {
+pub enum AccessType {
     Direct,
     Safe,
 }
@@ -87,12 +89,12 @@ pub enum Expression {
 
     //Primary operators
     /// Access to a field, (e.g. `x.y`)
-    FieldAccess(FieldAccessType, Box<Expression>, Box<Expression>), // TODO: Figure out if this should be expr -> ident, or expr -> expr
+    FieldAccess(AccessType, Box<Expression>, Box<Expression>), // TODO: Figure out if this should be expr -> ident, or expr -> expr
     /// Function call (e.g. `y(1, 2)`
     /// First part evaluates to a function, second part is the parameters
     FunctionCall(Box<Expression>, Vec<Expression>),
     /// Indexed access (e.g. `x.y[1]` or `y["x"]`)
-    Index(Box<Expression>, Box<Expression>),
+    Index(AccessType, Box<Expression>, Box<Expression>),
 
     // Operators
     Unary(UnaryOperator, Box<Expression>),
