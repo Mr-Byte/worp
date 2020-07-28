@@ -5,9 +5,9 @@ use crate::expression::{BinaryOperator, Expression, Literal, RangeOperator, Symb
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till},
-    character::complete::{alpha1, alphanumeric1, digit1},
+    character::complete::{alpha1, alphanumeric1, digit1, space1},
     character::complete::{char, space0},
-    combinator::{cut, map, map_res, not, opt},
+    combinator::{all_consuming, cut, map, map_res, not, opt},
     error::{context, convert_error, VerboseError},
     multi::{fold_many0, many0, separated_list0},
     number::complete::float,
@@ -26,7 +26,11 @@ fn reserved(input: &str) -> IResult<&str, (), VerboseError<&str>> {
             tag("break"),
             tag("continue"),
             tag("fn"),
-            tag(":="),
+            tag("let"),
+            tag("const"),
+            tag("switch"),
+            tag("match"),
+            tag("when"),
         )))),
     )(input)
 }
@@ -264,10 +268,28 @@ fn coalesce(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     })(input)
 }
 
-fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let (input, init) = coalesce(input)?;
+fn if_body(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    map(
+        tuple((
+            preceded(delimited(space0, tag("if"), space1), discard),
+            delimited(tag("{"), discard, tag("}")),
+            opt(alt((
+                preceded(delimited(space0, tag("else"), space1), delimited(tag("{"), expression, tag("}"))),
+                preceded(delimited(space0, tag("else"), space1), if_body),
+            ))),
+        )),
+        |(condition, body, alt)| Expression::Conditional(Box::new(condition), Box::new(body), alt.map(Box::new)),
+    )(input)
+}
 
-    fold_many0(preceded(tag(";"), coalesce), init, |acc, expr| {
+fn conditional(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    alt((if_body, coalesce))(input)
+}
+
+fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    let (input, init) = conditional(input)?;
+
+    fold_many0(preceded(tag(";"), conditional), init, |acc, expr| {
         Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
     })(input)
 }
@@ -277,7 +299,7 @@ fn expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
 }
 
 pub fn parse<'a>(input: &'a str) -> Result<Expression, String> {
-    match expression(input) {
+    match all_consuming(expression)(input) {
         Ok((_, result)) => Ok(result),
         Err(nom::Err::Error(err)) | Err(nom::Err::Failure(err)) => Err(convert_error(input, err)),
         _ => unreachable!(),
@@ -310,10 +332,11 @@ mod test {
 
     #[test]
     fn test() {
-        let input = r#"while"#;
+        let input = r#"poop; if lole { poop }"#;
 
-        if let Err(output) = parse(input) {
-            println!("{}", output);
+        match parse(input) {
+            Ok(result) => println!("{:?}", result),
+            Err(err) => println!("{}", err),
         }
     }
 }
