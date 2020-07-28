@@ -1,28 +1,45 @@
 // Remove once the parser is used via a public export.
 #![allow(dead_code)]
 
-use crate::expression::{AccessType, BinaryOperator, Expression, Literal, RangeOperator, Symbol, UnaryOperator};
+use crate::expression::{BinaryOperator, Expression, Literal, RangeOperator, Symbol, UnaryOperator};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till},
     character::complete::{alpha1, alphanumeric1, digit1},
     character::complete::{char, space0},
-    combinator::{map, map_res, opt},
+    combinator::{cut, map, map_res, not, opt},
+    error::{context, convert_error, VerboseError},
     multi::{fold_many0, many0, separated_list0},
     number::complete::float,
     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
 
-fn none_literal(input: &str) -> IResult<&str, Literal> {
-    map(delimited(space0, tag("None"), space0), |_| Literal::None)(input)
+fn reserved(input: &str) -> IResult<&str, (), VerboseError<&str>> {
+    context(
+        "reserved keyword",
+        cut(not(alt((
+            tag("while"),
+            tag("do"),
+            tag("loop"),
+            tag("for"),
+            tag("break"),
+            tag("continue"),
+            tag("fn"),
+            tag(":="),
+        )))),
+    )(input)
 }
 
-fn float_literal(input: &str) -> IResult<&str, Literal> {
+fn none_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
+    map(delimited(space0, tag("none"), space0), |_| Literal::None)(input)
+}
+
+fn float_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     map(delimited(space0, terminated(float, char('f')), space0), Literal::Float)(input)
 }
 
-fn int_literal(input: &str) -> IResult<&str, Literal> {
+fn int_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     let int = map_res(
         tuple((opt(alt((char('+'), char('-')))), digit1)),
         |(sign, value): (Option<char>, &str)| match sign {
@@ -34,7 +51,7 @@ fn int_literal(input: &str) -> IResult<&str, Literal> {
     map(delimited(space0, int, space0), Literal::Integer)(input)
 }
 
-fn boolean_literal(input: &str) -> IResult<&str, Literal> {
+fn boolean_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     let bool = map(alt((tag("true"), tag("false"))), |value| match value {
         "true" => true,
         "false" => false,
@@ -44,27 +61,30 @@ fn boolean_literal(input: &str) -> IResult<&str, Literal> {
     map(delimited(space0, bool, space0), Literal::Boolean)(input)
 }
 
-fn string_literal(input: &str) -> IResult<&str, Literal> {
+fn string_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     map(delimited(char('"'), take_till(|c| c == '"'), char('"')), |value: &str| {
         Literal::String(value.to_owned())
     })(input)
 }
 
-fn list(input: &str) -> IResult<&str, Literal> {
+fn list(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     map(
         delimited(char('['), separated_list0(delimited(space0, char(','), space0), expression), char(']')),
         Literal::List,
     )(input)
 }
 
-fn literal(input: &str) -> IResult<&str, Expression> {
+fn literal(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     map(
-        alt((none_literal, float_literal, int_literal, string_literal, boolean_literal, list)),
+        preceded(
+            reserved,
+            alt((none_literal, float_literal, int_literal, string_literal, boolean_literal, list)),
+        ),
         Expression::Literal,
     )(input)
 }
 
-fn symbol(input: &str) -> IResult<&str, Expression> {
+fn symbol(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let symbol_start = alt((tag("_"), alpha1));
     let symbol_remainder = many0(alt((tag("_"), alphanumeric1)));
     let symbol = pair(symbol_start, symbol_remainder);
@@ -85,49 +105,58 @@ fn symbol(input: &str) -> IResult<&str, Expression> {
     )(input)
 }
 
-fn parens(input: &str) -> IResult<&str, Expression> {
+fn parens(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     delimited(space0, delimited(char('('), expression, char(')')), space0)(input)
 }
 
-fn primary(input: &str) -> IResult<&str, Expression> {
+fn primary(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     alt((literal, symbol, parens))(input)
 }
 
-fn access(input: &str) -> IResult<&str, Expression> {
-    let (input, init) = primary(input)?;
+enum CallType {
+    Function(Vec<Expression>),
+    ArrayIndex(Expression),
+    FieldAccess(Expression),
+    SafeAccess,
+}
 
-    enum CallType<'a> {
-        Function(Vec<Expression>),
-        ArrayIndex(&'a str, Expression),
-        FieldAccess(&'a str, Expression),
-    }
-
-    let function_call = map(
+fn function_call(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
+    map(
         delimited(space0, delimited(tag("("), separated_list0(tag(","), expression), tag(")")), space0),
         CallType::Function,
-    );
-    let array_index = map(
-        delimited(space0, pair(alt((tag("["), tag("?["))), terminated(expression, tag("]"))), space0),
-        |(op, symbol)| CallType::ArrayIndex(op, symbol),
-    );
-    let field_access = map(delimited(space0, pair(alt((tag("."), tag("?."))), symbol), space0), |(op, symbol)| {
-        CallType::FieldAccess(op, symbol)
-    });
+    )(input)
+}
 
-    let call = alt((function_call, array_index, field_access));
+fn safe_access(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
+    map(delimited(space0, tag("?"), space0), |_| CallType::SafeAccess)(input)
+}
 
-    fold_many0(call, init, |acc, call_type| match call_type {
-        CallType::Function(args) => Expression::FunctionCall(Box::new(acc), args),
-        CallType::ArrayIndex("[", arg) => Expression::Index(AccessType::Direct, Box::new(acc), Box::new(arg)),
-        CallType::ArrayIndex("?[", arg) => Expression::Index(AccessType::Safe, Box::new(acc), Box::new(arg)),
-        CallType::FieldAccess(".", field) => Expression::FieldAccess(AccessType::Direct, Box::new(acc), Box::new(field)),
-        CallType::FieldAccess("?.", field) => Expression::FieldAccess(AccessType::Safe, Box::new(acc), Box::new(field)),
-        _ => unreachable!(),
+fn array_index(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
+    map(delimited(space0, delimited(tag("["), expression, tag("]")), space0), |expr| {
+        CallType::ArrayIndex(expr)
     })(input)
 }
 
-// TODO: Fix the bug here where unaries don't seem to parse correctly in scenarios like `!true && !true`
-fn unary(input: &str) -> IResult<&str, Expression> {
+fn field_access(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
+    map(delimited(space0, preceded(tag("."), symbol), space0), |symbol| {
+        CallType::FieldAccess(symbol)
+    })(input)
+}
+
+fn access(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    let (input, init) = primary(input)?;
+
+    let call = alt((safe_access, function_call, array_index, field_access));
+
+    fold_many0(call, init, |acc, call_type| match call_type {
+        CallType::Function(args) => Expression::FunctionCall(Box::new(acc), args),
+        CallType::ArrayIndex(arg) => Expression::Index(Box::new(acc), Box::new(arg)),
+        CallType::FieldAccess(field) => Expression::FieldAccess(Box::new(acc), Box::new(field)),
+        CallType::SafeAccess => Expression::SafeAccess(Box::new(acc)),
+    })(input)
+}
+
+fn unary(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let unary_rule = map(
         delimited(space0, pair(alt((char('-'), char('!'))), unary), space0),
         |(op, expr)| match op {
@@ -140,7 +169,7 @@ fn unary(input: &str) -> IResult<&str, Expression> {
     alt((access, unary_rule))(input)
 }
 
-fn dice_roll(input: &str) -> IResult<&str, Expression> {
+fn dice_roll(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     alt((
         map(separated_pair(unary, tag("d"), unary), |(lhs, rhs)| {
             Expression::Binary(BinaryOperator::DiceRoll, Box::new(lhs), Box::new(rhs))
@@ -149,7 +178,7 @@ fn dice_roll(input: &str) -> IResult<&str, Expression> {
     ))(input)
 }
 
-fn multiplicative(input: &str) -> IResult<&str, Expression> {
+fn multiplicative(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let (input, init) = dice_roll(input)?;
 
     fold_many0(pair(alt((char('*'), char('/'), char('%'))), dice_roll), init, |acc, (op, value)| {
@@ -164,7 +193,7 @@ fn multiplicative(input: &str) -> IResult<&str, Expression> {
     })(input)
 }
 
-fn additive(input: &str) -> IResult<&str, Expression> {
+fn additive(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let (input, init) = multiplicative(input)?;
 
     fold_many0(pair(alt((char('+'), char('-'))), multiplicative), init, |acc, (op, value)| {
@@ -178,7 +207,7 @@ fn additive(input: &str) -> IResult<&str, Expression> {
     })(input)
 }
 
-fn comparison(input: &str) -> IResult<&str, Expression> {
+fn comparison(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let (input, init) = additive(input)?;
 
     fold_many0(
@@ -200,7 +229,7 @@ fn comparison(input: &str) -> IResult<&str, Expression> {
     )(input)
 }
 
-fn logical_and(input: &str) -> IResult<&str, Expression> {
+fn logical_and(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let (input, init) = comparison(input)?;
 
     fold_many0(preceded(tag("&&"), comparison), init, |acc, expr| {
@@ -208,7 +237,7 @@ fn logical_and(input: &str) -> IResult<&str, Expression> {
     })(input)
 }
 
-fn logical_or(input: &str) -> IResult<&str, Expression> {
+fn logical_or(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let (input, init) = logical_and(input)?;
 
     fold_many0(preceded(tag("||"), logical_and), init, |acc, expr| {
@@ -216,7 +245,7 @@ fn logical_or(input: &str) -> IResult<&str, Expression> {
     })(input)
 }
 
-fn range(input: &str) -> IResult<&str, Expression> {
+fn range(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     alt((
         map(tuple((logical_or, alt((tag("..="), tag(".."))), logical_or)), |(lhs, op, rhs)| match op {
             ".." => Expression::Range(RangeOperator::Exclusive, Box::new(lhs), Box::new(rhs)),
@@ -227,7 +256,7 @@ fn range(input: &str) -> IResult<&str, Expression> {
     ))(input)
 }
 
-fn coalesce(input: &str) -> IResult<&str, Expression> {
+fn coalesce(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let (input, init) = range(input)?;
 
     fold_many0(preceded(tag("??"), range), init, |acc, expr| {
@@ -235,7 +264,7 @@ fn coalesce(input: &str) -> IResult<&str, Expression> {
     })(input)
 }
 
-fn discard(input: &str) -> IResult<&str, Expression> {
+fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let (input, init) = coalesce(input)?;
 
     fold_many0(preceded(tag(";"), coalesce), init, |acc, expr| {
@@ -243,14 +272,16 @@ fn discard(input: &str) -> IResult<&str, Expression> {
     })(input)
 }
 
-fn expression(input: &str) -> IResult<&str, Expression> {
+fn expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     discard(input)
 }
 
-pub fn parse<'a>(input: &'a str) -> Result<Expression, Box<dyn std::error::Error + 'a>> {
-    let (_, result) = expression(input)?;
-
-    Ok(result)
+pub fn parse<'a>(input: &'a str) -> Result<Expression, String> {
+    match expression(input) {
+        Ok((_, result)) => Ok(result),
+        Err(nom::Err::Error(err)) | Err(nom::Err::Failure(err)) => Err(convert_error(input, err)),
+        _ => unreachable!(),
+    }
 }
 
 #[cfg(test)]
@@ -279,7 +310,10 @@ mod test {
 
     #[test]
     fn test() {
-        let output = parse(r#"[None, None]?[1]?.xyz"#).unwrap();
-        println!("{:#?}", output);
+        let input = r#"while"#;
+
+        if let Err(output) = parse(input) {
+            println!("{}", output);
+        }
     }
 }
