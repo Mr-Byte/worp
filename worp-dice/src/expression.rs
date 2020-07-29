@@ -3,6 +3,12 @@ use std::fmt::Display;
 #[derive(Debug, Clone)]
 pub struct Symbol(pub String);
 
+impl Display for Symbol {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(fmt)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Literal {
     /// None values
@@ -19,10 +25,36 @@ pub enum Literal {
     List(Vec<Expression>),
 }
 
+impl Display for Literal {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Literal::None => write!(fmt, "none"),
+            Literal::Integer(value) => write!(fmt, "{}", value),
+            Literal::Float(value) => write!(fmt, "{}f", value),
+            Literal::String(value) => write!(fmt, r#""{}""#, value),
+            Literal::Boolean(value) => write!(fmt, "{}", value),
+            Literal::List(value) => write!(
+                fmt,
+                "( [{}] )",
+                value.iter().map(ToString::to_string).collect::<Vec<_>>().as_slice().join(", ")
+            ),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum UnaryOperator {
     Negate,
     Not,
+}
+
+impl Display for UnaryOperator {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UnaryOperator::Negate => write!(fmt, "-"),
+            UnaryOperator::Not => write!(fmt, "!"),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -62,17 +94,49 @@ pub enum BinaryOperator {
     /// The `or` operator
     LogicalOr,
 
-    /// The `??` operator (null-coalesce)
+    /// The `:?` operator (null-coalesce)
     Coalesce,
 
     /// The `;` operator (discard)
     Discard,
 }
 
+impl Display for BinaryOperator {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BinaryOperator::DiceRoll => write!(fmt, "d"),
+            BinaryOperator::Multiply => write!(fmt, "*"),
+            BinaryOperator::Divide => write!(fmt, "/"),
+            BinaryOperator::Remainder => write!(fmt, "%"),
+            BinaryOperator::Add => write!(fmt, "+"),
+            BinaryOperator::Subtract => write!(fmt, "-"),
+            BinaryOperator::Equals => write!(fmt, "=="),
+            BinaryOperator::NotEquals => write!(fmt, "!="),
+            BinaryOperator::GreaterThan => write!(fmt, ">"),
+            BinaryOperator::GreaterThanOrEquals => write!(fmt, ">="),
+            BinaryOperator::LessThan => write!(fmt, "<"),
+            BinaryOperator::LessThanOrEquals => write!(fmt, "<="),
+            BinaryOperator::LogicalAnd => write!(fmt, "&&"),
+            BinaryOperator::LogicalOr => write!(fmt, "||"),
+            BinaryOperator::Coalesce => write!(fmt, ":?"),
+            BinaryOperator::Discard => write!(fmt, ";"),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum RangeOperator {
     Exclusive,
     Inclusive,
+}
+
+impl Display for RangeOperator {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RangeOperator::Exclusive => write!(fmt, ".."),
+            RangeOperator::Inclusive => write!(fmt, "..="),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -101,7 +165,27 @@ pub enum Expression {
 }
 
 impl Display for Expression {
-    fn fmt(&self, _fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expression::Literal(value) => value.fmt(fmt),
+            Expression::Symbol(symbol) => symbol.fmt(fmt),
+            Expression::SafeAccess(expr) => write!(fmt, "{}?", expr),
+            Expression::FieldAccess(lhs, rhs) => write!(fmt, "{}.{}", lhs, rhs),
+            Expression::FunctionCall(expr, args) => {
+                let args = args.iter().map(ToString::to_string).collect::<Vec<_>>().join(" ");
+                write!(fmt, "{}( {} )", expr, args)
+            }
+            Expression::Index(expr, index) => write!(fmt, "{}[ {} ]", expr, index),
+            Expression::Unary(op, expr) => write!(fmt, "{}{}", op, expr),
+            Expression::Binary(op, lhs, rhs) => write!(fmt, "{} {} {}", lhs, op, rhs),
+            Expression::Range(op, lhs, rhs) => write!(fmt, "{} {} {}", lhs, op, rhs),
+            Expression::Conditional(condition, body, else_body) => write!(
+                fmt,
+                "if {} {{ {} }} else {{ {} }}",
+                condition,
+                body,
+                else_body.as_ref().map(ToString::to_string).unwrap_or_default()
+            ),
+        }
     }
 }
