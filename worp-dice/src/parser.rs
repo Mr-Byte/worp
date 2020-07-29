@@ -11,7 +11,7 @@ use nom::{
     error::{context, convert_error, VerboseError},
     multi::{fold_many0, many0, separated_list0},
     number::complete::float,
-    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
+    sequence::{delimited, pair, preceded, terminated, tuple},
     IResult,
 };
 
@@ -122,12 +122,11 @@ fn primary(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
 }
 
 fn dice_roll(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    alt((
-        map(separated_pair(primary, tag("d"), primary), |(lhs, rhs)| {
-            Expression::Binary(BinaryOperator::DiceRoll, Box::new(lhs), Box::new(rhs))
-        }),
-        primary,
-    ))(input)
+    let (input, init) = primary(input)?;
+
+    fold_many0(preceded(delimited(multispace0, tag("d"), multispace0), primary), init, |acc, expr| {
+        Expression::Binary(BinaryOperator::DiceRoll, Box::new(acc), Box::new(expr))
+    })(input)
 }
 
 enum CallType {
@@ -323,7 +322,11 @@ mod test {
 
     #[test]
     fn test() {
-        let result = parse("6d6.reroll(2)").unwrap();
-        println!("{:#?}", result);
+        let result = parse("2d8.reroll(8)");
+
+        match result {
+            Ok(ok) => println!("{}", ok),
+            Err(err) => println!("{}", err),
+        }
     }
 }

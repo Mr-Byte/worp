@@ -177,7 +177,7 @@ impl Display for Expression {
             }
             Expression::Index(expr, index) => write!(fmt, "{}[ {} ]", expr, index),
             Expression::Unary(op, expr) => write!(fmt, "{}{}", op, expr),
-            Expression::Binary(op, lhs, rhs) => write!(fmt, "{} {} {}", lhs, op, rhs),
+            Expression::Binary(op, lhs, rhs) => write!(fmt, "( {} {} {} )", lhs, op, rhs),
             Expression::Range(op, lhs, rhs) => write!(fmt, "{} {} {}", lhs, op, rhs),
             Expression::Conditional(condition, body, else_body) => write!(
                 fmt,
