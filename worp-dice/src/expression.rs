@@ -1,4 +1,5 @@
-use std::fmt::Display;
+use crate::parser::error::ParseError;
+use std::{fmt::Display, str::FromStr};
 
 #[derive(Debug, Clone)]
 pub struct Symbol(pub String);
@@ -187,5 +188,13 @@ impl Display for Expression {
                 else_body.as_ref().map(ToString::to_string).unwrap_or_default()
             ),
         }
+    }
+}
+
+impl FromStr for Expression {
+    type Err = ParseError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        crate::parser::parse(input)
     }
 }
