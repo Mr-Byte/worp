@@ -31,7 +31,7 @@ impl Display for Literal {
         match self {
             Literal::None => write!(fmt, "none"),
             Literal::Integer(value) => write!(fmt, "{}", value),
-            Literal::Float(value) => write!(fmt, "{}f", value),
+            Literal::Float(value) => write!(fmt, "{:.}", value),
             Literal::String(value) => write!(fmt, r#""{}""#, value),
             Literal::Boolean(value) => write!(fmt, "{}", value),
             Literal::List(value) => write!(

@@ -7,10 +7,10 @@ use nom::{
     combinator::{all_consuming, cut, map, map_res, not, opt, recognize, value},
     error::{context, convert_error, VerboseError},
     multi::{fold_many0, many0, separated_list0},
-    number::complete::float,
     sequence::{delimited, pair, preceded, terminated, tuple},
     IResult,
 };
+use std::str::FromStr;
 
 fn open_paren(input: &str) -> IResult<&str, (), VerboseError<&str>> {
     context("openening parenthesis", value((), char('(')))(input)
@@ -74,10 +74,12 @@ fn none_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
 }
 
 fn float_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
-    context(
-        "float literal",
-        map(delimited(multispace0, terminated(float, char('f')), multispace0), Literal::Float),
-    )(input)
+    let float = map_res(
+        recognize(tuple((opt(alt((char('+'), char('-')))), digit1, char('.'), digit1))),
+        FromStr::from_str,
+    );
+
+    context("float literal", map(delimited(multispace0, float, multispace0), Literal::Float))(input)
 }
 
 fn int_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
@@ -418,7 +420,7 @@ mod test {
 
     #[test]
     fn test() {
-        let result = parse("test <=");
+        let result = parse("+6.0d8.fireball()");
 
         match result {
             Ok(ok) => println!("{}", ok),
