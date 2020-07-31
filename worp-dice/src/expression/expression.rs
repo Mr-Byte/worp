@@ -1,7 +1,7 @@
-use crate::parser::error::ParseError;
-use std::{fmt::Display, str::FromStr};
+use super::parser::error::ParseError;
+use std::{collections::HashMap, fmt::Display, str::FromStr};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Symbol(pub String);
 
 impl Display for Symbol {
@@ -10,8 +10,25 @@ impl Display for Symbol {
     }
 }
 
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum ObjectKey {
+    Symbol(Symbol),
+    Index(i32),
+}
+
+impl Display for ObjectKey {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ObjectKey::Symbol(symbol) => write!(fmt, r#""{}""#, symbol),
+            ObjectKey::Index(index) => write!(fmt, "[{}]", index),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Literal {
+    /// Identifiers (e.g. _test)
+    Identifier(Symbol),
     /// None values
     None,
     /// Integer values such as `-1`, `0`, `1`, etc
@@ -24,20 +41,28 @@ pub enum Literal {
     Boolean(bool),
     /// Lists, such as `[ 1, x, 3 ]`
     List(Vec<Expression>),
+    /// Objects, such as { x: 55, y: 6d6, z: { inner: 42 } }
+    Object(HashMap<ObjectKey, Expression>),
 }
 
 impl Display for Literal {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Literal::Identifier(symbol) => symbol.fmt(fmt),
             Literal::None => write!(fmt, "none"),
             Literal::Integer(value) => write!(fmt, "{}", value),
             Literal::Float(value) => write!(fmt, "{:.}", value),
             Literal::String(value) => write!(fmt, r#""{}""#, value),
             Literal::Boolean(value) => write!(fmt, "{}", value),
-            Literal::List(value) => write!(
+            Literal::List(value) => write!(fmt, "( [{}] )", value.iter().map(ToString::to_string).collect::<Vec<_>>().join(", ")),
+            Literal::Object(object) => write!(
                 fmt,
-                "( [{}] )",
-                value.iter().map(ToString::to_string).collect::<Vec<_>>().as_slice().join(", ")
+                "{{ {} }}",
+                object
+                    .iter()
+                    .map(|(key, value)| format!("{}: {}", key, value))
+                    .collect::<Vec<_>>()
+                    .join(", ")
             ),
         }
     }
@@ -195,6 +220,6 @@ impl FromStr for Expression {
     type Err = ParseError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        crate::parser::parse(input)
+        super::parser::parse(input)
     }
 }

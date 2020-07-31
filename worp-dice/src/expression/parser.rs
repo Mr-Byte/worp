@@ -1,4 +1,7 @@
-use crate::expression::{BinaryOperator, Expression, Literal, RangeOperator, Symbol, UnaryOperator};
+use super::{
+    expression::{BinaryOperator, Expression, Literal, RangeOperator, Symbol, UnaryOperator},
+    ObjectKey,
+};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till},
@@ -7,37 +10,37 @@ use nom::{
     combinator::{all_consuming, cut, map, map_res, not, opt, recognize, value},
     error::{context, convert_error, VerboseError},
     multi::{fold_many0, many0, separated_list0},
-    sequence::{delimited, pair, preceded, terminated, tuple},
+    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
 use std::str::FromStr;
 
 fn open_paren(input: &str) -> IResult<&str, (), VerboseError<&str>> {
-    context("openening parenthesis", value((), char('(')))(input)
+    delimited(multispace0, context("openening parenthesis", value((), char('('))), multispace0)(input)
 }
 
 fn close_paren(input: &str) -> IResult<&str, (), VerboseError<&str>> {
-    context("closing parenthesis", value((), char(')')))(input)
+    delimited(multispace0, context("closing parenthesis", value((), char(')'))), multispace0)(input)
 }
 
 fn open_curly(input: &str) -> IResult<&str, (), VerboseError<&str>> {
-    context("openening curly brace", value((), char('{')))(input)
+    delimited(multispace0, context("openening curly brace", value((), char('{'))), multispace0)(input)
 }
 
 fn close_curly(input: &str) -> IResult<&str, (), VerboseError<&str>> {
-    context("closing curly brace", value((), char('}')))(input)
+    delimited(multispace0, context("closing curly brace", value((), char('}'))), multispace0)(input)
 }
 
 fn open_square(input: &str) -> IResult<&str, (), VerboseError<&str>> {
-    context("openening square bracket", value((), char('[')))(input)
+    delimited(multispace0, context("openening square bracket", value((), char('['))), multispace0)(input)
 }
 
 fn close_square(input: &str) -> IResult<&str, (), VerboseError<&str>> {
-    context("closing square bracket", value((), char(']')))(input)
+    delimited(multispace0, context("closing square bracket", value((), char(']'))), multispace0)(input)
 }
 
 fn comma(input: &str) -> IResult<&str, (), VerboseError<&str>> {
-    context("comma", value((), char(',')))(input)
+    delimited(multispace0, context("comma", value((), char(','))), multispace0)(input)
 }
 
 fn double_quote(input: &str) -> IResult<&str, (), VerboseError<&str>> {
@@ -66,6 +69,21 @@ fn reserved(input: &str) -> IResult<&str, (), VerboseError<&str>> {
             tag("trait"),
             tag("interface"),
         )))),
+    )(input)
+}
+
+fn identifier(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
+    let symbol_start = alt((tag("_"), alpha1));
+    let symbol_remainder = cut(many0(alt((tag("_"), alphanumeric1))));
+    let symbol = recognize(pair(symbol_start, symbol_remainder));
+
+    context(
+        "identifier",
+        delimited(
+            multispace0,
+            map(symbol, |symbol: &str| Literal::Identifier(Symbol(symbol.to_string()))),
+            multispace0,
+        ),
     )(input)
 }
 
@@ -107,13 +125,17 @@ fn boolean_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
 fn string_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     context(
         "string literal",
-        map(delimited(double_quote, take_till(|c| c == '"'), cut(double_quote)), |value: &str| {
-            Literal::String(value.to_owned())
-        }),
+        delimited(
+            multispace0,
+            map(delimited(double_quote, take_till(|c| c == '"'), cut(double_quote)), |value: &str| {
+                Literal::String(value.to_owned())
+            }),
+            multispace0,
+        ),
     )(input)
 }
 
-fn list(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
+fn list_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     context(
         "list literal",
         map(
@@ -127,28 +149,49 @@ fn list(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     )(input)
 }
 
+fn object_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
+    let field = context(
+        "field",
+        map(
+            alt((identifier, string_literal, delimited(open_square, int_literal, close_square))),
+            |value| match value {
+                Literal::Integer(index) => ObjectKey::Index(index),
+                Literal::Identifier(symbol) => ObjectKey::Symbol(symbol),
+                Literal::String(string) => ObjectKey::Symbol(Symbol(string)),
+                _ => unreachable!(),
+            },
+        ),
+    );
+
+    context(
+        "object literal",
+        map(
+            delimited(
+                open_curly,
+                separated_list0(comma, separated_pair(field, delimited(multispace0, char(':'), multispace0), expression)),
+                close_curly,
+            ),
+            |pairs| Literal::Object(pairs.into_iter().collect()),
+        ),
+    )(input)
+}
+
 fn literal(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     map(
         preceded(
             reserved,
-            alt((none_literal, float_literal, int_literal, string_literal, boolean_literal, list)),
+            alt((
+                identifier,
+                none_literal,
+                float_literal,
+                int_literal,
+                string_literal,
+                boolean_literal,
+                list_literal,
+                object_literal,
+            )),
         ),
         Expression::Literal,
-    )(input)
-}
-
-fn symbol(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let symbol_start = alt((tag("_"), alpha1));
-    let symbol_remainder = cut(many0(alt((tag("_"), alphanumeric1))));
-    let symbol = recognize(pair(symbol_start, symbol_remainder));
-
-    context(
-        "identifier",
-        delimited(
-            multispace0,
-            map(symbol, |symbol: &str| Expression::Symbol(Symbol(symbol.to_string()))),
-            multispace0,
-        ),
     )(input)
 }
 
@@ -160,7 +203,7 @@ fn parens(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
 }
 
 fn primary(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    alt((literal, symbol, parens))(input)
+    alt((literal, parens))(input)
 }
 
 fn dice_roll(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
@@ -213,8 +256,8 @@ fn field_access(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
 
     context(
         "field access",
-        map(delimited(multispace0, preceded(field_acces_op, symbol), multispace0), |symbol| {
-            CallType::FieldAccess(symbol)
+        map(delimited(multispace0, preceded(field_acces_op, identifier), multispace0), |identifier| {
+            CallType::FieldAccess(Expression::Literal(identifier))
         }),
     )(input)
 }
@@ -420,7 +463,7 @@ mod test {
 
     #[test]
     fn test() {
-        let result = parse("+6.0d8.fireball()");
+        let result = parse(r#"{ roll: 6d8, "test": 5;55, [5]: test.roll() }[5]"#);
 
         match result {
             Ok(ok) => println!("{}", ok),

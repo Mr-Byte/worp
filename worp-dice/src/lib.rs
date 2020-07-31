@@ -1,2 +1,2 @@
 pub mod expression;
-mod parser;
+pub mod interpreter;
