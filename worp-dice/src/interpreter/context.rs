@@ -1,4 +1,4 @@
-use super::Value;
+use super::object::ObjectInstance;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug)]
@@ -6,10 +6,10 @@ pub struct ExecutionContext {
     inner: Rc<Environment>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default, Debug)]
 struct Environment {
     parent: Option<Rc<Environment>>,
-    variables: RefCell<HashMap<String, Value>>,
+    variables: RefCell<HashMap<String, ObjectInstance>>,
 }
 
 impl ExecutionContext {
@@ -19,7 +19,7 @@ impl ExecutionContext {
 }
 
 impl ExecutionContext {
-    pub fn eval(&self, _input: &str) -> Result<(), super::error::EvaluationError> {
+    pub fn eval(&self, _input: &str) -> Result<(), super::error::RuntimeError> {
         todo!()
     }
 
@@ -32,7 +32,7 @@ impl ExecutionContext {
         }
     }
 
-    pub fn add_variable(&mut self, name: impl Into<String>, object: Value) {
-        self.inner.variables.borrow_mut().insert(name.into(), object);
+    pub fn add_variable(&mut self, name: impl Into<String>, instance: ObjectInstance) {
+        self.inner.variables.borrow_mut().insert(name.into(), instance);
     }
 }

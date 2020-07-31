@@ -1,6 +1,5 @@
 mod context;
 pub mod error;
-pub mod value;
+pub mod object;
 
 pub use context::ExecutionContext;
-pub use value::Value;

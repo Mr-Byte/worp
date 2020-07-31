@@ -16,6 +16,15 @@ pub enum ObjectKey {
     Index(i32),
 }
 
+impl<T> From<T> for ObjectKey
+where
+    T: Into<String>,
+{
+    fn from(value: T) -> Self {
+        ObjectKey::Symbol(Symbol(value.into()))
+    }
+}
+
 impl Display for ObjectKey {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
