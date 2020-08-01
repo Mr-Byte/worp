@@ -1,8 +1,3 @@
-use crate::interpreter::object::{Object, ObjectRef};
-use std::any::Any;
+use crate::interpreter::object::{ObjectBase, ObjectRef};
 
-impl Object for Vec<ObjectRef> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
+impl ObjectBase for Vec<ObjectRef> {}

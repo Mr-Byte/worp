@@ -1,8 +1,3 @@
-use crate::interpreter::object::Object;
-use std::any::Any;
+use crate::interpreter::object::ObjectBase;
 
-impl Object for f64 {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
+impl ObjectBase for f64 {}

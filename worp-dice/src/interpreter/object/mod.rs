@@ -8,9 +8,9 @@ mod types;
 pub use key::ObjectKey;
 pub use reference::*;
 
-pub trait Object: Any + Debug {
-    fn as_any(&self) -> &dyn Any;
-
+/// Trait implemented by types wishing to expose functionality to Dice.
+/// Provides several methods, with default implementations, for interacting with the Dice interpreter.
+pub trait ObjectBase: Any + Debug {
     fn get(&self, key: &ObjectKey) -> Result<ObjectRef, RuntimeError> {
         Err(RuntimeError::MissingField(key.clone()))
     }
@@ -28,12 +28,22 @@ pub trait Object: Any + Debug {
     }
 }
 
-impl dyn Object
+/// Trait that's automatically impelemented over all ObjectBase types that provides common functionality to the interpreter.
+pub trait Object: ObjectBase {
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T> Object for T
 where
-    Self: Any,
+    T: ObjectBase,
 {
-    #[inline]
-    fn value<T: Object>(&self) -> Option<&T> {
-        self.as_any().downcast_ref::<T>()
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl dyn Object {
+    fn value<V: ObjectBase + 'static>(&self) -> Option<&V> {
+        self.as_any().downcast_ref::<V>()
     }
 }

@@ -1,4 +1,4 @@
-use super::Object;
+use super::{Object, ObjectBase};
 use std::{ops::Deref, rc::Rc};
 
 // TODO: Figure out how to optimizie representation of strings and lists.
@@ -39,7 +39,7 @@ impl ObjectRef {
         Self(ObjectVariant::String(Rc::new(value)))
     }
 
-    pub fn new(value: impl Object + 'static) -> Self {
+    pub fn new(value: impl ObjectBase + 'static) -> Self {
         Self(ObjectVariant::Object(Rc::new(value) as Rc<dyn Object>))
     }
 }
