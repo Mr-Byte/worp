@@ -2,7 +2,10 @@ use super::func::{Func1, Func2};
 use crate::interpreter::{
     error::RuntimeError,
     object::{key::ObjectKey, reference::ObjectRef, ObjectBase},
-    symbol::common::operator::*,
+    symbol::{
+        common::{operators::*, types::TY_INT},
+        Symbol,
+    },
 };
 use maplit::hashmap;
 use std::collections::HashMap;
@@ -26,13 +29,17 @@ impl ObjectBase for i64 {
     fn to_string(&self) -> String {
         ToString::to_string(self)
     }
+
+    fn type_name(&self) -> Symbol {
+        TY_INT
+    }
 }
 
 fn negate(arg: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     if let Some(value) = arg.value::<i64>() {
         Ok(ObjectRef::new(!value))
     } else {
-        Err(RuntimeError::InvalidType)
+        Err(RuntimeError::InvalidType(TY_INT, arg.type_name()))
     }
 }
 
@@ -41,7 +48,9 @@ fn mul(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs * rhs)),
-        _ => Err(RuntimeError::Aborted),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }
 
@@ -50,7 +59,9 @@ fn div(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs * rhs)),
-        _ => Err(RuntimeError::Aborted),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }
 
@@ -59,7 +70,9 @@ fn rem(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs % rhs)),
-        _ => Err(RuntimeError::Aborted),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }
 
@@ -68,7 +81,9 @@ fn add(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs + rhs)),
-        _ => Err(RuntimeError::Aborted),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }
 
@@ -77,6 +92,8 @@ fn sub(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs - rhs)),
-        _ => Err(RuntimeError::Aborted),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }

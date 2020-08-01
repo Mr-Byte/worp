@@ -1,4 +1,4 @@
-use super::error::RuntimeError;
+use super::{error::RuntimeError, symbol::Symbol};
 use std::{any::Any, fmt::Debug};
 
 mod key;
@@ -16,16 +16,18 @@ pub trait ObjectBase: Any + Debug {
     }
 
     fn set(&self, _key: &ObjectKey, _value: ObjectRef) -> Result<(), RuntimeError> {
-        Err(RuntimeError::NotAnObject)
+        Err(RuntimeError::NotAnObject(self.type_name()))
     }
 
     fn call(&self, _args: &[ObjectRef]) -> Result<ObjectRef, RuntimeError> {
-        Err(RuntimeError::NotAFunction)
+        Err(RuntimeError::NotAFunction(self.type_name()))
     }
 
     fn to_string(&self) -> String {
-        format!("[Object]")
+        format!("[{}]", self.type_name())
     }
+
+    fn type_name(&self) -> Symbol;
 }
 
 /// Trait that's automatically impelemented over all ObjectBase types that provides common functionality to the interpreter.

@@ -1,6 +1,7 @@
 use crate::interpreter::{
     error::RuntimeError,
     object::{reference::ObjectRef, ObjectBase},
+    symbol::{common::types::TY_FUNC, Symbol},
 };
 use std::fmt::Debug;
 
@@ -18,6 +19,10 @@ where
         } else {
             Err(RuntimeError::InvalidFunctionArgs(0, args.len()))
         }
+    }
+
+    fn type_name(&self) -> Symbol {
+        TY_FUNC
     }
 }
 
@@ -45,6 +50,10 @@ where
             Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
         }
     }
+
+    fn type_name(&self) -> Symbol {
+        TY_FUNC
+    }
 }
 
 impl<F> Debug for Func1<F>
@@ -70,6 +79,10 @@ where
         } else {
             Err(RuntimeError::InvalidFunctionArgs(2, args.len()))
         }
+    }
+
+    fn type_name(&self) -> Symbol {
+        TY_FUNC
     }
 }
 
@@ -97,6 +110,10 @@ where
             Err(RuntimeError::InvalidFunctionArgs(3, args.len()))
         }
     }
+
+    fn type_name(&self) -> Symbol {
+        TY_FUNC
+    }
 }
 
 impl<F> Debug for Func3<F>
@@ -122,6 +139,10 @@ where
         } else {
             Err(RuntimeError::InvalidFunctionArgs(4, args.len()))
         }
+    }
+
+    fn type_name(&self) -> Symbol {
+        TY_FUNC
     }
 }
 
