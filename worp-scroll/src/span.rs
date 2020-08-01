@@ -1,6 +1,5 @@
 use super::{error::DocumentError, Expression, Link};
-use crate::next_pair;
-use crate::{parser::Rule, Symbol};
+use crate::{next_pair, parser::Rule, Symbol};
 use pest::iterators::Pairs;
 use std::{
     convert::{TryFrom, TryInto as _},

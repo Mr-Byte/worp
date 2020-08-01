@@ -3,8 +3,7 @@ use crate::{
     next_pair,
     parser::{DocumentParser, Rule},
 };
-use pest::iterators::Pairs;
-use pest::Parser as _;
+use pest::{iterators::Pairs, Parser as _};
 use std::convert::{TryFrom, TryInto as _};
 
 #[derive(Debug)]

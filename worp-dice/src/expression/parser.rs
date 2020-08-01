@@ -1,12 +1,9 @@
-use super::{
-    expression::{BinaryOperator, Expression, Literal, RangeOperator, Symbol, UnaryOperator},
-    ObjectKey,
-};
+use super::expression::{BinaryOperator, Expression, Literal, RangeOperator, UnaryOperator};
+use crate::interpreter::{object::ObjectKey, symbol::Symbol};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till},
-    character::complete::{alpha1, alphanumeric1, digit1, multispace1},
-    character::complete::{char, multispace0},
+    character::complete::{alpha1, alphanumeric1, char, digit1, multispace0, multispace1},
     combinator::{all_consuming, cut, map, map_res, not, opt, recognize, value},
     error::{context, convert_error, VerboseError},
     multi::{fold_many0, many0, separated_list0},
@@ -81,7 +78,7 @@ fn identifier(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
         "identifier",
         delimited(
             multispace0,
-            map(symbol, |symbol: &str| Literal::Identifier(Symbol(symbol.to_string()))),
+            map(symbol, |symbol: &str| Literal::Identifier(Symbol::new(symbol))),
             multispace0,
         ),
     )(input)
@@ -104,7 +101,7 @@ fn int_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     let int = map_res(
         tuple((opt(alt((char('+'), char('-')))), digit1)),
         |(sign, value): (Option<char>, &str)| match sign {
-            Some('-') => value.parse().map(|value: i32| -value),
+            Some('-') => value.parse().map(|value: i64| -value),
             _ => value.parse(),
         },
     );
@@ -157,7 +154,7 @@ fn object_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
             |value| match value {
                 Literal::Integer(index) => ObjectKey::Index(index),
                 Literal::Identifier(symbol) => ObjectKey::Symbol(symbol),
-                Literal::String(string) => ObjectKey::Symbol(Symbol(string)),
+                Literal::String(string) => ObjectKey::Symbol(Symbol::new(string)),
                 _ => unreachable!(),
             },
         ),

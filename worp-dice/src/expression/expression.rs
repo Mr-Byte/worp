@@ -1,38 +1,6 @@
 use super::parser::error::ParseError;
+use crate::interpreter::{object::ObjectKey, symbol::Symbol};
 use std::{collections::HashMap, fmt::Display, str::FromStr};
-
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct Symbol(pub String);
-
-impl Display for Symbol {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(fmt)
-    }
-}
-
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum ObjectKey {
-    Symbol(Symbol),
-    Index(i32),
-}
-
-impl<T> From<T> for ObjectKey
-where
-    T: Into<String>,
-{
-    fn from(value: T) -> Self {
-        ObjectKey::Symbol(Symbol(value.into()))
-    }
-}
-
-impl Display for ObjectKey {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ObjectKey::Symbol(symbol) => write!(fmt, r#""{}""#, symbol),
-            ObjectKey::Index(index) => write!(fmt, "[{}]", index),
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub enum Literal {
@@ -41,9 +9,9 @@ pub enum Literal {
     /// None values
     None,
     /// Integer values such as `-1`, `0`, `1`, etc
-    Integer(i32),
+    Integer(i64),
     /// Floating point decimals such as `-1.0, `0.0`, `1.1`, etc
-    Float(f32),
+    Float(f64),
     /// String literals such as `"hello"`
     String(String),
     /// Boolean literals (true or false)

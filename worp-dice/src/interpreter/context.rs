@@ -1,4 +1,4 @@
-use super::object::ObjectInstance;
+use super::object::ObjectRef;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug)]
@@ -9,7 +9,7 @@ pub struct ExecutionContext {
 #[derive(Default, Debug)]
 struct Environment {
     parent: Option<Rc<Environment>>,
-    variables: RefCell<HashMap<String, ObjectInstance>>,
+    variables: RefCell<HashMap<String, ObjectRef>>,
 }
 
 impl ExecutionContext {
@@ -32,7 +32,7 @@ impl ExecutionContext {
         }
     }
 
-    pub fn add_variable(&mut self, name: impl Into<String>, instance: ObjectInstance) {
+    pub fn add_variable(&mut self, name: impl Into<String>, instance: ObjectRef) {
         self.inner.variables.borrow_mut().insert(name.into(), instance);
     }
 }
