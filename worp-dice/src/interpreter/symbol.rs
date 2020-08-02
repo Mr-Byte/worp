@@ -42,6 +42,18 @@ pub mod common {
         pub const OP_REM: Symbol = Symbol::new_static("#op_rem");
         pub const OP_ADD: Symbol = Symbol::new_static("#op_add");
         pub const OP_SUB: Symbol = Symbol::new_static("#op_sub");
+
+        pub const OP_GT: Symbol = Symbol::new_static("#op_gt");
+        pub const OP_LT: Symbol = Symbol::new_static("#op_lt");
+        pub const OP_GTE: Symbol = Symbol::new_static("#op_gte");
+        pub const OP_LTE: Symbol = Symbol::new_static("#op_lte");
+        pub const OP_EQ: Symbol = Symbol::new_static("#op_eq");
+        pub const OP_NE: Symbol = Symbol::new_static("#op_ne");
+
+        pub const OP_AND: Symbol = Symbol::new_static("#op_and");
+        pub const OP_OR: Symbol = Symbol::new_static("#op_or");
+
+        pub const OP_COALESCE: Symbol = Symbol::new_static("#op_coalesce");
     }
 }
 

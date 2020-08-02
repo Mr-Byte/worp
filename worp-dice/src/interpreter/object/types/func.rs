@@ -1,7 +1,7 @@
 use crate::interpreter::{
     error::RuntimeError,
-    object::{reference::ObjectRef, ObjectBase},
-    symbol::{common::types::TY_FUNC, Symbol},
+    object::{reference::ObjectRef, reflection::TypeData, ObjectBase, ObjectKey},
+    symbol::common::types::TY_FUNC,
 };
 use std::fmt::Debug;
 
@@ -21,8 +21,12 @@ where
         }
     }
 
-    fn type_name(&self) -> Symbol {
-        TY_FUNC
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        Vec::new()
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_FUNC, vec![])
     }
 }
 
@@ -51,8 +55,12 @@ where
         }
     }
 
-    fn type_name(&self) -> Symbol {
-        TY_FUNC
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        Vec::new()
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_FUNC, vec![])
     }
 }
 
@@ -81,8 +89,12 @@ where
         }
     }
 
-    fn type_name(&self) -> Symbol {
-        TY_FUNC
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        Vec::new()
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_FUNC, vec![])
     }
 }
 
@@ -111,8 +123,12 @@ where
         }
     }
 
-    fn type_name(&self) -> Symbol {
-        TY_FUNC
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        Vec::new()
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_FUNC, vec![])
     }
 }
 
@@ -141,8 +157,12 @@ where
         }
     }
 
-    fn type_name(&self) -> Symbol {
-        TY_FUNC
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        Vec::new()
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_FUNC, vec![])
     }
 }
 

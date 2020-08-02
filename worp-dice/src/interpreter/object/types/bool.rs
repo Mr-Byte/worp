@@ -1,10 +1,14 @@
 use crate::interpreter::{
-    object::ObjectBase,
-    symbol::{common::types::TY_BOOL, Symbol},
+    object::{reflection::TypeData, ObjectBase, ObjectKey},
+    symbol::common::types::TY_BOOL,
 };
 
 impl ObjectBase for bool {
-    fn type_name(&self) -> Symbol {
-        TY_BOOL
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        Vec::new()
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_BOOL, Vec::new())
     }
 }

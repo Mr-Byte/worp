@@ -1,10 +1,14 @@
 use crate::interpreter::{
-    object::ObjectBase,
-    symbol::{common::types::TY_FLOAT, Symbol},
+    object::{reflection::TypeData, ObjectBase, ObjectKey},
+    symbol::common::types::TY_FLOAT,
 };
 
 impl ObjectBase for f64 {
-    fn type_name(&self) -> Symbol {
-        TY_FLOAT
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        Vec::new()
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_FLOAT, Vec::new())
     }
 }

@@ -1,11 +1,8 @@
 use super::func::{Func1, Func2};
 use crate::interpreter::{
     error::RuntimeError,
-    object::{key::ObjectKey, reference::ObjectRef, ObjectBase},
-    symbol::{
-        common::{operators::*, types::TY_INT},
-        Symbol,
-    },
+    object::{key::ObjectKey, operator::coalesce, reference::ObjectRef, reflection::TypeData, ObjectBase},
+    symbol::common::{operators::*, types::TY_INT},
 };
 use maplit::hashmap;
 use std::collections::HashMap;
@@ -18,6 +15,13 @@ thread_local! {
         ObjectKey::Symbol(OP_REM) => ObjectRef::new(Func2(rem)),
         ObjectKey::Symbol(OP_ADD) => ObjectRef::new(Func2(add)),
         ObjectKey::Symbol(OP_SUB) => ObjectRef::new(Func2(sub)),
+        ObjectKey::Symbol(OP_GT) => ObjectRef::new(Func2(gt)),
+        ObjectKey::Symbol(OP_LT) => ObjectRef::new(Func2(lt)),
+        ObjectKey::Symbol(OP_GTE) => ObjectRef::new(Func2(gte)),
+        ObjectKey::Symbol(OP_LTE) => ObjectRef::new(Func2(lte)),
+        ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func2(eq)),
+        ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func2(ne)),
+        ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func2(coalesce))
     ];
 }
 
@@ -30,16 +34,25 @@ impl ObjectBase for i64 {
         ToString::to_string(self)
     }
 
-    fn type_name(&self) -> Symbol {
-        TY_INT
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        INTEGER_OPERATIONS.with(|ops| {
+            ops.clone()
+                .into_iter()
+                .map(|(key, value)| (key, value.type_data().clone()))
+                .collect::<Vec<_>>()
+        })
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_INT, vec![])
     }
 }
 
 fn negate(arg: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     if let Some(value) = arg.value::<i64>() {
-        Ok(ObjectRef::new(!value))
+        Ok(ObjectRef::new_int(-value))
     } else {
-        Err(RuntimeError::InvalidType(TY_INT, arg.type_name()))
+        Err(RuntimeError::InvalidType(TY_INT, arg.tag()))
     }
 }
 
@@ -47,9 +60,9 @@ fn mul(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     let args = (lhs.value::<i64>(), rhs.value::<i64>());
 
     match args {
-        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs * rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs * rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
         (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }
@@ -58,9 +71,9 @@ fn div(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     let args = (lhs.value::<i64>(), rhs.value::<i64>());
 
     match args {
-        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs * rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs * rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
         (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }
@@ -69,9 +82,9 @@ fn rem(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     let args = (lhs.value::<i64>(), rhs.value::<i64>());
 
     match args {
-        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs % rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs % rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
         (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }
@@ -80,9 +93,9 @@ fn add(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     let args = (lhs.value::<i64>(), rhs.value::<i64>());
 
     match args {
-        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs + rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs + rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
         (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
     }
 }
@@ -91,9 +104,124 @@ fn sub(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     let args = (lhs.value::<i64>(), rhs.value::<i64>());
 
     match args {
-        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new(lhs - rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.type_name())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.type_name())),
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs - rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
         (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+    }
+}
+
+fn gt(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
+    let args = (lhs.value::<i64>(), rhs.value::<i64>());
+
+    match args {
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs > rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+    }
+}
+
+fn lt(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
+    let args = (lhs.value::<i64>(), rhs.value::<i64>());
+
+    match args {
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs < rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+    }
+}
+
+fn gte(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
+    let args = (lhs.value::<i64>(), rhs.value::<i64>());
+
+    match args {
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs >= rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+    }
+}
+
+fn lte(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
+    let args = (lhs.value::<i64>(), rhs.value::<i64>());
+
+    match args {
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs <= rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+    }
+}
+
+fn eq(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
+    let args = (lhs.value::<i64>(), rhs.value::<i64>());
+
+    match args {
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs == rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+    }
+}
+
+fn ne(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
+    let args = (lhs.value::<i64>(), rhs.value::<i64>());
+
+    match args {
+        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs != rhs)),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
+        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_add_with_two_ints() -> Result<(), RuntimeError> {
+        let lhs = ObjectRef::new_int(40);
+        let rhs = ObjectRef::new_int(2);
+        let result = lhs.get(&ObjectKey::Symbol(OP_ADD))?.call(vec![lhs, rhs].as_slice())?;
+
+        assert_eq!(42, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_with_lhs_int_rhs_none() -> Result<(), RuntimeError> {
+        let lhs = ObjectRef::new_int(40);
+        let rhs = ObjectRef::NONE;
+        let result = lhs.get(&ObjectKey::Symbol(OP_ADD))?.call(vec![lhs, rhs].as_slice());
+
+        assert!(result.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_with_lhs_none_rhs_int() -> Result<(), RuntimeError> {
+        let lhs = ObjectRef::NONE;
+        let rhs = ObjectRef::new_int(40);
+        let result = rhs.get(&ObjectKey::Symbol(OP_ADD))?.call(vec![lhs, rhs].as_slice());
+
+        assert!(result.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_eq_with_two_ints() -> Result<(), RuntimeError> {
+        let lhs = ObjectRef::new_int(40);
+        let rhs = ObjectRef::new_int(2);
+        let result = lhs.get(&ObjectKey::Symbol(OP_EQ))?.call(vec![lhs, rhs].as_slice())?;
+
+        assert_eq!(false, *result.value::<bool>().unwrap());
+
+        Ok(())
     }
 }

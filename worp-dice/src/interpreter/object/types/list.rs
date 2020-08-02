@@ -1,10 +1,14 @@
 use crate::interpreter::{
-    object::{ObjectBase, ObjectRef},
-    symbol::{common::types::TY_LIST, Symbol},
+    object::{reflection::TypeData, ObjectBase, ObjectKey, ObjectRef},
+    symbol::common::types::TY_LIST,
 };
 
 impl ObjectBase for Vec<ObjectRef> {
-    fn type_name(&self) -> Symbol {
-        TY_LIST
+    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
+        Vec::new()
+    }
+
+    fn type_data(&self) -> TypeData {
+        TypeData::new(TY_LIST, Vec::new())
     }
 }
