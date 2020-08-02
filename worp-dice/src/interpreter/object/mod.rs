@@ -35,7 +35,7 @@ pub trait ObjectBase: Any + Debug {
 
     /// Get a string representation of the type's value.
     fn to_string(&self) -> String {
-        format!("[{}]", self.type_data().tag())
+        format!("[{}]", *self.type_data().tag())
     }
 }
 

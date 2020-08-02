@@ -23,6 +23,8 @@ thread_local! {
         ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func2(ne)),
         ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func2(coalesce))
     ];
+
+    static TYPE_DATA: TypeData = TypeData::new(TY_INT, Vec::new());
 }
 
 impl ObjectBase for i64 {
@@ -44,7 +46,7 @@ impl ObjectBase for i64 {
     }
 
     fn type_data(&self) -> TypeData {
-        TypeData::new(TY_INT, vec![])
+        TYPE_DATA.with(Clone::clone)
     }
 }
 
@@ -62,8 +64,7 @@ fn mul(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs * rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -73,8 +74,7 @@ fn div(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs * rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -84,8 +84,7 @@ fn rem(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs % rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -95,8 +94,7 @@ fn add(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs + rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -106,8 +104,7 @@ fn sub(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs - rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -117,8 +114,7 @@ fn gt(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs > rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -128,8 +124,7 @@ fn lt(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs < rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -139,8 +134,7 @@ fn gte(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs >= rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -150,8 +144,7 @@ fn lte(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs <= rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -161,8 +154,7 @@ fn eq(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs == rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -172,8 +164,7 @@ fn ne(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs != rhs)),
         (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
-        (None, Some(_)) => Err(RuntimeError::InvalidType(TY_INT, lhs.tag())),
-        (None, None) => Err(RuntimeError::Aborted), // TODO Figure out a good error for this?
+        _ => unreachable!(),
     }
 }
 
@@ -197,17 +188,6 @@ mod test {
         let lhs = ObjectRef::new_int(40);
         let rhs = ObjectRef::NONE;
         let result = lhs.get(&ObjectKey::Symbol(OP_ADD))?.call(vec![lhs, rhs].as_slice());
-
-        assert!(result.is_err());
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_add_with_lhs_none_rhs_int() -> Result<(), RuntimeError> {
-        let lhs = ObjectRef::NONE;
-        let rhs = ObjectRef::new_int(40);
-        let result = rhs.get(&ObjectKey::Symbol(OP_ADD))?.call(vec![lhs, rhs].as_slice());
 
         assert!(result.is_err());
 

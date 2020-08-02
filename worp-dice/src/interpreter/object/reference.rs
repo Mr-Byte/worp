@@ -1,15 +1,14 @@
 use super::{Object, ObjectBase};
 use std::{ops::Deref, rc::Rc};
 
-// TODO: Figure out how to optimizie representation of strings and lists.
 #[derive(Clone, Debug)]
 enum ObjectVariant {
     None(()),
     Bool(bool),
     Int(i64),
     Float(f64),
-    List(Rc<Vec<ObjectRef>>),
-    String(Rc<String>),
+    List(Rc<[ObjectRef]>),
+    String(Rc<str>),
     Object(Rc<dyn Object>),
 }
 
@@ -31,12 +30,12 @@ impl ObjectRef {
         Self(ObjectVariant::Float(value))
     }
 
-    pub fn new_list(value: Vec<ObjectRef>) -> Self {
-        Self(ObjectVariant::List(Rc::new(value)))
+    pub fn new_list(value: impl Into<Rc<[ObjectRef]>>) -> Self {
+        Self(ObjectVariant::List(value.into()))
     }
 
-    pub fn new_string(value: String) -> Self {
-        Self(ObjectVariant::String(Rc::new(value)))
+    pub fn new_string(value: impl Into<Rc<str>>) -> Self {
+        Self(ObjectVariant::String(value.into()))
     }
 
     pub fn new(value: impl ObjectBase + 'static) -> Self {
@@ -53,8 +52,8 @@ impl Deref for ObjectRef {
             ObjectVariant::Bool(ref obj) => &*obj,
             ObjectVariant::Int(ref obj) => &*obj,
             ObjectVariant::Float(ref obj) => &*obj,
-            ObjectVariant::List(ref obj) => &**obj,
-            ObjectVariant::String(ref obj) => &**obj,
+            ObjectVariant::List(ref obj) => obj,
+            ObjectVariant::String(ref obj) => obj,
             ObjectVariant::Object(ref obj) => &**obj,
         }
     }

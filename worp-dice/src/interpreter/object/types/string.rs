@@ -3,8 +3,9 @@ use crate::interpreter::{
     symbol::common::types::TY_STRING,
 };
 use object::{reflection::TypeData, ObjectKey};
+use std::rc::Rc;
 
-impl ObjectBase for String {
+impl ObjectBase for Rc<str> {
     fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
         Vec::new()
     }
