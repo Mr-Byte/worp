@@ -1,6 +1,6 @@
 use crate::interpreter::{
     error::RuntimeError,
-    object::{reference::ObjectRef, reflection::TypeData, ObjectBase, ObjectKey},
+    object::{reference::ObjectRef, reflection::TypeData, Object, ObjectBase, ObjectKey},
     symbol::common::types::TY_FUNC,
 };
 use std::fmt::Debug;
@@ -25,8 +25,15 @@ where
         Vec::new()
     }
 
-    fn type_data(&self) -> TypeData {
+    fn type_data() -> TypeData
+    where
+        Self: Sized,
+    {
         TypeData::new(TY_FUNC, vec![])
+    }
+
+    fn instance_type_data(&self) -> TypeData {
+        Self::type_data().clone()
     }
 }
 
@@ -42,6 +49,30 @@ where
 pub struct Func1<F>(pub F)
 where
     F: Fn(ObjectRef) -> Result<ObjectRef, RuntimeError>;
+
+impl<F> Func1<F>
+where
+    F: Fn(ObjectRef) -> Result<ObjectRef, RuntimeError>,
+{
+    // TODO: Work out the bounds on this to work.
+    pub fn new<A, R, F1>(func: F1) -> Func1<impl Fn(ObjectRef) -> Result<ObjectRef, RuntimeError>>
+    where
+        A: Object,
+        R: Object,
+        F1: Fn(&A) -> R,
+    {
+        Func1(move |arg| {
+            if let Some(value) = arg.value::<A>() {
+                Ok(ObjectRef::new(func(value)))
+            } else {
+                Err(RuntimeError::InvalidType(
+                    A::type_data().type_tag().clone(),
+                    arg.instance_type_data().type_tag().clone(),
+                ))
+            }
+        })
+    }
+}
 
 impl<F> ObjectBase for Func1<F>
 where
@@ -59,8 +90,15 @@ where
         Vec::new()
     }
 
-    fn type_data(&self) -> TypeData {
+    fn type_data() -> TypeData
+    where
+        Self: Sized,
+    {
         TypeData::new(TY_FUNC, vec![])
+    }
+
+    fn instance_type_data(&self) -> TypeData {
+        Self::type_data().clone()
     }
 }
 
@@ -93,8 +131,15 @@ where
         Vec::new()
     }
 
-    fn type_data(&self) -> TypeData {
+    fn type_data() -> TypeData
+    where
+        Self: Sized,
+    {
         TypeData::new(TY_FUNC, vec![])
+    }
+
+    fn instance_type_data(&self) -> TypeData {
+        Self::type_data().clone()
     }
 }
 
@@ -127,8 +172,15 @@ where
         Vec::new()
     }
 
-    fn type_data(&self) -> TypeData {
+    fn type_data() -> TypeData
+    where
+        Self: Sized,
+    {
         TypeData::new(TY_FUNC, vec![])
+    }
+
+    fn instance_type_data(&self) -> TypeData {
+        Self::type_data().clone()
     }
 }
 
@@ -161,8 +213,15 @@ where
         Vec::new()
     }
 
-    fn type_data(&self) -> TypeData {
+    fn type_data() -> TypeData
+    where
+        Self: Sized,
+    {
         TypeData::new(TY_FUNC, vec![])
+    }
+
+    fn instance_type_data(&self) -> TypeData {
+        Self::type_data().clone()
     }
 }
 

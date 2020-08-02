@@ -9,7 +9,11 @@ impl ObjectBase for Rc<[ObjectRef]> {
         Vec::new()
     }
 
-    fn type_data(&self) -> TypeData {
+    fn type_data() -> TypeData {
         TypeData::new(TY_LIST, Vec::new())
+    }
+
+    fn instance_type_data(&self) -> TypeData {
+        Self::type_data().clone()
     }
 }

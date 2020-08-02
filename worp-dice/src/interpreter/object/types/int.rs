@@ -8,7 +8,7 @@ use maplit::hashmap;
 use std::collections::HashMap;
 
 thread_local! {
-    static INTEGER_OPERATIONS: HashMap<ObjectKey, ObjectRef> = hashmap! [
+    static OPERATIONS: HashMap<ObjectKey, ObjectRef> = hashmap! [
         ObjectKey::Symbol(OP_NEG) => ObjectRef::new(Func1(negate)),
         ObjectKey::Symbol(OP_MUL) => ObjectRef::new(Func2(mul)),
         ObjectKey::Symbol(OP_DIV) => ObjectRef::new(Func2(div)),
@@ -29,7 +29,7 @@ thread_local! {
 
 impl ObjectBase for i64 {
     fn get(&self, key: &ObjectKey) -> Result<ObjectRef, RuntimeError> {
-        INTEGER_OPERATIONS.with(|ops_table| ops_table.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone())))
+        OPERATIONS.with(|ops_table| ops_table.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone())))
     }
 
     fn to_string(&self) -> String {
@@ -37,16 +37,20 @@ impl ObjectBase for i64 {
     }
 
     fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
-        INTEGER_OPERATIONS.with(|ops| {
+        OPERATIONS.with(|ops| {
             ops.clone()
                 .into_iter()
-                .map(|(key, value)| (key, value.type_data().clone()))
+                .map(|(key, value)| (key, value.instance_type_data().clone()))
                 .collect::<Vec<_>>()
         })
     }
 
-    fn type_data(&self) -> TypeData {
+    fn type_data() -> TypeData {
         TYPE_DATA.with(Clone::clone)
+    }
+
+    fn instance_type_data(&self) -> TypeData {
+        Self::type_data().clone()
     }
 }
 
@@ -54,7 +58,7 @@ fn negate(arg: ObjectRef) -> Result<ObjectRef, RuntimeError> {
     if let Some(value) = arg.value::<i64>() {
         Ok(ObjectRef::new_int(-value))
     } else {
-        Err(RuntimeError::InvalidType(TY_INT, arg.tag()))
+        Err(RuntimeError::InvalidType(TY_INT, arg.instance_type_data().type_tag().clone()))
     }
 }
 
@@ -63,7 +67,7 @@ fn mul(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs * rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -73,7 +77,7 @@ fn div(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs * rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -83,7 +87,7 @@ fn rem(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs % rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -93,7 +97,7 @@ fn add(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs + rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -103,7 +107,7 @@ fn sub(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_int(lhs - rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -113,7 +117,7 @@ fn gt(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs > rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -123,7 +127,7 @@ fn lt(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs < rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -133,7 +137,7 @@ fn gte(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs >= rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -143,7 +147,7 @@ fn lte(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs <= rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -153,7 +157,7 @@ fn eq(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs == rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }
@@ -163,7 +167,7 @@ fn ne(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
 
     match args {
         (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs != rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.tag())),
+        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
         _ => unreachable!(),
     }
 }

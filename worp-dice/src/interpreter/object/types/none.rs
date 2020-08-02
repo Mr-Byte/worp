@@ -8,7 +8,11 @@ impl ObjectBase for () {
         Vec::new()
     }
 
-    fn type_data(&self) -> TypeData {
+    fn type_data() -> TypeData {
         TypeData::new(TY_NONE, Vec::new())
+    }
+
+    fn instance_type_data(&self) -> TypeData {
+        Self::type_data().clone()
     }
 }

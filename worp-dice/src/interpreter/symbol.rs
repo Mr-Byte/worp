@@ -50,6 +50,7 @@ pub mod common {
         pub const OP_EQ: Symbol = Symbol::new_static("#op_eq");
         pub const OP_NE: Symbol = Symbol::new_static("#op_ne");
 
+        pub const OP_NOT: Symbol = Symbol::new_static("#op_not");
         pub const OP_AND: Symbol = Symbol::new_static("#op_and");
         pub const OP_OR: Symbol = Symbol::new_static("#op_or");
 

@@ -1,7 +1,6 @@
 use crate::interpreter::symbol::Symbol;
 use std::{
     cell::{Ref, RefCell},
-    ops::Deref,
     rc::Rc,
 };
 
@@ -11,26 +10,26 @@ pub struct TypeData {
 }
 
 struct TypeDataInner {
-    tag: Symbol,
-    tags: Vec<Symbol>,
+    type_tag: Symbol,
+    type_tag_impls: Vec<Symbol>,
 }
 
 impl TypeData {
-    pub fn new(tag: Symbol, tags: Vec<Symbol>) -> Self {
+    pub fn new(type_tag: Symbol, type_tag_impls: Vec<Symbol>) -> Self {
         Self {
-            inner: Rc::new(RefCell::new(TypeDataInner { tag, tags })),
+            inner: Rc::new(RefCell::new(TypeDataInner { type_tag, type_tag_impls })),
         }
     }
 
-    pub fn tag(&self) -> impl Deref<Target = Symbol> + '_ {
-        Ref::map(self.inner.borrow(), |inner| &inner.tag)
+    pub fn type_tag(&self) -> Ref<'_, Symbol> {
+        Ref::map(self.inner.borrow(), |inner| &inner.type_tag)
     }
 
-    pub fn tags(&self) -> impl Deref<Target = [Symbol]> + '_ {
-        Ref::map(self.inner.borrow(), |inner| inner.tags.as_slice())
+    pub fn type_tag_impls(&self) -> Ref<'_, [Symbol]> {
+        Ref::map(self.inner.borrow(), |inner| inner.type_tag_impls.as_slice())
     }
 
     pub fn add_tag(&mut self, tag: Symbol) {
-        self.inner.borrow_mut().tags.push(tag)
+        self.inner.borrow_mut().type_tag_impls.push(tag)
     }
 }
