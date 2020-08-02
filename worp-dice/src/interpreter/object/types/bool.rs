@@ -9,12 +9,12 @@ use std::collections::HashMap;
 
 thread_local! {
     static OPERATIONS: HashMap<ObjectKey, ObjectRef> = hashmap! [
-        ObjectKey::Symbol(OP_NOT) => ObjectRef::new(Func1(not)),
-        ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func2(eq)),
-        ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func2(ne)),
-        ObjectKey::Symbol(OP_AND) => ObjectRef::new(Func2(and)),
-        ObjectKey::Symbol(OP_OR) => ObjectRef::new(Func2(or)),
-        ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func2(coalesce))
+        ObjectKey::Symbol(OP_NOT) => ObjectRef::new(Func1::new(not)),
+        ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func2::new(eq)),
+        ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func2::new(ne)),
+        ObjectKey::Symbol(OP_AND) => ObjectRef::new(Func2::new(and)),
+        ObjectKey::Symbol(OP_OR) => ObjectRef::new(Func2::new(or)),
+        ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func2::from_raw(coalesce))
     ];
 
     static TYPE_DATA: TypeData = TypeData::new(TY_INT, Vec::new());
@@ -47,52 +47,24 @@ impl ObjectBase for bool {
     }
 }
 
-fn not(arg: ObjectRef) -> Result<ObjectRef, RuntimeError> {
-    if let Some(value) = arg.value::<bool>() {
-        Ok(ObjectRef::new_bool(!value))
-    } else {
-        Err(RuntimeError::InvalidType(TY_INT, arg.instance_type_data().type_tag().clone()))
-    }
+fn not(arg: &bool) -> bool {
+    !arg
 }
 
-fn eq(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
-    let args = (lhs.value::<bool>(), rhs.value::<bool>());
-
-    match args {
-        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs == rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
-        _ => unreachable!(),
-    }
+fn eq(lhs: &bool, rhs: &bool) -> bool {
+    lhs == rhs
 }
 
-fn ne(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
-    let args = (lhs.value::<bool>(), rhs.value::<bool>());
-
-    match args {
-        (Some(lhs), Some(rhs)) => Ok(ObjectRef::new_bool(lhs != rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
-        _ => unreachable!(),
-    }
+fn ne(lhs: &bool, rhs: &bool) -> bool {
+    lhs != rhs
 }
 
-fn and(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
-    let args = (lhs.value::<bool>(), rhs.value::<bool>());
-
-    match args {
-        (Some(&lhs), Some(&rhs)) => Ok(ObjectRef::new_bool(lhs && rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
-        _ => unreachable!(),
-    }
+fn and(lhs: &bool, rhs: &bool) -> bool {
+    *lhs && *rhs
 }
 
-fn or(lhs: ObjectRef, rhs: ObjectRef) -> Result<ObjectRef, RuntimeError> {
-    let args = (lhs.value::<bool>(), rhs.value::<bool>());
-
-    match args {
-        (Some(&lhs), Some(&rhs)) => Ok(ObjectRef::new_bool(lhs || rhs)),
-        (Some(_), None) => Err(RuntimeError::InvalidType(TY_INT, rhs.instance_type_data().type_tag().clone())),
-        _ => unreachable!(),
-    }
+fn or(lhs: &bool, rhs: &bool) -> bool {
+    *lhs || *rhs
 }
 
 #[cfg(test)]
@@ -101,8 +73,8 @@ mod test {
 
     #[test]
     fn test_eq_with_two_bools() -> Result<(), RuntimeError> {
-        let lhs = ObjectRef::new_bool(true);
-        let rhs = ObjectRef::new_bool(false);
+        let lhs = ObjectRef::new(true);
+        let rhs = ObjectRef::new(false);
         let result = lhs.get(&ObjectKey::Symbol(OP_EQ))?.call(vec![lhs, rhs].as_slice())?;
 
         assert_eq!(false, *result.value::<bool>().unwrap());
