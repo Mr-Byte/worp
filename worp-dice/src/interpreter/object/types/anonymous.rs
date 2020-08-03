@@ -1,8 +1,6 @@
-use crate::interpreter::object::operator::coalesce;
-use crate::interpreter::object::types::func::Func;
-use crate::interpreter::object::{reflection::TypeData, ObjectBase, ObjectKey, ObjectRef};
 use crate::interpreter::{
     error::RuntimeError,
+    object::{operator::coalesce, reflection::TypeData, types::func::Func, ObjectBase, ObjectKey, ObjectRef},
     symbol::common::{operators::OP_COALESCE, types::TY_OBJECT},
 };
 use maplit::hashmap;

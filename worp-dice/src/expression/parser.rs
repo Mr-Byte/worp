@@ -69,18 +69,14 @@ fn reserved(input: &str) -> IResult<&str, (), VerboseError<&str>> {
     )(input)
 }
 
-fn identifier(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
+fn identifier(input: &str) -> IResult<&str, Symbol, VerboseError<&str>> {
     let symbol_start = alt((tag("_"), alpha1));
     let symbol_remainder = cut(many0(alt((tag("_"), alphanumeric1))));
     let symbol = recognize(pair(symbol_start, symbol_remainder));
 
     context(
         "identifier",
-        delimited(
-            multispace0,
-            map(symbol, |symbol: &str| Literal::Identifier(Symbol::new(symbol))),
-            multispace0,
-        ),
+        delimited(multispace0, map(symbol, |symbol: &str| Symbol::new(symbol)), multispace0),
     )(input)
 }
 
@@ -150,7 +146,11 @@ fn object_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     let field = context(
         "field",
         map(
-            alt((identifier, string_literal, delimited(open_square, int_literal, close_square))),
+            alt((
+                map(identifier, Literal::Identifier),
+                string_literal,
+                delimited(open_square, int_literal, close_square),
+            )),
             |value| match value {
                 Literal::Integer(index) => ObjectKey::Index(index),
                 Literal::Identifier(symbol) => ObjectKey::Symbol(symbol),
@@ -183,7 +183,7 @@ fn literal(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
                 int_literal,
                 string_literal,
                 boolean_literal,
-                identifier,
+                map(identifier, Literal::Identifier),
                 list_literal,
                 object_literal,
             )),
@@ -215,7 +215,7 @@ fn dice_roll(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
 enum CallType {
     Function(Vec<Expression>),
     ArrayIndex(Expression),
-    FieldAccess(Expression),
+    FieldAccess(Symbol),
     SafeAccess,
 }
 
@@ -254,7 +254,7 @@ fn field_access(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
     context(
         "field access",
         map(delimited(multispace0, preceded(field_acces_op, identifier), multispace0), |identifier| {
-            CallType::FieldAccess(Expression::Literal(identifier))
+            CallType::FieldAccess(identifier)
         }),
     )(input)
 }
@@ -267,7 +267,7 @@ fn access(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     fold_many0(call, init, |acc, call_type| match call_type {
         CallType::Function(args) => Expression::FunctionCall(Box::new(acc), args),
         CallType::ArrayIndex(arg) => Expression::Index(Box::new(acc), Box::new(arg)),
-        CallType::FieldAccess(field) => Expression::FieldAccess(Box::new(acc), Box::new(field)),
+        CallType::FieldAccess(field) => Expression::FieldAccess(Box::new(acc), field),
         CallType::SafeAccess => Expression::SafeAccess(Box::new(acc)),
     })(input)
 }

@@ -1,9 +1,17 @@
 use super::{
     error::RuntimeError,
     object::{AnonymouseObject, ObjectKey, ObjectRef},
-    symbol::common::operators::{OP_ADD, OP_AND, OP_COALESCE, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_OR, OP_REM, OP_SUB},
+    symbol::{
+        common::{
+            operators::{
+                OP_ADD, OP_AND, OP_COALESCE, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB,
+            },
+            types::TY_BOOL,
+        },
+        Symbol,
+    },
 };
-use crate::expression::{BinaryOperator, Expression, Literal};
+use crate::expression::{BinaryOperator, Expression, Literal, UnaryOperator};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug)]
@@ -14,7 +22,19 @@ pub struct ExecutionContext {
 #[derive(Default, Debug)]
 struct Environment {
     parent: Option<Rc<Environment>>,
-    variables: RefCell<HashMap<String, ObjectRef>>,
+    variables: RefCell<HashMap<Symbol, ObjectRef>>,
+}
+
+impl Environment {
+    fn variable(&self, name: &Symbol) -> Result<ObjectRef, RuntimeError> {
+        if let Some(variable) = self.variables.borrow().get(name) {
+            Ok(variable.clone())
+        } else if let Some(variable) = self.parent.as_ref().map(|parent| parent.variable(name)).transpose()? {
+            Ok(variable.clone())
+        } else {
+            Err(RuntimeError::VariableNotFound(name.clone()))
+        }
+    }
 }
 
 impl ExecutionContext {
@@ -26,7 +46,7 @@ impl ExecutionContext {
 impl ExecutionContext {
     pub fn eval_expression(&self, input: &str) -> Result<ObjectRef, RuntimeError> {
         let expr: Expression = input.parse()?;
-        eval_expression(expr)
+        eval_expression(expr, &self.inner)
     }
 
     pub fn scoped(&self) -> ExecutionContext {
@@ -38,29 +58,64 @@ impl ExecutionContext {
         }
     }
 
-    pub fn add_variable(&mut self, name: impl Into<String>, instance: ObjectRef) {
-        self.inner.variables.borrow_mut().insert(name.into(), instance);
+    pub fn variable(&self, name: &Symbol) -> Result<ObjectRef, RuntimeError> {
+        self.inner.variable(name)
+    }
+
+    pub fn add_variable(&mut self, name: Symbol, instance: ObjectRef) {
+        self.inner.variables.borrow_mut().insert(name, instance);
     }
 }
 
-fn eval_expression(expression: Expression) -> Result<ObjectRef, RuntimeError> {
-    match expression {
-        Expression::Literal(literal) => eval_literal(literal),
-        Expression::Symbol(_) => Err(RuntimeError::Aborted),
-        Expression::SafeAccess(_) => Err(RuntimeError::Aborted),
-        Expression::FieldAccess(_, _) => Err(RuntimeError::Aborted),
-        Expression::FunctionCall(_, _) => Err(RuntimeError::Aborted),
-        Expression::Index(_, _) => Err(RuntimeError::Aborted),
-        Expression::Unary(_, _) => Err(RuntimeError::Aborted),
-        Expression::Binary(op, lhs, rhs) => eval_bin_op(op, lhs, rhs),
-        Expression::Range(_, _, _) => Err(RuntimeError::Aborted),
-        Expression::Conditional(_, _, _) => Err(RuntimeError::Aborted),
+fn eval_expression(expr: Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    match expr {
+        Expression::Literal(literal) => eval_literal(literal, environment),
+        Expression::SafeAccess(_) => Err(RuntimeError::Aborted), // TODO: Is this the right representation?
+        Expression::FieldAccess(expr, field) => eval_field_access(*expr, field, environment),
+        Expression::FunctionCall(_, _) => Err(RuntimeError::Aborted), // TODO: Do I need method calls, too?
+        Expression::Index(_, _) => Err(RuntimeError::Aborted),        //eval_index(expr, index, environment),
+        Expression::Unary(op, expr) => eval_unary(op, *expr, environment),
+        Expression::Binary(op, lhs, rhs) => eval_binary(op, *lhs, *rhs, environment),
+        Expression::Range(op, lower, upper) => Err(RuntimeError::Aborted),
+        Expression::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate, environment),
     }
 }
 
-fn eval_bin_op(op: BinaryOperator, lhs: Box<Expression>, rhs: Box<Expression>) -> Result<ObjectRef, RuntimeError> {
-    let lhs = eval_expression(*lhs)?;
-    let rhs = eval_expression(*rhs)?;
+fn eval_conditional(
+    condition: Box<Expression>,
+    body: Box<Expression>,
+    alternate: Option<Box<Expression>>,
+    environment: &Environment,
+) -> Result<ObjectRef, RuntimeError> {
+    let condition_result = eval_expression(*condition, environment)?;
+    let condition = *condition_result
+        .value::<bool>()
+        .ok_or_else(|| RuntimeError::InvalidType(TY_BOOL, condition_result.instance_type_data().type_tag().clone()))?;
+
+    if condition {
+        eval_expression(*body, environment)
+    } else {
+        if let Some(alternate) = alternate {
+            eval_expression(*alternate, environment)
+        } else {
+            Ok(ObjectRef::NONE)
+        }
+    }
+}
+
+fn eval_unary(op: UnaryOperator, expr: Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    let object_ref = eval_expression(expr, environment)?;
+
+    match op {
+        UnaryOperator::Negate => object_ref.get(&ObjectKey::Symbol(OP_NEG))?.call(&[object_ref]),
+        UnaryOperator::Not => object_ref.get(&ObjectKey::Symbol(OP_NOT))?.call(&[object_ref]),
+    }
+}
+
+fn eval_binary(op: BinaryOperator, lhs: Expression, rhs: Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    let lhs = eval_expression(lhs, environment)?;
+    // TODO: Only evaluate this when needed.
+    let rhs = eval_expression(rhs, environment)?;
 
     match op {
         BinaryOperator::DiceRoll => Err(RuntimeError::Aborted),
@@ -82,9 +137,16 @@ fn eval_bin_op(op: BinaryOperator, lhs: Box<Expression>, rhs: Box<Expression>) -
     }
 }
 
-fn eval_literal(literal: Literal) -> Result<ObjectRef, RuntimeError> {
+fn eval_field_access(expr: Expression, field: Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    // TODO: Check if `expr` is a safe-access or function call, to properly handle them.
+
+    let object_ref = eval_expression(expr, environment)?;
+    object_ref.get(&ObjectKey::Symbol(field))
+}
+
+fn eval_literal(literal: Literal, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     match literal {
-        Literal::Identifier(_) => Err(RuntimeError::Aborted),
+        Literal::Identifier(ref symbol) => environment.variable(symbol),
         Literal::None => Ok(ObjectRef::NONE),
         Literal::Integer(int) => Ok(ObjectRef::new(int)),
         Literal::Float(float) => Ok(ObjectRef::new(float)),
@@ -93,7 +155,7 @@ fn eval_literal(literal: Literal) -> Result<ObjectRef, RuntimeError> {
         Literal::List(list) => {
             let result = Vec::with_capacity(list.len());
             let result = list.iter().try_fold(result, |mut acc, value| {
-                let value = eval_expression(value.clone())?;
+                let value = eval_expression(value.clone(), environment)?;
                 acc.push(value);
                 Ok::<_, RuntimeError>(acc)
             })?;
@@ -104,7 +166,7 @@ fn eval_literal(literal: Literal) -> Result<ObjectRef, RuntimeError> {
         Literal::Object(object) => {
             let result = HashMap::new();
             let result = object.iter().try_fold(result, |mut acc, (key, value)| {
-                acc.insert(key.clone(), eval_expression(value.clone())?);
+                acc.insert(key.clone(), eval_expression(value.clone(), environment)?);
 
                 Ok::<_, RuntimeError>(acc)
             })?;
@@ -140,6 +202,26 @@ mod test {
     }
 
     #[test]
+    fn test_negate() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression("- -5")?;
+
+        assert_eq!(5, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_not() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression("!true")?;
+
+        assert_eq!(false, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
     fn test_equality() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression("2 + 3 == 5")?;
@@ -166,6 +248,67 @@ mod test {
         let inner = result.get(&ObjectKey::Symbol(Symbol::new_static("test")))?;
 
         assert_eq!(10, *inner.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_field_access() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"{ test: 5 + 5 }.test"#)?;
+        assert_eq!(10, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_variable() -> Result<(), RuntimeError> {
+        let mut context = ExecutionContext::new();
+        context.add_variable(Symbol::new("test"), ObjectRef::new(5));
+        let result = context.eval_expression(r#"test + 5"#)?;
+
+        assert_eq!(10, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_variable_from_parent_scope() -> Result<(), RuntimeError> {
+        let mut context = ExecutionContext::new();
+        context.add_variable(Symbol::new("test"), ObjectRef::new(5));
+        let result = context.scoped().eval_expression(r#"test + 5"#)?;
+
+        assert_eq!(10, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"if 5 == 5 { 10 } else { 12 }"#)?;
+
+        assert_eq!(10, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional_alternate() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"if 5 == 6 { 10 } else { 12 }"#)?;
+
+        assert_eq!(12, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional_no_alternate() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"if 5 == 6 { 10 }"#)?;
+
+        assert_eq!((), *result.value::<()>().unwrap());
 
         Ok(())
     }

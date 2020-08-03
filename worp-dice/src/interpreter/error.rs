@@ -18,4 +18,6 @@ pub enum RuntimeError {
     InvalidType(Symbol, Symbol),
     #[error("Runtime Error: {0}")]
     ParseError(#[from] ParseError),
+    #[error("Runtime Error: Variable {0} not found.")]
+    VariableNotFound(Symbol),
 }
