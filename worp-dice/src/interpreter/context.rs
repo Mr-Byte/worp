@@ -128,4 +128,14 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn test_none() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression("none")?;
+
+        assert_eq!((), *result.value::<()>().unwrap());
+
+        Ok(())
+    }
 }

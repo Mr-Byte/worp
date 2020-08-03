@@ -25,10 +25,6 @@ impl ObjectBase for bool {
         OPERATIONS.with(|ops_table| ops_table.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone())))
     }
 
-    fn to_string(&self) -> String {
-        ToString::to_string(self)
-    }
-
     fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
         OPERATIONS.with(|ops| {
             ops.clone()
@@ -44,6 +40,10 @@ impl ObjectBase for bool {
 
     fn instance_type_data(&self) -> TypeData {
         Self::type_data().clone()
+    }
+
+    fn to_string(&self) -> String {
+        ToString::to_string(self)
     }
 }
 

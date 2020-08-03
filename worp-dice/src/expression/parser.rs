@@ -178,12 +178,12 @@ fn literal(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
         preceded(
             reserved,
             alt((
-                identifier,
                 none_literal,
                 float_literal,
                 int_literal,
                 string_literal,
                 boolean_literal,
+                identifier,
                 list_literal,
                 object_literal,
             )),
