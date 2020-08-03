@@ -1,7 +1,7 @@
 use super::func::Func;
 use crate::interpreter::{
     error::RuntimeError,
-    object::{key::ObjectKey, operator::coalesce, reference::ObjectRef, reflection::TypeData, ObjectBase},
+    object::{key::ObjectKey, reference::ObjectRef, reflection::TypeData, ObjectBase},
     symbol::common::{operators::*, types::TY_FLOAT},
 };
 use maplit::hashmap;
@@ -21,7 +21,6 @@ thread_local! {
         ObjectKey::Symbol(OP_LTE) => ObjectRef::new(Func::new_func2(lte)),
         ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func::new_func2(eq)),
         ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func::new_func2(ne)),
-        ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func::from_raw_func2(coalesce))
     ];
 
     static TYPE_DATA: TypeData = TypeData::new(TY_FLOAT, Vec::new());

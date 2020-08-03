@@ -216,7 +216,7 @@ enum CallType {
     Function(Vec<Expression>),
     ArrayIndex(Expression),
     FieldAccess(Symbol),
-    SafeAccess,
+    SafeAccess(Symbol),
 }
 
 fn function_call(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
@@ -234,8 +234,14 @@ fn function_call(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
 }
 
 fn safe_access(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
-    let safe_access_op = context("safe access operator", delimited(multispace0, tag("?"), multispace0));
-    map(safe_access_op, |_| CallType::SafeAccess)(input)
+    let field_acces_op = context("safe field access operator", tag("?."));
+
+    context(
+        "safe field access",
+        map(delimited(multispace0, preceded(field_acces_op, identifier), multispace0), |identifier| {
+            CallType::SafeAccess(identifier)
+        }),
+    )(input)
 }
 
 fn array_index(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
@@ -268,7 +274,7 @@ fn access(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
         CallType::Function(args) => Expression::FunctionCall(Box::new(acc), args),
         CallType::ArrayIndex(arg) => Expression::Index(Box::new(acc), Box::new(arg)),
         CallType::FieldAccess(field) => Expression::FieldAccess(Box::new(acc), field),
-        CallType::SafeAccess => Expression::SafeAccess(Box::new(acc)),
+        CallType::SafeAccess(field) => Expression::SafeAccess(Box::new(acc), field),
     })(input)
 }
 
@@ -394,7 +400,7 @@ fn range(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
 fn coalesce(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let (input, init) = range(input)?;
 
-    let coalesce_op = context("none coalesce operator", tag(":?"));
+    let coalesce_op = context("none coalesce operator", tag("??"));
 
     fold_many0(preceded(coalesce_op, range), init, |acc, expr| {
         Expression::Binary(BinaryOperator::Coalesce, Box::new(acc), Box::new(expr))

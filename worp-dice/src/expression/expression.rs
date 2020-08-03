@@ -147,7 +147,7 @@ pub enum Expression {
     Literal(Literal),
 
     /// Use of the safe access operator `?` which will short-circuit further evaluation on `none`.
-    SafeAccess(Box<Expression>),
+    SafeAccess(Box<Expression>, Symbol),
 
     //Primary operators
     /// Access to a field, (e.g. `x.y`)
@@ -169,8 +169,8 @@ impl Display for Expression {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expression::Literal(value) => value.fmt(fmt),
-            Expression::SafeAccess(expr) => write!(fmt, "{}?", expr),
-            Expression::FieldAccess(lhs, rhs) => write!(fmt, "{}.{}", lhs, rhs),
+            Expression::SafeAccess(expr, field) => write!(fmt, "{}?.{}", expr, field),
+            Expression::FieldAccess(expr, field) => write!(fmt, "{}.{}", expr, field),
             Expression::FunctionCall(expr, args) => {
                 let args = args.iter().map(ToString::to_string).collect::<Vec<_>>().join(" ");
                 write!(fmt, "{}( {} )", expr, args)

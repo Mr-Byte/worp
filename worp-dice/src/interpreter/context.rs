@@ -3,10 +3,8 @@ use super::{
     object::{AnonymouseObject, ObjectKey, ObjectRef},
     symbol::{
         common::{
-            operators::{
-                OP_ADD, OP_AND, OP_COALESCE, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB,
-            },
-            types::TY_BOOL,
+            operators::{OP_ADD, OP_AND, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB},
+            types::{TY_BOOL, TY_NONE},
         },
         Symbol,
     },
@@ -70,13 +68,13 @@ impl ExecutionContext {
 fn eval_expression(expr: Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     match expr {
         Expression::Literal(literal) => eval_literal(literal, environment),
-        Expression::SafeAccess(_) => Err(RuntimeError::Aborted), // TODO: Is this the right representation?
+        Expression::SafeAccess(expr, field) => eval_safe_field_access(*expr, field, environment),
         Expression::FieldAccess(expr, field) => eval_field_access(*expr, field, environment),
         Expression::FunctionCall(_, _) => Err(RuntimeError::Aborted), // TODO: Do I need method calls, too?
         Expression::Index(_, _) => Err(RuntimeError::Aborted),        //eval_index(expr, index, environment),
         Expression::Unary(op, expr) => eval_unary(op, *expr, environment),
         Expression::Binary(op, lhs, rhs) => eval_binary(op, *lhs, *rhs, environment),
-        Expression::Range(op, lower, upper) => Err(RuntimeError::Aborted),
+        Expression::Range(_op, _lower, _upper) => Err(RuntimeError::Aborted),
         Expression::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate, environment),
     }
 }
@@ -132,14 +130,28 @@ fn eval_binary(op: BinaryOperator, lhs: Expression, rhs: Expression, environment
         BinaryOperator::LessThanOrEquals => lhs.get(&ObjectKey::Symbol(OP_LTE))?.call(&[lhs, rhs]),
         BinaryOperator::LogicalAnd => lhs.get(&ObjectKey::Symbol(OP_AND))?.call(&[lhs, rhs]),
         BinaryOperator::LogicalOr => lhs.get(&ObjectKey::Symbol(OP_OR))?.call(&[lhs, rhs]),
-        BinaryOperator::Coalesce => lhs.get(&ObjectKey::Symbol(OP_COALESCE))?.call(&[lhs, rhs]),
+        BinaryOperator::Coalesce => {
+            if *lhs.instance_type_data().type_tag() != TY_NONE {
+                Ok(lhs)
+            } else {
+                Ok(rhs)
+            }
+        }
         BinaryOperator::Discard => Ok(rhs),
     }
 }
 
-fn eval_field_access(expr: Expression, field: Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
-    // TODO: Check if `expr` is a safe-access or function call, to properly handle them.
+fn eval_safe_field_access(expr: Expression, field: Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    let object_ref = eval_expression(expr, environment)?;
 
+    if *object_ref.instance_type_data().type_tag() != TY_NONE {
+        object_ref.get(&ObjectKey::Symbol(field))
+    } else {
+        Ok(ObjectRef::NONE)
+    }
+}
+
+fn eval_field_access(expr: Expression, field: Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
     object_ref.get(&ObjectKey::Symbol(field))
 }
@@ -256,6 +268,33 @@ mod test {
     fn test_field_access() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"{ test: 5 + 5 }.test"#)?;
+        assert_eq!(10, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_safe_field_access() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"(none)?.test"#)?;
+        assert_eq!((), *result.value::<()>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_nested_safe_field_access() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"{ test: none }.test?.xy"#)?;
+        assert_eq!((), *result.value::<()>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_coalesce() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"{ test: none }.test?.xy ?? 10"#)?;
         assert_eq!(10, *result.value::<i64>().unwrap());
 
         Ok(())

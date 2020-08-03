@@ -2,7 +2,6 @@ use super::error::RuntimeError;
 use std::{any::Any, fmt::Debug};
 
 mod key;
-mod operator;
 mod reference;
 pub mod reflection;
 mod types;
