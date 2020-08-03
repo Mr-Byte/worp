@@ -1,4 +1,4 @@
-use super::func::{Func1, Func2};
+use super::func::Func;
 use crate::interpreter::{
     error::RuntimeError,
     object::{key::ObjectKey, operator::coalesce, reference::ObjectRef, reflection::TypeData, ObjectBase},
@@ -9,19 +9,19 @@ use std::collections::HashMap;
 
 thread_local! {
     static OPERATIONS: HashMap<ObjectKey, ObjectRef> = hashmap! [
-        ObjectKey::Symbol(OP_NEG) => ObjectRef::new(Func1::new(negate)),
-        ObjectKey::Symbol(OP_MUL) => ObjectRef::new(Func2::new(mul)),
-        ObjectKey::Symbol(OP_DIV) => ObjectRef::new(Func2::new(div)),
-        ObjectKey::Symbol(OP_REM) => ObjectRef::new(Func2::new(rem)),
-        ObjectKey::Symbol(OP_ADD) => ObjectRef::new(Func2::new(add)),
-        ObjectKey::Symbol(OP_SUB) => ObjectRef::new(Func2::new(sub)),
-        ObjectKey::Symbol(OP_GT) => ObjectRef::new(Func2::new(gt)),
-        ObjectKey::Symbol(OP_LT) => ObjectRef::new(Func2::new(lt)),
-        ObjectKey::Symbol(OP_GTE) => ObjectRef::new(Func2::new(gte)),
-        ObjectKey::Symbol(OP_LTE) => ObjectRef::new(Func2::new(lte)),
-        ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func2::new(eq)),
-        ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func2::new(ne)),
-        ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func2::from_raw(coalesce))
+        ObjectKey::Symbol(OP_NEG) => ObjectRef::new(Func::new_func1(negate)),
+        ObjectKey::Symbol(OP_MUL) => ObjectRef::new(Func::new_func2(mul)),
+        ObjectKey::Symbol(OP_DIV) => ObjectRef::new(Func::new_func2(div)),
+        ObjectKey::Symbol(OP_REM) => ObjectRef::new(Func::new_func2(rem)),
+        ObjectKey::Symbol(OP_ADD) => ObjectRef::new(Func::new_func2(add)),
+        ObjectKey::Symbol(OP_SUB) => ObjectRef::new(Func::new_func2(sub)),
+        ObjectKey::Symbol(OP_GT) => ObjectRef::new(Func::new_func2(gt)),
+        ObjectKey::Symbol(OP_LT) => ObjectRef::new(Func::new_func2(lt)),
+        ObjectKey::Symbol(OP_GTE) => ObjectRef::new(Func::new_func2(gte)),
+        ObjectKey::Symbol(OP_LTE) => ObjectRef::new(Func::new_func2(lte)),
+        ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func::new_func2(eq)),
+        ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func::new_func2(ne)),
+        ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func::from_raw_func2(coalesce))
     ];
 
     static TYPE_DATA: TypeData = TypeData::new(TY_INT, Vec::new());

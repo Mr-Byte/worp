@@ -1,4 +1,4 @@
-use super::func::{Func1, Func2};
+use super::func::Func;
 use crate::interpreter::{
     error::RuntimeError,
     object::{key::ObjectKey, operator::coalesce, reference::ObjectRef, reflection::TypeData, ObjectBase},
@@ -9,12 +9,12 @@ use std::collections::HashMap;
 
 thread_local! {
     static OPERATIONS: HashMap<ObjectKey, ObjectRef> = hashmap! [
-        ObjectKey::Symbol(OP_NOT) => ObjectRef::new(Func1::new(not)),
-        ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func2::new(eq)),
-        ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func2::new(ne)),
-        ObjectKey::Symbol(OP_AND) => ObjectRef::new(Func2::new(and)),
-        ObjectKey::Symbol(OP_OR) => ObjectRef::new(Func2::new(or)),
-        ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func2::from_raw(coalesce))
+        ObjectKey::Symbol(OP_NOT) => ObjectRef::new(Func::new_func1(not)),
+        ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func::new_func2(eq)),
+        ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func::new_func2(ne)),
+        ObjectKey::Symbol(OP_AND) => ObjectRef::new(Func::new_func2(and)),
+        ObjectKey::Symbol(OP_OR) => ObjectRef::new(Func::new_func2(or)),
+        ObjectKey::Symbol(OP_COALESCE) => ObjectRef::new(Func::from_raw_func2(coalesce))
     ];
 
     static TYPE_DATA: TypeData = TypeData::new(TY_INT, Vec::new());
