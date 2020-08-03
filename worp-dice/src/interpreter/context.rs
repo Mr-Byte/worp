@@ -1,6 +1,6 @@
 use super::{
     error::RuntimeError,
-    object::{ObjectKey, ObjectRef},
+    object::{AnonymouseObject, ObjectKey, ObjectRef},
     symbol::common::operators::{OP_ADD, OP_AND, OP_COALESCE, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_OR, OP_REM, OP_SUB},
 };
 use crate::expression::{BinaryOperator, Expression, Literal};
@@ -88,16 +88,36 @@ fn eval_literal(literal: Literal) -> Result<ObjectRef, RuntimeError> {
         Literal::None => Ok(ObjectRef::NONE),
         Literal::Integer(int) => Ok(ObjectRef::new(int)),
         Literal::Float(float) => Ok(ObjectRef::new(float)),
-        Literal::String(_) => Err(RuntimeError::Aborted),
+        Literal::String(string) => Ok(ObjectRef::new(Into::<Rc<str>>::into(string))),
         Literal::Boolean(bool) => Ok(ObjectRef::new(bool)),
-        Literal::List(_) => Err(RuntimeError::Aborted),
-        Literal::Object(_) => Err(RuntimeError::Aborted),
+        Literal::List(list) => {
+            let result = Vec::with_capacity(list.len());
+            let result = list.iter().try_fold(result, |mut acc, value| {
+                let value = eval_expression(value.clone())?;
+                acc.push(value);
+                Ok::<_, RuntimeError>(acc)
+            })?;
+            let result: Rc<[ObjectRef]> = result.into();
+
+            Ok(ObjectRef::new(result))
+        }
+        Literal::Object(object) => {
+            let result = HashMap::new();
+            let result = object.iter().try_fold(result, |mut acc, (key, value)| {
+                acc.insert(key.clone(), eval_expression(value.clone())?);
+
+                Ok::<_, RuntimeError>(acc)
+            })?;
+
+            Ok(ObjectRef::new(AnonymouseObject::new(result)))
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::interpreter::symbol::Symbol;
 
     #[test]
     fn test_multiplication() -> Result<(), RuntimeError> {
@@ -135,6 +155,17 @@ mod test {
         let result = context.eval_expression("none")?;
 
         assert_eq!((), *result.value::<()>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_object() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"{ test: 5 + 5 }"#)?;
+        let inner = result.get(&ObjectKey::Symbol(Symbol::new_static("test")))?;
+
+        assert_eq!(10, *inner.value::<i64>().unwrap());
 
         Ok(())
     }

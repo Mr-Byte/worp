@@ -9,6 +9,8 @@ mod types;
 
 pub use key::ObjectKey;
 pub use reference::*;
+pub use types::anonymous::AnonymouseObject;
+
 use reflection::TypeData;
 
 /// Trait implemented by types wishing to expose functionality to Dice.

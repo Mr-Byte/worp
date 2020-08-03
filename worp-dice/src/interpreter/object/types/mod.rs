@@ -1,3 +1,4 @@
+pub mod anonymous;
 pub mod bool;
 pub mod float;
 pub mod func;

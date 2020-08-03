@@ -17,4 +17,8 @@ impl ObjectBase for Rc<str> {
     fn instance_type_data(&self) -> TypeData {
         Self::type_data().clone()
     }
+
+    fn to_string(&self) -> String {
+        ToString::to_string(self)
+    }
 }
