@@ -1,4 +1,5 @@
 use super::{object::ObjectKey, symbol::Symbol};
+use crate::expression::ParseError;
 
 #[derive(thiserror::Error, Debug)]
 #[error("Evaluation failed.")]
@@ -15,4 +16,6 @@ pub enum RuntimeError {
     InvalidFunctionArgs(usize, usize),
     #[error("Runtime Error: Invalid type. Expected: {0}, Found: {1}.")]
     InvalidType(Symbol, Symbol),
+    #[error("Runtime Error: {0}")]
+    ParseError(#[from] ParseError),
 }

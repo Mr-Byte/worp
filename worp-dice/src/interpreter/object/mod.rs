@@ -64,7 +64,7 @@ where
 }
 
 impl dyn Object {
-    fn value<V: ObjectBase + 'static>(&self) -> Option<&V> {
+    pub fn value<V: ObjectBase + 'static>(&self) -> Option<&V> {
         self.as_any().downcast_ref::<V>()
     }
 }
