@@ -417,6 +417,20 @@ fn coalesce(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     })(input)
 }
 
+fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    let (input, init) = coalesce(input)?;
+
+    let discard_op = context("discard operator", char(';'));
+
+    fold_many0(preceded(discard_op, coalesce), init, |acc, expr| {
+        Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
+    })(input)
+}
+
+fn block_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    delimited(open_curly, expression, close_curly)(input)
+}
+
 fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     // TODO: Figure out better error handling here.
     map(
@@ -432,24 +446,10 @@ fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     )(input)
 }
 
-fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let (input, init) = coalesce(input)?;
-
-    let discard_op = context("discard operator", char(';'));
-
-    fold_many0(preceded(discard_op, coalesce), init, |acc, expr| {
-        Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
-    })(input)
-}
-
-fn block_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    delimited(open_curly, expression, close_curly)(input)
-}
-
 fn expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let (input, init) = alt((block_expression, if_expression, discard))(input)?;
+    let (input, init) = alt((if_expression, discard))(input)?;
 
-    fold_many0(alt((block_expression, if_expression, discard)), init, |acc, expr| {
+    fold_many0(alt((if_expression, discard)), init, |acc, expr| {
         Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
     })(input)
 }
