@@ -47,27 +47,44 @@ fn double_quote(input: &str) -> IResult<&str, (), VerboseError<&str>> {
 fn reserved(input: &str) -> IResult<&str, (), VerboseError<&str>> {
     context(
         "reserved keyword",
-        cut(not(alt((
-            tag("if"),
-            tag("else"),
-            tag("while"),
-            tag("do"),
-            tag("loop"),
-            tag("for"),
-            tag("break"),
-            tag("continue"),
-            tag("return"),
-            tag("fn"),
-            tag("let"),
-            tag("const"),
-            tag("switch"),
-            tag("match"),
-            tag("when"),
-            tag("table"),
-            tag("struct"),
-            tag("trait"),
-            tag("interface"),
-        )))),
+        cut(alt((
+            not(alt((
+                tag("if"),
+                tag("else"),
+                tag("while"),
+                tag("do"),
+                tag("loop"),
+                tag("for"),
+                tag("break"),
+                tag("continue"),
+                tag("return"),
+                tag("yied"),
+                tag("fn"),
+                tag("let"),
+                tag("const"),
+                tag("switch"),
+                tag("match"),
+                tag("when"),
+                tag("trait"),
+                tag("interface"),
+                tag("in"),
+                tag("operator"),
+            ))),
+            not(alt((
+                tag("static"),
+                tag("class"),
+                tag("struct"),
+                tag("type"),
+                tag("typeof"),
+                tag("instanceof"),
+                tag("self"),
+                tag("enum"),
+                tag("virtaul"),
+                tag("override"),
+                tag("abstract"),
+                tag("final"),
+            ))),
+        ))),
     )(input)
 }
 
@@ -524,6 +541,16 @@ mod test {
     #[test]
     fn method_call() {
         let result = parse(r#"5.to_string()"#).unwrap();
+
+        match result {
+            Expression::FunctionCall(_, _) => (),
+            _ => unreachable!(),
+        }
+    }
+
+    #[test]
+    fn method_call_on_block_expression() {
+        let result = parse(r#"if true { 5 }.to_string()"#).unwrap();
 
         match result {
             Expression::FunctionCall(_, _) => (),
