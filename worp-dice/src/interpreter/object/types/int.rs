@@ -1,8 +1,8 @@
 use super::func::Func;
 use crate::interpreter::{
     error::RuntimeError,
-    object::{key::ObjectKey, reference::ObjectRef, reflection::TypeData, ObjectBase},
-    symbol::common::{operators::*, types::TY_INT},
+    object::{key::ObjectKey, methods::to_string, reference::ObjectRef, reflection::TypeData, ObjectBase},
+    symbol::common::{methods::FN_TO_STRING, operators::*, types::TY_INT},
 };
 use maplit::hashmap;
 use std::collections::HashMap;
@@ -21,6 +21,7 @@ thread_local! {
         ObjectKey::Symbol(OP_LTE) => ObjectRef::new(Func::new_func2(lte)),
         ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func::new_func2(eq)),
         ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func::new_func2(ne)),
+        ObjectKey::Symbol(FN_TO_STRING) => ObjectRef::new(Func::new_func1(to_string::<i64>)),
     ];
 
     static TYPE_DATA: TypeData = TypeData::new(TY_INT, Vec::new());

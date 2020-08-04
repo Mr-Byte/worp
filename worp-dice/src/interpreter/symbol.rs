@@ -55,6 +55,12 @@ pub mod common {
         pub const OP_AND: Symbol = Symbol::new_static("#op_and");
         pub const OP_OR: Symbol = Symbol::new_static("#op_or");
     }
+
+    pub mod methods {
+        use crate::interpreter::symbol::Symbol;
+
+        pub const FN_TO_STRING: Symbol = Symbol::new_static("to_string");
+    }
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use super::{error::RuntimeError, evaluation::eval, object::ObjectRef, symbol::Symbol};
+use super::{error::RuntimeError, evaluator::eval, object::ObjectRef, symbol::Symbol};
 use crate::expression::Expression;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -234,6 +234,39 @@ mod test {
         let result = context.eval_expression("5 + 5 ; none")?;
 
         assert_eq!((), *result.value::<()>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_method_call() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression("5.to_string()")?;
+        let actual = result.value::<Rc<str>>().unwrap().as_ref();
+
+        assert_eq!("5", actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_method_call_with_index() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r##"5["#op_add"](5)"##)?;
+        let actual = result.value::<i64>().unwrap();
+
+        assert_eq!(10, *actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_chained_method_cal() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r##"5["#op_add"](5).to_string()"##)?;
+        let actual = result.value::<Rc<str>>().unwrap().as_ref();
+
+        assert_eq!("10", actual);
 
         Ok(())
     }

@@ -16,6 +16,8 @@ pub enum RuntimeError {
     InvalidFunctionArgs(usize, usize),
     #[error("Runtime Error: Invalid type. Expected: {0}, Found: {1}.")]
     InvalidType(Symbol, Symbol),
+    #[error("Runtime Error: Invalid index type {0}.")]
+    InvalidIndexType(Symbol),
     #[error("Runtime Error: {0}")]
     ParseError(#[from] ParseError),
     #[error("Runtime Error: Variable {0} not found.")]

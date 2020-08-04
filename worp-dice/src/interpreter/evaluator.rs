@@ -23,7 +23,7 @@ fn eval_expression(expr: &Expression, environment: &Environment) -> Result<Objec
         Expression::Literal(literal) => eval_literal(literal, environment),
         Expression::SafeAccess(expr, field) => eval_safe_field_access(expr, field, environment),
         Expression::FieldAccess(expr, field) => eval_field_access(expr, field, environment),
-        Expression::FunctionCall(_, _) => Err(RuntimeError::Aborted), // TODO: Do I need method calls, too?
+        Expression::FunctionCall(expr, args) => eval_function_call(expr, args, environment),
         Expression::Index(expr, index) => eval_index(expr, index, environment),
         Expression::Unary(op, expr) => eval_unary(op, expr, environment),
         Expression::Binary(op, lhs, rhs) => eval_binary(op, lhs, rhs, environment),
@@ -54,18 +54,55 @@ fn eval_conditional(
     }
 }
 
+fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    match expr {
+        Expression::Literal(Literal::Identifier(target)) => {
+            let evaled_args = Vec::with_capacity(args.len());
+            let args = args.iter().try_fold(evaled_args, |mut acc, expr| {
+                let arg = eval_expression(expr, environment)?;
+                acc.push(arg);
+                Ok::<_, RuntimeError>(acc)
+            })?;
+
+            environment.variable(target)?.call(&args)
+        }
+        Expression::FieldAccess(this, method) => {
+            let this = eval_expression(this, environment)?;
+            let mut evaled_args = Vec::with_capacity(args.len() + 1);
+            evaled_args.push(this.clone());
+            let args = args.iter().try_fold(evaled_args, |mut acc, expr| {
+                let arg = eval_expression(expr, environment)?;
+                acc.push(arg);
+                Ok::<_, RuntimeError>(acc)
+            })?;
+            let target = this.get(&ObjectKey::Symbol(method.clone()))?;
+
+            target.call(&args)
+        }
+        Expression::Index(this, method) => {
+            let this = eval_expression(this, environment)?;
+            let method = eval_object_key(method, environment)?;
+
+            let mut evaled_args = Vec::with_capacity(args.len() + 1);
+            evaled_args.push(this.clone());
+            let args = args.iter().try_fold(evaled_args, |mut acc, expr| {
+                let arg = eval_expression(expr, environment)?;
+                acc.push(arg);
+                Ok::<_, RuntimeError>(acc)
+            })?;
+            let target = this.get(&method)?;
+
+            target.call(&args)
+        }
+        _ => unreachable!(),
+    }
+}
+
 fn eval_index(expr: &Expression, index: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     let target = eval_expression(expr, environment)?;
-    let index = eval_expression(index, environment)?;
+    let index = eval_object_key(index, environment)?;
 
-    if let Some(index) = index.value::<i64>() {
-        target.get(&ObjectKey::Index(*index))
-    } else if let Some(index) = index.value::<Rc<str>>() {
-        let index: String = index.to_string();
-        target.get(&ObjectKey::Symbol(Symbol::new(index)))
-    } else {
-        Err(RuntimeError::Aborted)
-    }
+    target.get(&index)
 }
 
 fn eval_unary(op: &UnaryOperator, expr: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
@@ -121,6 +158,19 @@ fn eval_safe_field_access(expr: &Expression, field: &Symbol, environment: &Envir
 fn eval_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
     object_ref.get(&ObjectKey::Symbol(field.clone()))
+}
+
+fn eval_object_key(expr: &Expression, environment: &Environment) -> Result<ObjectKey, RuntimeError> {
+    let index = eval_expression(expr, environment)?;
+
+    if let Some(index) = index.value::<i64>() {
+        Ok(ObjectKey::Index(*index))
+    } else if let Some(index) = index.value::<Rc<str>>() {
+        let index: String = index.to_string();
+        Ok(ObjectKey::Symbol(Symbol::new(index)))
+    } else {
+        Err(RuntimeError::Aborted)
+    }
 }
 
 fn eval_literal(literal: &Literal, environment: &Environment) -> Result<ObjectRef, RuntimeError> {

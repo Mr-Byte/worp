@@ -1,6 +1,6 @@
 pub(in crate::interpreter) mod context;
 pub mod error;
-mod evaluation;
+mod evaluator;
 pub mod object;
 pub mod symbol;
 
