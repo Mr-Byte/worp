@@ -342,7 +342,7 @@ fn comparison(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     let lte_op = context("less than or equals operator", tag("<="));
 
     fold_many0(
-        pair(alt((eq_op, ne_op, gt_op, lt_op, gte_op, lte_op)), additive),
+        pair(alt((eq_op, ne_op, gte_op, lte_op, gt_op, lt_op)), additive),
         init,
         |acc, (op, value)| {
             let op = match op {
@@ -352,7 +352,7 @@ fn comparison(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
                 "<" => BinaryOperator::LessThan,
                 ">=" => BinaryOperator::GreaterThanOrEquals,
                 "<=" => BinaryOperator::LessThanOrEquals,
-                _ => unreachable!(), // TODO: make this an error?
+                _ => unreachable!(),
             };
 
             Expression::Binary(op, Box::new(acc), Box::new(value))
@@ -420,7 +420,7 @@ fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
                 "alternate condition",
                 alt((
                     preceded(else_keyword, delimited(open_curly, expression, cut(close_curly))),
-                    preceded(delimited(multispace0, tag("else"), multispace1), if_expression),
+                    preceded(delimited(multispace0, tag("else"), multispace1), cut(if_expression)),
                 )),
             )),
         )),

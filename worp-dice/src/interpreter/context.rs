@@ -143,7 +143,7 @@ mod test {
     #[test]
     fn test_safe_field_access() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
-        let result = context.eval_expression(r#"(none)?.test"#)?;
+        let result = context.eval_expression(r#"none?.test"#)?;
         assert_eq!((), *result.value::<()>().unwrap());
 
         Ok(())
@@ -219,9 +219,29 @@ mod test {
     }
 
     #[test]
+    fn test_conditional_multiple_alternate() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"if 5 == 6 { 10 } else if 5 == 5 { 42 } else { 12 }"#)?;
+
+        assert_eq!(42, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
     fn test_conditional_no_alternate() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"if 5 == 6 { 10 }"#)?;
+
+        assert_eq!((), *result.value::<()>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional_gte_no_alternate() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"if 5 >= 6 { 10 }"#)?;
 
         assert_eq!((), *result.value::<()>().unwrap());
 
