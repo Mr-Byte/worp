@@ -14,47 +14,61 @@ use crate::expression::{BinaryOperator, Expression, Literal, UnaryOperator};
 use std::{collections::HashMap, rc::Rc};
 
 #[inline]
-pub fn eval(expr: Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+pub fn eval(expr: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     eval_expression(expr, environment)
 }
 
-fn eval_expression(expr: Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_expression(expr: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     match expr {
         Expression::Literal(literal) => eval_literal(literal, environment),
-        Expression::SafeAccess(expr, field) => eval_safe_field_access(*expr, field, environment),
-        Expression::FieldAccess(expr, field) => eval_field_access(*expr, field, environment),
+        Expression::SafeAccess(expr, field) => eval_safe_field_access(expr, field, environment),
+        Expression::FieldAccess(expr, field) => eval_field_access(expr, field, environment),
         Expression::FunctionCall(_, _) => Err(RuntimeError::Aborted), // TODO: Do I need method calls, too?
-        Expression::Index(_, _) => Err(RuntimeError::Aborted),        //eval_index(expr, index, environment),
-        Expression::Unary(op, expr) => eval_unary(op, *expr, environment),
-        Expression::Binary(op, lhs, rhs) => eval_binary(op, *lhs, *rhs, environment),
+        Expression::Index(expr, index) => eval_index(expr, index, environment),
+        Expression::Unary(op, expr) => eval_unary(op, expr, environment),
+        Expression::Binary(op, lhs, rhs) => eval_binary(op, lhs, rhs, environment),
         Expression::Range(_op, _lower, _upper) => Err(RuntimeError::Aborted),
-        Expression::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate, environment),
+        Expression::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate.as_deref(), environment),
     }
 }
 
 fn eval_conditional(
-    condition: Box<Expression>,
-    body: Box<Expression>,
-    alternate: Option<Box<Expression>>,
+    condition: &Expression,
+    body: &Expression,
+    alternate: Option<&Expression>,
     environment: &Environment,
 ) -> Result<ObjectRef, RuntimeError> {
-    let condition_result = eval_expression(*condition, environment)?;
+    let condition_result = eval_expression(condition, environment)?;
     let condition = *condition_result
         .value::<bool>()
         .ok_or_else(|| RuntimeError::InvalidType(TY_BOOL, condition_result.instance_type_data().type_tag().clone()))?;
 
     if condition {
-        eval_expression(*body, environment)
+        eval_expression(body, environment)
     } else {
         if let Some(alternate) = alternate {
-            eval_expression(*alternate, environment)
+            eval_expression(alternate, environment)
         } else {
             Ok(ObjectRef::NONE)
         }
     }
 }
 
-fn eval_unary(op: UnaryOperator, expr: Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_index(expr: &Expression, index: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    let target = eval_expression(expr, environment)?;
+    let index = eval_expression(index, environment)?;
+
+    if let Some(index) = index.value::<i64>() {
+        target.get(&ObjectKey::Index(*index))
+    } else if let Some(index) = index.value::<Rc<str>>() {
+        let index: String = index.to_string();
+        target.get(&ObjectKey::Symbol(Symbol::new(index)))
+    } else {
+        Err(RuntimeError::Aborted)
+    }
+}
+
+fn eval_unary(op: &UnaryOperator, expr: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
     match op {
@@ -63,7 +77,7 @@ fn eval_unary(op: UnaryOperator, expr: Expression, environment: &Environment) ->
     }
 }
 
-fn eval_binary(op: BinaryOperator, lhs: Expression, rhs: Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     let lhs = eval_expression(lhs, environment)?;
     // TODO: Only evaluate this when needed.
     let rhs = eval_expression(rhs, environment)?;
@@ -94,33 +108,33 @@ fn eval_binary(op: BinaryOperator, lhs: Expression, rhs: Expression, environment
     }
 }
 
-fn eval_safe_field_access(expr: Expression, field: Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_safe_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
     if *object_ref.instance_type_data().type_tag() != TY_NONE {
-        object_ref.get(&ObjectKey::Symbol(field))
+        object_ref.get(&ObjectKey::Symbol(field.clone()))
     } else {
         Ok(ObjectRef::NONE)
     }
 }
 
-fn eval_field_access(expr: Expression, field: Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
-    object_ref.get(&ObjectKey::Symbol(field))
+    object_ref.get(&ObjectKey::Symbol(field.clone()))
 }
 
-fn eval_literal(literal: Literal, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_literal(literal: &Literal, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     match literal {
         Literal::Identifier(ref symbol) => environment.variable(symbol),
         Literal::None => Ok(ObjectRef::NONE),
-        Literal::Integer(int) => Ok(ObjectRef::new(int)),
-        Literal::Float(float) => Ok(ObjectRef::new(float)),
-        Literal::String(string) => Ok(ObjectRef::new(Into::<Rc<str>>::into(string))),
-        Literal::Boolean(bool) => Ok(ObjectRef::new(bool)),
+        Literal::Integer(int) => Ok(ObjectRef::new(int.clone())),
+        Literal::Float(float) => Ok(ObjectRef::new(float.clone())),
+        Literal::String(string) => Ok(ObjectRef::new(Into::<Rc<str>>::into(string.clone()))),
+        Literal::Boolean(bool) => Ok(ObjectRef::new(bool.clone())),
         Literal::List(list) => {
             let result = Vec::with_capacity(list.len());
             let result = list.iter().try_fold(result, |mut acc, value| {
-                let value = eval_expression(value.clone(), environment)?;
+                let value = eval_expression(value, environment)?;
                 acc.push(value);
                 Ok::<_, RuntimeError>(acc)
             })?;
@@ -131,7 +145,7 @@ fn eval_literal(literal: Literal, environment: &Environment) -> Result<ObjectRef
         Literal::Object(object) => {
             let result = HashMap::new();
             let result = object.iter().try_fold(result, |mut acc, (key, value)| {
-                acc.insert(key.clone(), eval_expression(value.clone(), environment)?);
+                acc.insert(key.clone(), eval_expression(value, environment)?);
 
                 Ok::<_, RuntimeError>(acc)
             })?;

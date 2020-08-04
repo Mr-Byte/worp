@@ -34,7 +34,7 @@ impl ExecutionContext {
 impl ExecutionContext {
     pub fn eval_expression(&self, input: &str) -> Result<ObjectRef, RuntimeError> {
         let expr: Expression = input.parse()?;
-        eval(expr, &self.inner)
+        eval(&expr, &self.inner)
     }
 
     pub fn scoped(&self) -> ExecutionContext {
@@ -168,6 +168,15 @@ mod test {
     }
 
     #[test]
+    fn test_index_access() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"{ test: 5 + 5 }["test"]"#)?;
+        assert_eq!(10, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
     fn test_variable() -> Result<(), RuntimeError> {
         let mut context = ExecutionContext::new();
         context.add_variable(Symbol::new("test"), ObjectRef::new(5));
@@ -213,6 +222,16 @@ mod test {
     fn test_conditional_no_alternate() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"if 5 == 6 { 10 }"#)?;
+
+        assert_eq!((), *result.value::<()>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_discard_expression_seps() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression("5 + 5 ; none")?;
 
         assert_eq!((), *result.value::<()>().unwrap());
 

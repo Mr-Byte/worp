@@ -428,22 +428,26 @@ fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     )(input)
 }
 
-fn conditional(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    alt((if_expression, coalesce))(input)
-}
-
 fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let (input, init) = conditional(input)?;
+    let (input, init) = coalesce(input)?;
 
     let discard_op = context("discard operator", char(';'));
 
-    fold_many0(preceded(discard_op, conditional), init, |acc, expr| {
+    fold_many0(preceded(discard_op, block_expression), init, |acc, expr| {
+        Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
+    })(input)
+}
+
+fn block_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    let (input, init) = alt((if_expression, discard))(input)?;
+
+    fold_many0(alt((if_expression, discard)), init, |acc, expr| {
         Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
     })(input)
 }
 
 fn expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    context("expression", discard)(input)
+    context("expression", block_expression)(input)
 }
 
 pub fn parse(input: &str) -> Result<Expression, error::ParseError> {
@@ -466,7 +470,7 @@ mod test {
 
     #[test]
     fn test() {
-        let result = parse(r#"{ roll: 6d8, "test": 5;55, [5]: test.roll() }[5]"#);
+        let result = parse(r#"if x { y } if y { z }"#);
 
         match result {
             Ok(ok) => println!("{}", ok),
