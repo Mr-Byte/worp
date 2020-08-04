@@ -48,6 +48,8 @@ fn reserved(input: &str) -> IResult<&str, (), VerboseError<&str>> {
     context(
         "reserved keyword",
         cut(not(alt((
+            tag("if"),
+            tag("else"),
             tag("while"),
             tag("do"),
             tag("loop"),
@@ -67,6 +69,14 @@ fn reserved(input: &str) -> IResult<&str, (), VerboseError<&str>> {
             tag("interface"),
         )))),
     )(input)
+}
+
+fn if_keyword(input: &str) -> IResult<&str, (), VerboseError<&str>> {
+    value((), context("if keyword", delimited(multispace0, tag("if"), multispace1)))(input)
+}
+
+fn else_keyword(input: &str) -> IResult<&str, (), VerboseError<&str>> {
+    value((), context("else keyword", delimited(multispace0, tag("else"), multispace1)))(input)
 }
 
 fn identifier(input: &str) -> IResult<&str, Symbol, VerboseError<&str>> {
@@ -408,20 +418,14 @@ fn coalesce(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
 }
 
 fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let if_keyword = context("if keyword", delimited(multispace0, tag("if"), multispace1));
-    let else_keyword = context("else keyword", delimited(multispace0, tag("else"), multispace1));
-
     // TODO: Figure out better error handling here.
     map(
         tuple((
             preceded(if_keyword, discard),
-            context("primary condition", delimited(open_curly, discard, cut(close_curly))),
+            context("primary condition", block_expression),
             opt(context(
                 "alternate condition",
-                alt((
-                    preceded(else_keyword, delimited(open_curly, expression, cut(close_curly))),
-                    preceded(delimited(multispace0, tag("else"), multispace1), cut(if_expression)),
-                )),
+                alt((preceded(else_keyword, block_expression), preceded(else_keyword, cut(if_expression)))),
             )),
         )),
         |(condition, body, alt)| Expression::Conditional(Box::new(condition), Box::new(body), alt.map(Box::new)),
@@ -433,21 +437,21 @@ fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
 
     let discard_op = context("discard operator", char(';'));
 
-    fold_many0(preceded(discard_op, block_expression), init, |acc, expr| {
+    fold_many0(preceded(discard_op, coalesce), init, |acc, expr| {
         Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
     })(input)
 }
 
 fn block_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let (input, init) = alt((if_expression, discard))(input)?;
-
-    fold_many0(alt((if_expression, discard)), init, |acc, expr| {
-        Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
-    })(input)
+    delimited(open_curly, expression, close_curly)(input)
 }
 
 fn expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    context("expression", block_expression)(input)
+    let (input, init) = alt((block_expression, if_expression, discard))(input)?;
+
+    fold_many0(alt((block_expression, if_expression, discard)), init, |acc, expr| {
+        Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
+    })(input)
 }
 
 pub fn parse(input: &str) -> Result<Expression, error::ParseError> {
@@ -469,12 +473,61 @@ mod test {
     use super::*;
 
     #[test]
-    fn test() {
-        let result = parse(r#"if x { y } if y { z }"#);
+    fn test_debug() {
+        let result = parse("5.to_string()");
 
         match result {
-            Ok(ok) => println!("{}", ok),
+            Ok(ast) => println!("{}", ast),
             Err(err) => println!("{}", err),
+        }
+    }
+
+    #[test]
+    fn bare_if_should_fail() {
+        let result = parse(r#"if"#);
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn subsequent_if_should_produce_discard_node() {
+        let result = parse(r#"if x { y } if y { z }"#).unwrap();
+
+        match result {
+            Expression::Binary(BinaryOperator::Discard, _, rhs) => match *rhs {
+                Expression::Conditional(_, _, _) => (),
+                _ => unreachable!(),
+            },
+            _ => unreachable!(),
+        }
+    }
+
+    #[test]
+    fn subsequent_non_if_expression_should_produce_discard_node() {
+        let result = parse(r#"if x { y } x"#).unwrap();
+
+        match result {
+            Expression::Binary(BinaryOperator::Discard, _, rhs) => match *rhs {
+                Expression::Literal(_) => (),
+                _ => unreachable!(),
+            },
+            _ => unreachable!(),
+        }
+    }
+
+    #[test]
+    fn dangling_else_should_fail() {
+        let result = parse(r#"if x { y } else"#);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn method_call() {
+        let result = parse(r#"5.to_string()"#).unwrap();
+
+        match result {
+            Expression::FunctionCall(_, _) => (),
+            _ => unreachable!(),
         }
     }
 }

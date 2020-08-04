@@ -281,7 +281,7 @@ mod test {
     }
 
     #[test]
-    fn test_chained_method_cal() -> Result<(), RuntimeError> {
+    fn test_chained_method_call() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r##"5["#op_add"](5).to_string()"##)?;
         let actual = result.value::<Rc<str>>().unwrap().as_ref();
