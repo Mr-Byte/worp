@@ -11,7 +11,7 @@ use super::{
     },
 };
 use crate::expression::{BinaryOperator, Expression, Literal, UnaryOperator};
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, iter, rc::Rc};
 
 #[inline]
 pub fn eval(expr: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
@@ -57,44 +57,31 @@ fn eval_conditional(
 fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Environment) -> Result<ObjectRef, RuntimeError> {
     match expr {
         Expression::Literal(Literal::Identifier(target)) => {
-            let evaled_args = Vec::with_capacity(args.len());
-            let args = args.iter().try_fold(evaled_args, |mut acc, expr| {
-                let arg = eval_expression(expr, environment)?;
-                acc.push(arg);
-                Ok::<_, RuntimeError>(acc)
-            })?;
-
+            let args = args.iter().map(|arg| eval_expression(arg, environment)).collect::<Result<Vec<_>, _>>()?;
             environment.variable(target)?.call(&args)
         }
         Expression::FieldAccess(this, method) => {
-            let this = eval_expression(this, environment)?;
-            let mut evaled_args = Vec::with_capacity(args.len() + 1);
-            evaled_args.push(this.clone());
-            let args = args.iter().try_fold(evaled_args, |mut acc, expr| {
-                let arg = eval_expression(expr, environment)?;
-                acc.push(arg);
-                Ok::<_, RuntimeError>(acc)
-            })?;
-            let target = this.get(&ObjectKey::Symbol(method.clone()))?;
-
-            target.call(&args)
+            let method = &ObjectKey::Symbol(method.clone());
+            call_method(&method, this, args, environment)
         }
         Expression::Index(this, method) => {
-            let this = eval_expression(this, environment)?;
             let method = eval_object_key(method, environment)?;
-
-            let mut evaled_args = Vec::with_capacity(args.len() + 1);
-            evaled_args.push(this.clone());
-            let args = args.iter().try_fold(evaled_args, |mut acc, expr| {
-                let arg = eval_expression(expr, environment)?;
-                acc.push(arg);
-                Ok::<_, RuntimeError>(acc)
-            })?;
-            let target = this.get(&method)?;
-
-            target.call(&args)
+            call_method(&method, this, args, environment)
         }
         _ => unreachable!(),
+    }
+}
+
+fn call_method(method: &ObjectKey, this: &Expression, args: &[Expression], environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    let args = iter::once_with(|| eval_expression(this, environment))
+        .chain(args.iter().map(|arg| eval_expression(arg, environment)))
+        .collect::<Result<Vec<ObjectRef>, RuntimeError>>()?;
+
+    if let Some(this) = args.first() {
+        let this = this.get(method)?;
+        this.call(&args)
+    } else {
+        return Err(RuntimeError::NoSelfParameterProvided);
     }
 }
 
@@ -169,7 +156,7 @@ fn eval_object_key(expr: &Expression, environment: &Environment) -> Result<Objec
         let index: String = index.to_string();
         Ok(ObjectKey::Symbol(Symbol::new(index)))
     } else {
-        Err(RuntimeError::Aborted)
+        Err(RuntimeError::InvalidKeyType(index.instance_type_data().type_tag().clone()))
     }
 }
 
@@ -181,26 +168,26 @@ fn eval_literal(literal: &Literal, environment: &Environment) -> Result<ObjectRe
         Literal::Float(float) => Ok(ObjectRef::new(float.clone())),
         Literal::String(string) => Ok(ObjectRef::new(Into::<Rc<str>>::into(string.clone()))),
         Literal::Boolean(bool) => Ok(ObjectRef::new(bool.clone())),
-        Literal::List(list) => {
-            let result = Vec::with_capacity(list.len());
-            let result = list.iter().try_fold(result, |mut acc, value| {
-                let value = eval_expression(value, environment)?;
-                acc.push(value);
-                Ok::<_, RuntimeError>(acc)
-            })?;
-            let result: Rc<[ObjectRef]> = result.into();
-
-            Ok(ObjectRef::new(result))
-        }
-        Literal::Object(object) => {
-            let result = HashMap::new();
-            let result = object.iter().try_fold(result, |mut acc, (key, value)| {
-                acc.insert(key.clone(), eval_expression(value, environment)?);
-
-                Ok::<_, RuntimeError>(acc)
-            })?;
-
-            Ok(ObjectRef::new(AnonymouseObject::new(result)))
-        }
+        Literal::List(list) => eval_list_literal(list, environment),
+        Literal::Object(object) => eval_object_literal(object, environment),
     }
+}
+
+fn eval_list_literal(list: &Vec<Expression>, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    let result: Rc<[ObjectRef]> = list
+        .iter()
+        .map(|expr| eval_expression(expr, environment))
+        .collect::<Result<Vec<_>, _>>()?
+        .into();
+
+    Ok(ObjectRef::new(result))
+}
+
+fn eval_object_literal(object: &HashMap<ObjectKey, Expression>, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+    let result = object
+        .iter()
+        .map(|(key, value)| Ok::<_, RuntimeError>((key.clone(), eval_expression(value, environment)?)))
+        .collect::<Result<_, _>>()?;
+
+    Ok(ObjectRef::new(AnonymouseObject::new(result)))
 }

@@ -10,14 +10,16 @@ pub enum RuntimeError {
     NotAnObject(Symbol),
     #[error("Runtime Error: The target type {0} is not a function.")]
     NotAFunction(Symbol),
+    #[error("Runtime Error: Functions require a self parameter to be called as a method.")]
+    NoSelfParameterProvided,
     #[error("Runtime Error: Missing field {0}.")]
     MissingField(ObjectKey),
     #[error("Runtime Error: Invalid number of parameters passed to function. Expected: {0}, Found: {1}.")]
     InvalidFunctionArgs(usize, usize),
     #[error("Runtime Error: Invalid type. Expected: {0}, Found: {1}.")]
     InvalidType(Symbol, Symbol),
-    #[error("Runtime Error: Invalid index type {0}.")]
-    InvalidIndexType(Symbol),
+    #[error("Runtime Error: Keys must be either Int or String. Found: {0}.")]
+    InvalidKeyType(Symbol),
     #[error("Runtime Error: {0}")]
     ParseError(#[from] ParseError),
     #[error("Runtime Error: Variable {0} not found.")]

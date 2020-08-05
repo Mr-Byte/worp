@@ -281,6 +281,21 @@ mod test {
     }
 
     #[test]
+    fn test_method_call_with_invalid_index() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r##"5[5.0]"##);
+
+        assert!(result.is_err());
+
+        match result {
+            Err(RuntimeError::InvalidKeyType(_)) => (),
+            err => assert!(false, "Invalid error type. Found: {:?}", err),
+        }
+
+        Ok(())
+    }
+
+    #[test]
     fn test_chained_method_call() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r##"5["#op_add"](5).to_string()"##)?;
