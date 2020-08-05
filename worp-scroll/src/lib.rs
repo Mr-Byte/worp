@@ -24,10 +24,7 @@ mod macros {
         ($input:expr => $($rule:pat)|+) => {
             $input
                 .next()
-                .filter(|token| match token.as_rule() {
-                    $($rule)|+ => true,
-                    _ => false,
-                })
+                .filter(|token| matches!(token.as_rule(), $($rule)|+))
                 .unwrap_or_else(|| unreachable!())
         };
     }

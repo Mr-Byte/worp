@@ -27,7 +27,7 @@ impl ObjectBase for AnonymouseObject {
         self.0
             .clone()
             .into_iter()
-            .map(|(key, value)| (key, value.instance_type_data().clone()))
+            .map(|(key, value)| (key, value.instance_type_data()))
             .collect::<Vec<_>>()
     }
 
@@ -36,14 +36,14 @@ impl ObjectBase for AnonymouseObject {
     }
 
     fn instance_type_data(&self) -> TypeData {
-        Self::type_data().clone()
+        Self::type_data()
     }
 
-    fn to_string(&self) -> String {
+    fn format_value(&self) -> String {
         let fields = self
             .0
             .iter()
-            .map(|(key, value)| format!("{}: {}", key.to_string(), value.to_string()))
+            .map(|(key, value)| format!("{}: {}", key.to_string(), value.format_value()))
             .collect::<Vec<_>>()
             .join(", ");
 

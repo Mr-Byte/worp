@@ -102,7 +102,7 @@ impl ObjectBase for Func {
     }
 
     fn instance_type_data(&self) -> TypeData {
-        Self::type_data().clone()
+        Self::type_data()
     }
 }
 
@@ -166,7 +166,7 @@ mod test {
             assert_eq!(42, *arg);
         }));
 
-        let result = test_func.call(&[arg.clone()])?;
+        let result = test_func.call(&[arg])?;
 
         assert_eq!(ObjectRef::NONE.value::<()>(), result.value::<()>());
 

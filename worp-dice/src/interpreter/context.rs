@@ -2,7 +2,7 @@ use super::{error::RuntimeError, evaluator::eval, object::ObjectRef, symbol::Sym
 use crate::expression::Expression;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ExecutionContext {
     inner: Rc<Environment>,
 }
@@ -18,7 +18,7 @@ impl Environment {
         if let Some(variable) = self.variables.borrow().get(name) {
             Ok(variable.clone())
         } else if let Some(variable) = self.parent.as_ref().map(|parent| parent.variable(name)).transpose()? {
-            Ok(variable.clone())
+            Ok(variable)
         } else {
             Err(RuntimeError::VariableNotFound(name.clone()))
         }
@@ -29,9 +29,7 @@ impl ExecutionContext {
     pub fn new() -> Self {
         Self { inner: Default::default() }
     }
-}
 
-impl ExecutionContext {
     pub fn eval_expression(&self, input: &str) -> Result<ObjectRef, RuntimeError> {
         let expr: Expression = input.parse()?;
         eval(&expr, &self.inner)

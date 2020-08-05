@@ -15,10 +15,10 @@ impl ObjectBase for Rc<str> {
     }
 
     fn instance_type_data(&self) -> TypeData {
-        Self::type_data().clone()
+        Self::type_data()
     }
 
-    fn to_string(&self) -> String {
+    fn format_value(&self) -> String {
         ToString::to_string(self)
     }
 }

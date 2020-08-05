@@ -32,7 +32,7 @@ impl ObjectBase for f64 {
         OPERATIONS.with(|ops_table| ops_table.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone())))
     }
 
-    fn to_string(&self) -> String {
+    fn format_value(&self) -> String {
         ToString::to_string(self)
     }
 
@@ -40,7 +40,7 @@ impl ObjectBase for f64 {
         OPERATIONS.with(|ops| {
             ops.clone()
                 .into_iter()
-                .map(|(key, value)| (key, value.instance_type_data().clone()))
+                .map(|(key, value)| (key, value.instance_type_data()))
                 .collect::<Vec<_>>()
         })
     }
@@ -50,7 +50,7 @@ impl ObjectBase for f64 {
     }
 
     fn instance_type_data(&self) -> TypeData {
-        Self::type_data().clone()
+        Self::type_data()
     }
 }
 

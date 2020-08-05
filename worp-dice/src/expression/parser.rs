@@ -101,10 +101,7 @@ fn identifier(input: &str) -> IResult<&str, Symbol, VerboseError<&str>> {
     let symbol_remainder = cut(many0(alt((tag("_"), alphanumeric1))));
     let symbol = recognize(pair(symbol_start, symbol_remainder));
 
-    context(
-        "identifier",
-        delimited(multispace0, map(symbol, |symbol: &str| Symbol::new(symbol)), multispace0),
-    )(input)
+    context("identifier", delimited(multispace0, map(symbol, Symbol::new), multispace0))(input)
 }
 
 fn none_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
@@ -265,9 +262,10 @@ fn safe_access(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
 
     context(
         "safe field access",
-        map(delimited(multispace0, preceded(field_acces_op, identifier), multispace0), |identifier| {
-            CallType::SafeAccess(identifier)
-        }),
+        map(
+            delimited(multispace0, preceded(field_acces_op, identifier), multispace0),
+            CallType::SafeAccess,
+        ),
     )(input)
 }
 
@@ -276,7 +274,7 @@ fn array_index(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
         "array index",
         map(
             delimited(multispace0, delimited(open_square, expression, cut(close_square)), multispace0),
-            |expr| CallType::ArrayIndex(expr),
+            CallType::ArrayIndex,
         ),
     )(input)
 }
@@ -286,9 +284,10 @@ fn field_access(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
 
     context(
         "field access",
-        map(delimited(multispace0, preceded(field_acces_op, identifier), multispace0), |identifier| {
-            CallType::FieldAccess(identifier)
-        }),
+        map(
+            delimited(multispace0, preceded(field_acces_op, identifier), multispace0),
+            CallType::FieldAccess,
+        ),
     )(input)
 }
 

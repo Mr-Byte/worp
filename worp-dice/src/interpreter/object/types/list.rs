@@ -14,11 +14,11 @@ impl ObjectBase for Rc<[ObjectRef]> {
     }
 
     fn instance_type_data(&self) -> TypeData {
-        Self::type_data().clone()
+        Self::type_data()
     }
 
-    fn to_string(&self) -> String {
-        let items = self.iter().map(|obj| obj.to_string()).collect::<Vec<_>>().join(", ");
+    fn format_value(&self) -> String {
+        let items = self.iter().map(|obj| obj.format_value()).collect::<Vec<_>>().join(", ");
 
         format!("[ {} ]", items)
     }

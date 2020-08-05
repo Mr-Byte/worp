@@ -29,7 +29,7 @@ impl ObjectBase for bool {
         OPERATIONS.with(|ops| {
             ops.clone()
                 .into_iter()
-                .map(|(key, value)| (key, value.instance_type_data().clone()))
+                .map(|(key, value)| (key, value.instance_type_data()))
                 .collect::<Vec<_>>()
         })
     }
@@ -39,10 +39,10 @@ impl ObjectBase for bool {
     }
 
     fn instance_type_data(&self) -> TypeData {
-        Self::type_data().clone()
+        Self::type_data()
     }
 
-    fn to_string(&self) -> String {
+    fn format_value(&self) -> String {
         ToString::to_string(self)
     }
 }

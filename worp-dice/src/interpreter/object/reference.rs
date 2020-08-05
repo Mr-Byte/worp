@@ -29,7 +29,7 @@ impl ObjectRef {
 
     pub fn new(value: impl Object + 'static) -> Self {
         let value_ref = &value as &dyn Object;
-        let variant = if let Some(_) = value_ref.value::<()>() {
+        let variant = if value_ref.value::<()>().is_some() {
             ObjectVariant::None(())
         } else if let Some(value) = value_ref.value::<bool>() {
             ObjectVariant::Bool(*value)
