@@ -283,12 +283,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r##"5[5.0]"##);
 
-        assert!(result.is_err());
-
-        match result {
-            Err(RuntimeError::InvalidKeyType(_)) => (),
-            err => assert!(false, "Invalid error type. Found: {:?}", err),
-        }
+        assert!(matches!(result, Err(RuntimeError::InvalidKeyType(_))));
 
         Ok(())
     }
@@ -300,6 +295,71 @@ mod test {
         let actual = result.value::<Rc<str>>().unwrap().as_ref();
 
         assert_eq!("10", actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_string_concat() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r##""test" + "value""##)?;
+        let actual = result.value::<Rc<str>>().unwrap().as_ref();
+
+        assert_eq!("testvalue", actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_concat() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"[5] + [5, 5]"#)?;
+        let actual = result.value::<Rc<[ObjectRef]>>().unwrap().as_ref();
+
+        assert_eq!(3, actual.len());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_concat_with_value() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"[5] + 5"#)?;
+        let actual = result.value::<Rc<[ObjectRef]>>().unwrap().as_ref();
+
+        assert_eq!(2, actual.len());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_index() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"[5][0]"#)?;
+        let actual = *result.value::<i64>().unwrap();
+
+        assert_eq!(5, actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_negative_index() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"[5][-1]"#)?;
+        let actual = *result.value::<i64>().unwrap();
+
+        assert_eq!(5, actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_negative_index_out_of_bounds() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"[5][-2]"#);
+
+        assert!(matches!(result, Err(RuntimeError::IndexOutOfBounds(1, -1))));
 
         Ok(())
     }

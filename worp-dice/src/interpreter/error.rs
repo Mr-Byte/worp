@@ -24,4 +24,6 @@ pub enum RuntimeError {
     ParseError(#[from] ParseError),
     #[error("Runtime Error: Variable {0} not found.")]
     VariableNotFound(Symbol),
+    #[error("Runtime Error: Index out of bounds. Length: {0}, Index: {1}.")]
+    IndexOutOfBounds(usize, i64),
 }
