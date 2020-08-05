@@ -14,7 +14,7 @@ thread_local! {
         ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func::new_func2(ne)),
         ObjectKey::Symbol(OP_AND) => ObjectRef::new(Func::new_func2(and)),
         ObjectKey::Symbol(OP_OR) => ObjectRef::new(Func::new_func2(or)),
-        ObjectKey::Symbol(FN_TO_STRING) => ObjectRef::new(Func::new_func1(to_string::<bool>)),
+        ObjectKey::Symbol(FN_TO_STRING) => ObjectRef::new(Func::from_raw_func1(to_string)),
     ];
 
     static TYPE_DATA: TypeData = TypeData::new(TY_INT, Vec::new());

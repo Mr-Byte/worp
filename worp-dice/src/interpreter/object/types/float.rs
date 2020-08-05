@@ -21,7 +21,7 @@ thread_local! {
         ObjectKey::Symbol(OP_LTE) => ObjectRef::new(Func::new_func2(lte)),
         ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func::new_func2(eq)),
         ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func::new_func2(ne)),
-        ObjectKey::Symbol(FN_TO_STRING) => ObjectRef::new(Func::new_func1(to_string::<f64>)),
+        ObjectKey::Symbol(FN_TO_STRING) => ObjectRef::new(Func::from_raw_func1(to_string)),
     ];
 
     static TYPE_DATA: TypeData = TypeData::new(TY_FLOAT, Vec::new());
