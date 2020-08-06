@@ -6,8 +6,8 @@ mod evaluator;
 mod test {
     use super::*;
     use crate::runtime::{
+        core::{key::ValueKey, value::Value},
         error::RuntimeError,
-        object::{instance::ObjectInstance, key::ObjectKey},
         symbol::Symbol,
         types::{list::List, none, string::RcString},
     };
@@ -102,7 +102,7 @@ mod test {
     fn test_object() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"{ test: 5 + 5 }"#)?;
-        let inner = result.get(&ObjectKey::Symbol(Symbol::new_static("test")))?;
+        let inner = result.get(&ValueKey::Symbol(Symbol::new_static("test")))?;
 
         assert_eq!(10, *inner.value::<i64>().unwrap());
 
@@ -166,7 +166,7 @@ mod test {
     #[test]
     fn test_variable() -> Result<(), RuntimeError> {
         let mut context = ExecutionContext::new();
-        context.add_variable(Symbol::new("test"), ObjectInstance::new(5));
+        context.add_variable(Symbol::new("test"), Value::new(5));
         let result = context.eval_expression(r#"test + 5"#)?;
 
         assert_eq!(10, *result.value::<i64>().unwrap());
@@ -177,7 +177,7 @@ mod test {
     #[test]
     fn test_variable_from_parent_scope() -> Result<(), RuntimeError> {
         let mut context = ExecutionContext::new();
-        context.add_variable(Symbol::new("test"), ObjectInstance::new(5));
+        context.add_variable(Symbol::new("test"), Value::new(5));
         let result = context.scoped().eval_expression(r#"test + 5"#)?;
 
         assert_eq!(10, *result.value::<i64>().unwrap());

@@ -1,4 +1,4 @@
-use super::{object::key::ObjectKey, symbol::Symbol};
+use super::{core::key::ValueKey, symbol::Symbol};
 use crate::syntax::ParseError;
 
 #[derive(thiserror::Error, Debug)]
@@ -15,7 +15,7 @@ pub enum RuntimeError {
     #[error("Runtime Error: {0} has no instructor.")]
     NoConstructor(Symbol),
     #[error("Runtime Error: Missing field {0}.")]
-    MissingField(ObjectKey),
+    MissingField(ValueKey),
     #[error("Runtime Error: Invalid number of parameters passed to function. Expected: {0}, Found: {1}.")]
     InvalidFunctionArgs(usize, usize),
     #[error("Runtime Error: Invalid type. Expected: {0}, Found: {1}.")]

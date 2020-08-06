@@ -1,7 +1,7 @@
 use super::func::Func;
 use crate::runtime::{
+    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
     symbol::{common::operators::OP_ADD, common::types::TY_LIST, Symbol},
 };
 use maplit::hashmap;
@@ -14,7 +14,7 @@ thread_local! {
 #[derive(Debug)]
 struct TypeList {
     name: Symbol,
-    members: HashMap<ObjectKey, ObjectInstance>,
+    members: HashMap<ValueKey, Value>,
 }
 
 impl Default for TypeList {
@@ -22,9 +22,9 @@ impl Default for TypeList {
         Self {
             name: TY_LIST,
             members: hashmap! [
-                ObjectKey::Symbol(OP_ADD) => ObjectInstance::new(Func::new_func2(concat)),
-                "length".into() => ObjectInstance::new(Func::new_func1(length)),
-                "is_empty".into() => ObjectInstance::new(Func::new_func1(is_empty)),
+                ValueKey::Symbol(OP_ADD) => Value::new(Func::new_func2(concat)),
+                "length".into() => Value::new(Func::new_func1(length)),
+                "is_empty".into() => Value::new(Func::new_func1(is_empty)),
             ],
         }
     }
@@ -39,21 +39,21 @@ impl Type for TypeList {
         &[]
     }
 
-    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+    fn members(&self) -> &HashMap<ValueKey, Value> {
         &self.members
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct List(Rc<[ObjectInstance]>);
+pub struct List(Rc<[Value]>);
 
-impl ObjectBase for List {
+impl TypeInstanceBase for List {
     fn reflect_type(&self) -> Rc<dyn Type> {
         TYPE.with(Clone::clone)
     }
 
-    fn get_instance_member(&self, key: &ObjectKey) -> Result<ObjectInstance, RuntimeError> {
-        if let ObjectKey::Index(index) = key {
+    fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
+        if let ValueKey::Index(index) = key {
             let index = if *index >= 0 { *index } else { (self.len() as i64) + *index };
 
             if (index as usize) >= self.len() || index < 0 {
@@ -74,20 +74,20 @@ impl Display for List {
 }
 
 impl Deref for List {
-    type Target = [ObjectInstance];
+    type Target = [Value];
 
     fn deref(&self) -> &Self::Target {
         &*self.0
     }
 }
 
-impl From<Vec<ObjectInstance>> for List {
-    fn from(value: Vec<ObjectInstance>) -> Self {
+impl From<Vec<Value>> for List {
+    fn from(value: Vec<Value>) -> Self {
         Self(value.into())
     }
 }
 
-fn concat(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn concat(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs
         .value::<List>()
         .ok_or_else(|| RuntimeError::InvalidType(TY_LIST, lhs.reflect_type().name().clone()))?;
@@ -97,17 +97,17 @@ fn concat(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, Ru
         lhs.iter().chain(iter::once(&rhs)).cloned().collect::<Vec<_>>().into()
     };
 
-    Ok(ObjectInstance::new(output))
+    Ok(Value::new(output))
 }
 
-fn length(this: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn length(this: Value) -> Result<Value, RuntimeError> {
     let this = this.try_value::<List>(&TY_LIST)?;
 
-    Ok(ObjectInstance::new(this.len() as i64))
+    Ok(Value::new(this.len() as i64))
 }
 
-fn is_empty(this: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn is_empty(this: Value) -> Result<Value, RuntimeError> {
     let this = this.try_value::<List>(&TY_LIST)?;
 
-    Ok(ObjectInstance::new(this.is_empty() as bool))
+    Ok(Value::new(this.is_empty() as bool))
 }

@@ -1,7 +1,7 @@
 use super::func::Func;
 use crate::runtime::{
+    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
     symbol::{common::operators::OP_ADD, common::types::TY_STRING, Symbol},
 };
 use maplit::hashmap;
@@ -14,7 +14,7 @@ thread_local! {
 #[derive(Debug)]
 struct TypeString {
     name: Symbol,
-    members: HashMap<ObjectKey, ObjectInstance>,
+    members: HashMap<ValueKey, Value>,
 }
 
 impl Default for TypeString {
@@ -22,9 +22,9 @@ impl Default for TypeString {
         Self {
             name: TY_STRING,
             members: hashmap! [
-                ObjectKey::Symbol(OP_ADD) => ObjectInstance::new(Func::new_func2(concat)),
-                "length".into() => ObjectInstance::new(Func::new_func1(length)),
-                "is_empty".into() => ObjectInstance::new(Func::new_func1(is_empty)),
+                ValueKey::Symbol(OP_ADD) => Value::new(Func::new_func2(concat)),
+                "length".into() => Value::new(Func::new_func1(length)),
+                "is_empty".into() => Value::new(Func::new_func1(is_empty)),
             ],
         }
     }
@@ -39,7 +39,7 @@ impl Type for TypeString {
         &[]
     }
 
-    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+    fn members(&self) -> &HashMap<ValueKey, Value> {
         &self.members
     }
 }
@@ -47,7 +47,7 @@ impl Type for TypeString {
 #[derive(Debug, Clone)]
 pub struct RcString(Rc<str>);
 
-impl ObjectBase for RcString {
+impl TypeInstanceBase for RcString {
     fn reflect_type(&self) -> Rc<dyn Type> {
         TYPE.with(Clone::clone)
     }
@@ -73,21 +73,21 @@ impl From<String> for RcString {
     }
 }
 
-fn concat(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn concat(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<RcString>(&TY_STRING)?;
     let result: RcString = format!("{}{}", lhs, &*rhs).into();
 
-    Ok(ObjectInstance::new(result))
+    Ok(Value::new(result))
 }
 
-fn length(this: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn length(this: Value) -> Result<Value, RuntimeError> {
     let this = this.try_value::<RcString>(&TY_STRING)?;
 
-    Ok(ObjectInstance::new(this.len() as i64))
+    Ok(Value::new(this.len() as i64))
 }
 
-fn is_empty(this: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn is_empty(this: Value) -> Result<Value, RuntimeError> {
     let this = this.try_value::<RcString>(&TY_STRING)?;
 
-    Ok(ObjectInstance::new(this.is_empty() as bool))
+    Ok(Value::new(this.is_empty() as bool))
 }

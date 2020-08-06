@@ -1,7 +1,7 @@
 use super::func::Func;
 use crate::runtime::{
+    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
     symbol::{common::operators::*, common::types::TY_BOOL, Symbol},
 };
 use maplit::hashmap;
@@ -14,7 +14,7 @@ thread_local! {
 #[derive(Debug)]
 struct TypeBool {
     name: Symbol,
-    instance_members: HashMap<ObjectKey, ObjectInstance>,
+    instance_members: HashMap<ValueKey, Value>,
 }
 
 impl Default for TypeBool {
@@ -22,22 +22,22 @@ impl Default for TypeBool {
         Self {
             name: TY_BOOL,
             instance_members: hashmap! [
-                ObjectKey::Symbol(OP_NOT) => ObjectInstance::new(Func::new_func1(not)),
-                ObjectKey::Symbol(OP_AND) => ObjectInstance::new(Func::new_func2(and)),
-                ObjectKey::Symbol(OP_OR) => ObjectInstance::new(Func::new_func2(or)),
-                ObjectKey::Symbol(OP_EQ) => ObjectInstance::new(Func::new_func2(eq)),
-                ObjectKey::Symbol(OP_NE) => ObjectInstance::new(Func::new_func2(ne)),
-                ObjectKey::Symbol(OP_GT) => ObjectInstance::new(Func::new_func2(gt)),
-                ObjectKey::Symbol(OP_GTE) => ObjectInstance::new(Func::new_func2(gte)),
-                ObjectKey::Symbol(OP_LT) => ObjectInstance::new(Func::new_func2(lt)),
-                ObjectKey::Symbol(OP_LTE) => ObjectInstance::new(Func::new_func2(lte)),
+                ValueKey::Symbol(OP_NOT) => Value::new(Func::new_func1(not)),
+                ValueKey::Symbol(OP_AND) => Value::new(Func::new_func2(and)),
+                ValueKey::Symbol(OP_OR) => Value::new(Func::new_func2(or)),
+                ValueKey::Symbol(OP_EQ) => Value::new(Func::new_func2(eq)),
+                ValueKey::Symbol(OP_NE) => Value::new(Func::new_func2(ne)),
+                ValueKey::Symbol(OP_GT) => Value::new(Func::new_func2(gt)),
+                ValueKey::Symbol(OP_GTE) => Value::new(Func::new_func2(gte)),
+                ValueKey::Symbol(OP_LT) => Value::new(Func::new_func2(lt)),
+                ValueKey::Symbol(OP_LTE) => Value::new(Func::new_func2(lte)),
             ],
         }
     }
 }
 
 impl Type for TypeBool {
-    fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
+    fn construct(&self) -> Result<Value, RuntimeError> {
         Err(RuntimeError::NoConstructor(self.name.clone()))
     }
 
@@ -49,24 +49,24 @@ impl Type for TypeBool {
         &[]
     }
 
-    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+    fn members(&self) -> &HashMap<ValueKey, Value> {
         &self.instance_members
     }
 }
 
-impl ObjectBase for bool {
+impl TypeInstanceBase for bool {
     fn reflect_type(&self) -> Rc<dyn Type> {
         TYPE.with(Clone::clone)
     }
 }
 
-fn not(value: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn not(value: Value) -> Result<Value, RuntimeError> {
     let value = value.try_value::<bool>(&TY_BOOL)?;
 
-    Ok(ObjectInstance::new(!value))
+    Ok(Value::new(!value))
 }
 
-fn eq(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
     let rhs = rhs.value::<bool>();
     let result = match rhs {
@@ -74,10 +74,10 @@ fn eq(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, Runtim
         None => false,
     };
 
-    Ok(ObjectInstance::new(result))
+    Ok(Value::new(result))
 }
 
-fn ne(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn ne(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
     let rhs = rhs.value::<bool>();
     let result = match rhs {
@@ -85,47 +85,47 @@ fn ne(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, Runtim
         None => true,
     };
 
-    Ok(ObjectInstance::new(result))
+    Ok(Value::new(result))
 }
 
-fn and(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn and(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
     let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
 
-    Ok(ObjectInstance::new(*lhs && *rhs))
+    Ok(Value::new(*lhs && *rhs))
 }
 
-fn or(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn or(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
     let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
 
-    Ok(ObjectInstance::new(*lhs || *rhs))
+    Ok(Value::new(*lhs || *rhs))
 }
 
-fn gt(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn gt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
     let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
 
-    Ok(ObjectInstance::new(lhs > rhs))
+    Ok(Value::new(lhs > rhs))
 }
 
-fn gte(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn gte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
     let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
 
-    Ok(ObjectInstance::new(lhs >= rhs))
+    Ok(Value::new(lhs >= rhs))
 }
 
-fn lt(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn lt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
     let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
 
-    Ok(ObjectInstance::new(lhs < rhs))
+    Ok(Value::new(lhs < rhs))
 }
 
-fn lte(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn lte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
     let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
 
-    Ok(ObjectInstance::new(lhs <= rhs))
+    Ok(Value::new(lhs <= rhs))
 }

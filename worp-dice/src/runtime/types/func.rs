@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use crate::runtime::{
+    core::{reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    object::{instance::ObjectInstance, reflection::Type, ObjectBase},
 };
 use std::{
     fmt::{Debug, Display},
@@ -22,21 +22,21 @@ enum FuncVariant {
 pub struct Func(FuncVariant);
 
 impl Func {
-    pub fn new_func0(func: impl Fn() -> Result<ObjectInstance, RuntimeError> + 'static) -> Self {
+    pub fn new_func0(func: impl Fn() -> Result<Value, RuntimeError> + 'static) -> Self {
         Self(FuncVariant::Func0(Func0(Rc::new(func))))
     }
 
-    pub fn new_func1(func: impl Fn(ObjectInstance) -> Result<ObjectInstance, RuntimeError> + 'static) -> Self {
+    pub fn new_func1(func: impl Fn(Value) -> Result<Value, RuntimeError> + 'static) -> Self {
         Self(FuncVariant::Func1(Func1(Rc::new(func))))
     }
 
-    pub fn new_func2(func: impl Fn(ObjectInstance, ObjectInstance) -> Result<ObjectInstance, RuntimeError> + 'static) -> Self {
+    pub fn new_func2(func: impl Fn(Value, Value) -> Result<Value, RuntimeError> + 'static) -> Self {
         Self(FuncVariant::Func2(Func2(Rc::new(func))))
     }
 }
 
-impl ObjectBase for Func {
-    fn call(&self, args: &[ObjectInstance]) -> Result<ObjectInstance, RuntimeError> {
+impl TypeInstanceBase for Func {
+    fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
         match &self.0 {
             FuncVariant::Func0(func0) => func0.call(args),
             FuncVariant::Func1(func1) => func1.call(args),
@@ -70,10 +70,10 @@ impl Display for Func {
 }
 
 #[derive(Clone)]
-struct Func0(Rc<dyn Fn() -> Result<ObjectInstance, RuntimeError>>);
+struct Func0(Rc<dyn Fn() -> Result<Value, RuntimeError>>);
 
 impl Func0 {
-    fn call(&self, args: &[ObjectInstance]) -> Result<ObjectInstance, RuntimeError> {
+    fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
         if let [] = args {
             Ok((self.0)()?)
         } else {
@@ -83,10 +83,10 @@ impl Func0 {
 }
 
 #[derive(Clone)]
-struct Func1(Rc<dyn Fn(ObjectInstance) -> Result<ObjectInstance, RuntimeError>>);
+struct Func1(Rc<dyn Fn(Value) -> Result<Value, RuntimeError>>);
 
 impl Func1 {
-    fn call(&self, args: &[ObjectInstance]) -> Result<ObjectInstance, RuntimeError> {
+    fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
         if let [arg1] = args {
             Ok((self.0)(arg1.clone())?)
         } else {
@@ -96,10 +96,10 @@ impl Func1 {
 }
 
 #[derive(Clone)]
-pub struct Func2(Rc<dyn Fn(ObjectInstance, ObjectInstance) -> Result<ObjectInstance, RuntimeError>>);
+pub struct Func2(Rc<dyn Fn(Value, Value) -> Result<Value, RuntimeError>>);
 
 impl Func2 {
-    fn call(&self, args: &[ObjectInstance]) -> Result<ObjectInstance, RuntimeError> {
+    fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
         if let [arg1, arg2] = args {
             Ok((self.0)(arg1.clone(), arg2.clone())?)
         } else {

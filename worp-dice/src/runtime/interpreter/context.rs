@@ -1,6 +1,6 @@
 use super::{environment::Environment, evaluator::eval};
 use crate::{
-    runtime::{error::RuntimeError, object::instance::ObjectInstance, symbol::Symbol},
+    runtime::{core::value::Value, error::RuntimeError, symbol::Symbol},
     syntax::Expression,
 };
 use std::rc::Rc;
@@ -15,7 +15,7 @@ impl ExecutionContext {
         Self { inner: Default::default() }
     }
 
-    pub fn eval_expression(&self, input: &str) -> Result<ObjectInstance, RuntimeError> {
+    pub fn eval_expression(&self, input: &str) -> Result<Value, RuntimeError> {
         let expr: Expression = input.parse()?;
         eval(&expr, &self.inner)
     }
@@ -26,11 +26,11 @@ impl ExecutionContext {
         }
     }
 
-    pub fn variable(&self, name: &Symbol) -> Result<ObjectInstance, RuntimeError> {
+    pub fn variable(&self, name: &Symbol) -> Result<Value, RuntimeError> {
         self.inner.variable(name)
     }
 
-    pub fn add_variable(&mut self, name: Symbol, instance: ObjectInstance) {
+    pub fn add_variable(&mut self, name: Symbol, instance: Value) {
         self.inner.add_variable(name, instance);
     }
 }

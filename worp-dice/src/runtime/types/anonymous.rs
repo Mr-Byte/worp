@@ -1,6 +1,6 @@
 use crate::runtime::{
+    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
     symbol::{common::types::TY_OBJECT, Symbol},
 };
 use std::{collections::HashMap, fmt::Display, rc::Rc};
@@ -12,7 +12,7 @@ thread_local! {
 #[derive(Debug)]
 struct TypeAnonymousObject {
     name: Symbol,
-    members: HashMap<ObjectKey, ObjectInstance>,
+    members: HashMap<ValueKey, Value>,
 }
 
 impl Default for TypeAnonymousObject {
@@ -33,26 +33,26 @@ impl Type for TypeAnonymousObject {
         &[]
     }
 
-    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+    fn members(&self) -> &HashMap<ValueKey, Value> {
         &self.members
     }
 }
 
 #[derive(Debug)]
-pub struct AnonymouseObject(HashMap<ObjectKey, ObjectInstance>);
+pub struct AnonymouseObject(HashMap<ValueKey, Value>);
 
 impl AnonymouseObject {
-    pub fn new(data: HashMap<ObjectKey, ObjectInstance>) -> Self {
+    pub fn new(data: HashMap<ValueKey, Value>) -> Self {
         Self(data)
     }
 }
 
-impl ObjectBase for AnonymouseObject {
-    fn get_instance_member(&self, key: &ObjectKey) -> Result<ObjectInstance, RuntimeError> {
+impl TypeInstanceBase for AnonymouseObject {
+    fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
         self.0.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone()))
     }
 
-    fn reflect_type(&self) -> std::rc::Rc<dyn crate::runtime::object::reflection::Type> {
+    fn reflect_type(&self) -> std::rc::Rc<dyn crate::runtime::core::reflection::Type> {
         TYPE.with(Clone::clone)
     }
 }

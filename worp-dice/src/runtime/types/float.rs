@@ -1,7 +1,7 @@
 use super::func::Func;
 use crate::runtime::{
+    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
     symbol::{common::operators::*, common::types::TY_FLOAT, Symbol},
 };
 use maplit::hashmap;
@@ -14,7 +14,7 @@ thread_local! {
 #[derive(Debug)]
 struct TypeFloat {
     name: Symbol,
-    instance_members: HashMap<ObjectKey, ObjectInstance>,
+    instance_members: HashMap<ValueKey, Value>,
 }
 
 impl Default for TypeFloat {
@@ -22,25 +22,25 @@ impl Default for TypeFloat {
         Self {
             name: TY_FLOAT,
             instance_members: hashmap! [
-                ObjectKey::Symbol(OP_NEG) => ObjectInstance::new(Func::new_func1(negate)),
-                ObjectKey::Symbol(OP_MUL) => ObjectInstance::new(Func::new_func2(mul)),
-                ObjectKey::Symbol(OP_DIV) => ObjectInstance::new(Func::new_func2(div)),
-                ObjectKey::Symbol(OP_REM) => ObjectInstance::new(Func::new_func2(rem)),
-                ObjectKey::Symbol(OP_ADD) => ObjectInstance::new(Func::new_func2(add)),
-                ObjectKey::Symbol(OP_SUB) => ObjectInstance::new(Func::new_func2(sub)),
-                ObjectKey::Symbol(OP_EQ) => ObjectInstance::new(Func::new_func2(eq)),
-                ObjectKey::Symbol(OP_NE) => ObjectInstance::new(Func::new_func2(ne)),
-                ObjectKey::Symbol(OP_GT) => ObjectInstance::new(Func::new_func2(gt)),
-                ObjectKey::Symbol(OP_GTE) => ObjectInstance::new(Func::new_func2(gte)),
-                ObjectKey::Symbol(OP_LT) => ObjectInstance::new(Func::new_func2(lt)),
-                ObjectKey::Symbol(OP_LTE) => ObjectInstance::new(Func::new_func2(lte)),
+                ValueKey::Symbol(OP_NEG) => Value::new(Func::new_func1(negate)),
+                ValueKey::Symbol(OP_MUL) => Value::new(Func::new_func2(mul)),
+                ValueKey::Symbol(OP_DIV) => Value::new(Func::new_func2(div)),
+                ValueKey::Symbol(OP_REM) => Value::new(Func::new_func2(rem)),
+                ValueKey::Symbol(OP_ADD) => Value::new(Func::new_func2(add)),
+                ValueKey::Symbol(OP_SUB) => Value::new(Func::new_func2(sub)),
+                ValueKey::Symbol(OP_EQ) => Value::new(Func::new_func2(eq)),
+                ValueKey::Symbol(OP_NE) => Value::new(Func::new_func2(ne)),
+                ValueKey::Symbol(OP_GT) => Value::new(Func::new_func2(gt)),
+                ValueKey::Symbol(OP_GTE) => Value::new(Func::new_func2(gte)),
+                ValueKey::Symbol(OP_LT) => Value::new(Func::new_func2(lt)),
+                ValueKey::Symbol(OP_LTE) => Value::new(Func::new_func2(lte)),
             ],
         }
     }
 }
 
 impl Type for TypeFloat {
-    fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
+    fn construct(&self) -> Result<Value, RuntimeError> {
         Err(RuntimeError::NoConstructor(self.name.clone()))
     }
 
@@ -52,59 +52,59 @@ impl Type for TypeFloat {
         &[]
     }
 
-    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+    fn members(&self) -> &HashMap<ValueKey, Value> {
         &self.instance_members
     }
 }
 
-impl ObjectBase for f64 {
+impl TypeInstanceBase for f64 {
     fn reflect_type(&self) -> Rc<dyn Type> {
         TYPE.with(Clone::clone)
     }
 }
 
-fn negate(value: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn negate(value: Value) -> Result<Value, RuntimeError> {
     let value = value.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(-value))
+    Ok(Value::new(-value))
 }
 
-fn mul(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn mul(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs * rhs))
+    Ok(Value::new(lhs * rhs))
 }
 
-fn div(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn div(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs / rhs))
+    Ok(Value::new(lhs / rhs))
 }
 
-fn rem(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn rem(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs % rhs))
+    Ok(Value::new(lhs % rhs))
 }
 
-fn add(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs + rhs))
+    Ok(Value::new(lhs + rhs))
 }
 
-fn sub(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn sub(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs - rhs))
+    Ok(Value::new(lhs - rhs))
 }
 
-fn eq(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.value::<f64>();
     let result = match rhs {
@@ -112,10 +112,10 @@ fn eq(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, Runtim
         None => false,
     };
 
-    Ok(ObjectInstance::new(result))
+    Ok(Value::new(result))
 }
 
-fn ne(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn ne(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.value::<f64>();
     let result = match rhs {
@@ -123,33 +123,33 @@ fn ne(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, Runtim
         None => true,
     };
 
-    Ok(ObjectInstance::new(result))
+    Ok(Value::new(result))
 }
 
-fn gt(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn gt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs > rhs))
+    Ok(Value::new(lhs > rhs))
 }
 
-fn gte(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn gte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs >= rhs))
+    Ok(Value::new(lhs >= rhs))
 }
 
-fn lt(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn lt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs < rhs))
+    Ok(Value::new(lhs < rhs))
 }
 
-fn lte(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+fn lte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
     let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
     let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-    Ok(ObjectInstance::new(lhs <= rhs))
+    Ok(Value::new(lhs <= rhs))
 }

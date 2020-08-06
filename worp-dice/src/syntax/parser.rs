@@ -1,5 +1,5 @@
 use super::expression::{BinaryOperator, Expression, Literal, RangeOperator, UnaryOperator};
-use crate::runtime::{object::key::ObjectKey, symbol::Symbol};
+use crate::runtime::{core::key::ValueKey, symbol::Symbol};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till},
@@ -176,9 +176,9 @@ fn object_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
                 delimited(open_square, int_literal, close_square),
             )),
             |value| match value {
-                Literal::Integer(index) => ObjectKey::Index(index),
-                Literal::Identifier(symbol) => ObjectKey::Symbol(symbol),
-                Literal::String(string) => ObjectKey::Symbol(Symbol::new(string)),
+                Literal::Integer(index) => ValueKey::Index(index),
+                Literal::Identifier(symbol) => ValueKey::Symbol(symbol),
+                Literal::String(string) => ValueKey::Symbol(Symbol::new(string)),
                 _ => unreachable!(),
             },
         ),

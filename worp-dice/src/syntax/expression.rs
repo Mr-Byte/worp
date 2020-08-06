@@ -1,5 +1,5 @@
 use super::parser::error::ParseError;
-use crate::runtime::{object::key::ObjectKey, symbol::Symbol};
+use crate::runtime::{core::key::ValueKey, symbol::Symbol};
 use std::{collections::HashMap, fmt::Display, str::FromStr};
 
 #[derive(Debug, Clone)]
@@ -19,7 +19,7 @@ pub enum Literal {
     /// Lists, such as `[ 1, x, 3 ]`
     List(Vec<Expression>),
     /// Objects, such as { x: 55, y: 6d6, z: { inner: 42 } }
-    Object(HashMap<ObjectKey, Expression>),
+    Object(HashMap<ValueKey, Expression>),
 }
 
 impl Display for Literal {
