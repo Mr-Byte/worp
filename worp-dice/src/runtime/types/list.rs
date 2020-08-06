@@ -11,6 +11,7 @@ thread_local! {
     static TYPE: Rc<TypeList> = Default::default();
 }
 
+#[derive(Debug)]
 struct TypeList {
     name: Symbol,
     members: HashMap<ObjectKey, ObjectInstance>,

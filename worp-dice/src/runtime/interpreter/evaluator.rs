@@ -1,4 +1,4 @@
-use super::context::Environment;
+use super::environment::Environment;
 use crate::{
     runtime::{
         error::RuntimeError,

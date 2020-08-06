@@ -11,6 +11,7 @@ thread_local! {
     static TYPE: Rc<TypeString> = Default::default();
 }
 
+#[derive(Debug)]
 struct TypeString {
     name: Symbol,
     members: HashMap<ObjectKey, ObjectInstance>,

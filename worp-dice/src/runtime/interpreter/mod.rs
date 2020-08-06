@@ -1,4 +1,5 @@
 pub mod context;
+pub mod environment;
 mod evaluator;
 
 #[cfg(test)]

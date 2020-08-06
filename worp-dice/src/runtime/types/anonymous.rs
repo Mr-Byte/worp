@@ -9,15 +9,16 @@ thread_local! {
     static TYPE: Rc<TypeAnonymousObject> = Default::default();
 }
 
+#[derive(Debug)]
 struct TypeAnonymousObject {
-    _type: Symbol,
+    name: Symbol,
     members: HashMap<ObjectKey, ObjectInstance>,
 }
 
 impl Default for TypeAnonymousObject {
     fn default() -> Self {
         Self {
-            _type: TY_OBJECT,
+            name: TY_OBJECT,
             members: HashMap::new(),
         }
     }
@@ -25,7 +26,7 @@ impl Default for TypeAnonymousObject {
 
 impl Type for TypeAnonymousObject {
     fn name(&self) -> &Symbol {
-        &self._type
+        &self.name
     }
 
     fn impl_names(&self) -> &[&Symbol] {

@@ -11,15 +11,16 @@ thread_local! {
     static TYPE: Rc<TypeInt> = Default::default();
 }
 
+#[derive(Debug)]
 struct TypeInt {
-    _type: Symbol,
+    name: Symbol,
     instance_members: HashMap<ObjectKey, ObjectInstance>,
 }
 
 impl Default for TypeInt {
     fn default() -> Self {
         Self {
-            _type: TY_INT,
+            name: TY_INT,
             instance_members: hashmap! [
                 ObjectKey::Symbol(OP_NEG) => ObjectInstance::new(Func::new_func1(negate)),
                 ObjectKey::Symbol(OP_MUL) => ObjectInstance::new(Func::new_func2(mul)),
@@ -40,11 +41,11 @@ impl Default for TypeInt {
 
 impl Type for TypeInt {
     fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
-        Err(RuntimeError::NoConstructor(self._type.clone()))
+        Err(RuntimeError::NoConstructor(self.name.clone()))
     }
 
     fn name(&self) -> &Symbol {
-        &self._type
+        &self.name
     }
 
     fn impl_names(&self) -> &[&Symbol] {

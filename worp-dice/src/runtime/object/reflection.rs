@@ -1,8 +1,8 @@
 use super::{key::ObjectKey, ObjectInstance};
 use crate::runtime::{error::RuntimeError, symbol::Symbol};
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
-pub trait Type {
+pub trait Type: Debug {
     fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
         Err(RuntimeError::NoConstructor(self.name().clone()))
     }

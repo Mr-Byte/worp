@@ -11,15 +11,16 @@ thread_local! {
     static TYPE: Rc<TypeBool> = Default::default();
 }
 
+#[derive(Debug)]
 struct TypeBool {
-    _type: Symbol,
+    name: Symbol,
     instance_members: HashMap<ObjectKey, ObjectInstance>,
 }
 
 impl Default for TypeBool {
     fn default() -> Self {
         Self {
-            _type: TY_BOOL,
+            name: TY_BOOL,
             instance_members: hashmap! [
                 ObjectKey::Symbol(OP_NOT) => ObjectInstance::new(Func::new_func1(not)),
                 ObjectKey::Symbol(OP_AND) => ObjectInstance::new(Func::new_func2(and)),
@@ -37,11 +38,11 @@ impl Default for TypeBool {
 
 impl Type for TypeBool {
     fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
-        Err(RuntimeError::NoConstructor(self._type.clone()))
+        Err(RuntimeError::NoConstructor(self.name.clone()))
     }
 
     fn name(&self) -> &Symbol {
-        &self._type
+        &self.name
     }
 
     fn impl_names(&self) -> &[&Symbol] {

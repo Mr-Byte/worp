@@ -11,15 +11,16 @@ thread_local! {
     static TYPE: Rc<TypeFloat> = Default::default();
 }
 
+#[derive(Debug)]
 struct TypeFloat {
-    _type: Symbol,
+    name: Symbol,
     instance_members: HashMap<ObjectKey, ObjectInstance>,
 }
 
 impl Default for TypeFloat {
     fn default() -> Self {
         Self {
-            _type: TY_FLOAT,
+            name: TY_FLOAT,
             instance_members: hashmap! [
                 ObjectKey::Symbol(OP_NEG) => ObjectInstance::new(Func::new_func1(negate)),
                 ObjectKey::Symbol(OP_MUL) => ObjectInstance::new(Func::new_func2(mul)),
@@ -40,11 +41,11 @@ impl Default for TypeFloat {
 
 impl Type for TypeFloat {
     fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
-        Err(RuntimeError::NoConstructor(self._type.clone()))
+        Err(RuntimeError::NoConstructor(self.name.clone()))
     }
 
     fn name(&self) -> &Symbol {
-        &self._type
+        &self.name
     }
 
     fn impl_names(&self) -> &[&Symbol] {

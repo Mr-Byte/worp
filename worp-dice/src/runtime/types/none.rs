@@ -11,15 +11,16 @@ thread_local! {
     static TYPE: Rc<TypeNone> = Default::default()
 }
 
+#[derive(Debug)]
 pub struct TypeNone {
-    _type: Symbol,
+    name: Symbol,
     instance_members: HashMap<ObjectKey, ObjectInstance>,
 }
 
 impl Default for TypeNone {
     fn default() -> Self {
         Self {
-            _type: TY_NONE,
+            name: TY_NONE,
             instance_members: hashmap! [
                 ObjectKey::Symbol(OP_EQ) => ObjectInstance::new(Func::new_func2(eq)),
                 ObjectKey::Symbol(OP_NE) => ObjectInstance::new(Func::new_func2(ne)),
@@ -30,7 +31,7 @@ impl Default for TypeNone {
 
 impl Type for TypeNone {
     fn name(&self) -> &Symbol {
-        &self._type
+        &self.name
     }
 
     fn impl_names(&self) -> &[&Symbol] {
