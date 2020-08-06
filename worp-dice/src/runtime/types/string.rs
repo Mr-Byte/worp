@@ -1,14 +1,54 @@
-use crate::runtime::object::{reflection::Type, ObjectBase};
-use std::{fmt::Display, ops::Deref, rc::Rc};
+use super::func::Func;
+use crate::runtime::{
+    error::RuntimeError,
+    object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
+    symbol::{common::operators::OP_ADD, common::types::TY_STRING, Symbol},
+};
+use maplit::hashmap;
+use std::{collections::HashMap, fmt::Display, ops::Deref, rc::Rc};
 
-// TODO: Implement TypeString
+thread_local! {
+    static TYPE: Rc<TypeString> = Default::default();
+}
+
+struct TypeString {
+    name: Symbol,
+    members: HashMap<ObjectKey, ObjectInstance>,
+}
+
+impl Default for TypeString {
+    fn default() -> Self {
+        Self {
+            name: TY_STRING,
+            members: hashmap! [
+                ObjectKey::Symbol(OP_ADD) => ObjectInstance::new(Func::new_func2(concat)),
+                "length".into() => ObjectInstance::new(Func::new_func1(length)),
+                "is_empty".into() => ObjectInstance::new(Func::new_func1(is_empty)),
+            ],
+        }
+    }
+}
+
+impl Type for TypeString {
+    fn name(&self) -> &Symbol {
+        &self.name
+    }
+
+    fn impl_names(&self) -> &[&Symbol] {
+        &[]
+    }
+
+    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+        &self.members
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct RcString(Rc<str>);
 
 impl ObjectBase for RcString {
     fn reflect_type(&self) -> Rc<dyn Type> {
-        todo!()
+        TYPE.with(Clone::clone)
     }
 }
 
@@ -32,25 +72,21 @@ impl From<String> for RcString {
     }
 }
 
-// thread_local! {
-//     static OPERATIONS: HashMap<ObjectKey, ObjectInstance> = hashmap! [
-//         ObjectKey::Symbol(OP_ADD) => ObjectRef::new(Func::new_func2(concat)),
-//         ObjectKey::Symbol(FN_TO_STRING) => ObjectRef::new(Func::from_raw_func1(to_string)),
-//         "length".into() => ObjectRef::new(Func::new_func1(length)),
-//         "is_empty".into() => ObjectRef::new(Func::new_func1(is_empty)),
-//     ];
+fn concat(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<RcString>(&TY_STRING)?;
+    let result: RcString = format!("{}{}", lhs, &*rhs).into();
 
-//     static TYPE_DATA: TypeData = TypeData::new(TY_STRING, Vec::new());
-// }
+    Ok(ObjectInstance::new(result))
+}
 
-// fn concat(lhs: &Rc<str>, rhs: &Rc<str>) -> Rc<str> {
-//     format!("{}{}", lhs, rhs).into()
-// }
+fn length(this: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let this = this.try_value::<RcString>(&TY_STRING)?;
 
-// fn length(value: &Rc<str>) -> i64 {
-//     value.len() as i64
-// }
+    Ok(ObjectInstance::new(this.len() as i64))
+}
 
-// fn is_empty(value: &Rc<str>) -> bool {
-//     value.is_empty()
-// }
+fn is_empty(this: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let this = this.try_value::<RcString>(&TY_STRING)?;
+
+    Ok(ObjectInstance::new(this.is_empty() as bool))
+}

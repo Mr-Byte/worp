@@ -4,10 +4,10 @@ use std::collections::HashMap;
 
 pub trait Type {
     fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
-        Err(RuntimeError::NoConstructor(self.type_name().clone()))
+        Err(RuntimeError::NoConstructor(self.name().clone()))
     }
 
-    fn type_name(&self) -> &Symbol;
+    fn name(&self) -> &Symbol;
     fn impl_names(&self) -> &[&Symbol];
     fn members(&self) -> &HashMap<ObjectKey, ObjectInstance>;
 

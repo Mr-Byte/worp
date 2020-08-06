@@ -45,7 +45,7 @@ pub trait ObjectBase: Any + Debug + Display {
 
     /// Set the property by key on the object.
     fn set(&self, _key: &ObjectKey, _value: ObjectInstance) -> Result<(), RuntimeError> {
-        Err(RuntimeError::NotAnObject(self.reflect_type().type_name().clone()))
+        Err(RuntimeError::NotAnObject(self.reflect_type().name().clone()))
     }
 
     /// Reflection facilities.
@@ -53,12 +53,7 @@ pub trait ObjectBase: Any + Debug + Display {
 
     /// Attempt to xall the object as a function.
     fn call(&self, _args: &[ObjectInstance]) -> Result<ObjectInstance, RuntimeError> {
-        Err(RuntimeError::NotAFunction(self.reflect_type().type_name().clone()))
-    }
-
-    /// Get a string representation of the type's value.
-    fn format(&self) -> String {
-        format!("[{}]", self.reflect_type().type_name())
+        Err(RuntimeError::NotAFunction(self.reflect_type().name().clone()))
     }
 }
 
@@ -83,6 +78,6 @@ impl dyn Object {
 
     pub fn try_value<V: ObjectBase + 'static>(&self, _type: &Symbol) -> Result<&V, RuntimeError> {
         self.value::<V>()
-            .ok_or_else(|| RuntimeError::InvalidType(_type.clone(), self.reflect_type().type_name().clone()))
+            .ok_or_else(|| RuntimeError::InvalidType(_type.clone(), self.reflect_type().name().clone()))
     }
 }

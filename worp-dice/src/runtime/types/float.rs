@@ -43,7 +43,7 @@ impl Type for TypeFloat {
         Err(RuntimeError::NoConstructor(self._type.clone()))
     }
 
-    fn type_name(&self) -> &Symbol {
+    fn name(&self) -> &Symbol {
         &self._type
     }
 

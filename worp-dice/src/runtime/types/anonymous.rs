@@ -24,7 +24,7 @@ impl Default for TypeAnonymousObject {
 }
 
 impl Type for TypeAnonymousObject {
-    fn type_name(&self) -> &Symbol {
+    fn name(&self) -> &Symbol {
         &self._type
     }
 

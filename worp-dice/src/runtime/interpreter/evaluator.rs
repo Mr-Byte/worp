@@ -140,7 +140,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
         BinaryOperator::LogicalAnd => lhs.get(&ObjectKey::Symbol(OP_AND))?.call(&[lhs, rhs]),
         BinaryOperator::LogicalOr => lhs.get(&ObjectKey::Symbol(OP_OR))?.call(&[lhs, rhs]),
         BinaryOperator::Coalesce => {
-            if *lhs.reflect_type().type_name() != TY_NONE {
+            if *lhs.reflect_type().name() != TY_NONE {
                 Ok(lhs)
             } else {
                 Ok(rhs)
@@ -154,7 +154,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
 fn eval_safe_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
-    if *object_ref.reflect_type().type_name() != TY_NONE {
+    if *object_ref.reflect_type().name() != TY_NONE {
         object_ref.get(&ObjectKey::Symbol(field.clone()))
     } else {
         Ok(ObjectInstance::NONE)
@@ -177,7 +177,7 @@ fn eval_object_key(expr: &Expression, environment: &Environment) -> Result<Objec
         let index: String = index.to_string();
         Ok(ObjectKey::Symbol(Symbol::new(index)))
     } else {
-        Err(RuntimeError::InvalidKeyType(index.reflect_type().type_name().clone()))
+        Err(RuntimeError::InvalidKeyType(index.reflect_type().name().clone()))
     }
 }
 
@@ -190,7 +190,7 @@ fn eval_conditional(
     let condition_result = eval_expression(condition, environment)?;
     let condition = *condition_result
         .value::<bool>()
-        .ok_or_else(|| RuntimeError::InvalidType(TY_BOOL, condition_result.reflect_type().type_name().clone()))?;
+        .ok_or_else(|| RuntimeError::InvalidType(TY_BOOL, condition_result.reflect_type().name().clone()))?;
 
     if condition {
         eval_expression(body, environment)
