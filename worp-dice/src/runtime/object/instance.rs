@@ -1,36 +1,36 @@
-use super::{types::func::Func, Object};
+use super::Object;
+use crate::runtime::types::{func::Func, list::List, none, string::RcString};
 use std::{ops::Deref, rc::Rc};
 
 #[derive(Clone, Debug)]
 enum ObjectVariant {
-    None(()),
+    None(none::None),
     Bool(bool),
     Int(i64),
     Float(f64),
     Function(Func),
-    List(Rc<[ObjectRef]>),
-    String(Rc<str>),
+    List(List),
+    String(RcString),
     Object(Rc<dyn Object>),
 }
 
 #[derive(Clone, Debug)]
-pub struct ObjectRef(ObjectVariant);
+pub struct ObjectInstance(ObjectVariant);
 
-impl ObjectRef {
-    pub const NONE: Self = ObjectRef(ObjectVariant::None(()));
+impl ObjectInstance {
+    pub const NONE: Self = ObjectInstance(ObjectVariant::None(none::None));
 
-    pub fn new_list(value: impl Into<Rc<[ObjectRef]>>) -> Self {
-        Self(ObjectVariant::List(value.into()))
+    pub fn new<O>(value: O) -> Self
+    where
+        O: Object + 'static,
+    {
+        Self::new_object(value)
     }
 
-    pub fn new_string(value: impl Into<Rc<str>>) -> Self {
-        Self(ObjectVariant::String(value.into()))
-    }
-
-    pub fn new(value: impl Object + 'static) -> Self {
+    fn new_object(value: impl Object + 'static) -> Self {
         let value_ref = &value as &dyn Object;
-        let variant = if value_ref.value::<()>().is_some() {
-            ObjectVariant::None(())
+        let variant = if value_ref.value::<none::None>().is_some() {
+            ObjectVariant::None(none::None)
         } else if let Some(value) = value_ref.value::<bool>() {
             ObjectVariant::Bool(*value)
         } else if let Some(value) = value_ref.value::<i64>() {
@@ -39,9 +39,9 @@ impl ObjectRef {
             ObjectVariant::Float(*value)
         } else if let Some(value) = value_ref.value::<Func>() {
             ObjectVariant::Function(value.clone())
-        } else if let Some(value) = value_ref.value::<Rc<[ObjectRef]>>() {
+        } else if let Some(value) = value_ref.value::<List>() {
             ObjectVariant::List(value.clone())
-        } else if let Some(value) = value_ref.value::<Rc<str>>() {
+        } else if let Some(value) = value_ref.value::<RcString>() {
             ObjectVariant::String(value.clone())
         } else {
             ObjectVariant::Object(Rc::new(value))
@@ -51,7 +51,7 @@ impl ObjectRef {
     }
 }
 
-impl Deref for ObjectRef {
+impl Deref for ObjectInstance {
     type Target = dyn Object;
 
     fn deref(&self) -> &Self::Target {
@@ -65,5 +65,14 @@ impl Deref for ObjectRef {
             ObjectVariant::Function(ref obj) => obj,
             ObjectVariant::Object(ref obj) => &**obj,
         }
+    }
+}
+
+impl<O> From<O> for ObjectInstance
+where
+    O: Object + Into<O>,
+{
+    fn from(value: O) -> Self {
+        ObjectInstance::new(value)
     }
 }

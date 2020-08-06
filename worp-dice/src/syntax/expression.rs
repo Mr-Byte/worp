@@ -1,5 +1,5 @@
 use super::parser::error::ParseError;
-use crate::interpreter::{object::ObjectKey, symbol::Symbol};
+use crate::runtime::{object::key::ObjectKey, symbol::Symbol};
 use std::{collections::HashMap, fmt::Display, str::FromStr};
 
 #[derive(Debug, Clone)]

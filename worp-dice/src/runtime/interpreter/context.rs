@@ -1,5 +1,8 @@
-use super::{error::RuntimeError, evaluator::eval, object::ObjectRef, symbol::Symbol};
-use crate::expression::Expression;
+use super::evaluator::eval;
+use crate::{
+    runtime::{error::RuntimeError, object::instance::ObjectInstance, symbol::Symbol},
+    syntax::Expression,
+};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Default)]
@@ -10,11 +13,11 @@ pub struct ExecutionContext {
 #[derive(Default, Debug)]
 pub struct Environment {
     parent: Option<Rc<Environment>>,
-    variables: RefCell<HashMap<Symbol, ObjectRef>>,
+    variables: RefCell<HashMap<Symbol, ObjectInstance>>,
 }
 
 impl Environment {
-    pub fn variable(&self, name: &Symbol) -> Result<ObjectRef, RuntimeError> {
+    pub fn variable(&self, name: &Symbol) -> Result<ObjectInstance, RuntimeError> {
         if let Some(variable) = self.variables.borrow().get(name) {
             Ok(variable.clone())
         } else if let Some(variable) = self.parent.as_ref().map(|parent| parent.variable(name)).transpose()? {
@@ -30,7 +33,7 @@ impl ExecutionContext {
         Self { inner: Default::default() }
     }
 
-    pub fn eval_expression(&self, input: &str) -> Result<ObjectRef, RuntimeError> {
+    pub fn eval_expression(&self, input: &str) -> Result<ObjectInstance, RuntimeError> {
         let expr: Expression = input.parse()?;
         eval(&expr, &self.inner)
     }
@@ -44,11 +47,11 @@ impl ExecutionContext {
         }
     }
 
-    pub fn variable(&self, name: &Symbol) -> Result<ObjectRef, RuntimeError> {
+    pub fn variable(&self, name: &Symbol) -> Result<ObjectInstance, RuntimeError> {
         self.inner.variable(name)
     }
 
-    pub fn add_variable(&mut self, name: Symbol, instance: ObjectRef) {
+    pub fn add_variable(&mut self, name: Symbol, instance: ObjectInstance) {
         self.inner.variables.borrow_mut().insert(name, instance);
     }
 }
@@ -56,7 +59,10 @@ impl ExecutionContext {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::interpreter::{object::ObjectKey, symbol::Symbol};
+    use crate::runtime::{
+        object::key::ObjectKey,
+        types::{list::List, none, string::RcString},
+    };
 
     #[test]
     fn test_multiplication() -> Result<(), RuntimeError> {
@@ -113,7 +119,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression("none")?;
 
-        assert_eq!((), *result.value::<()>().unwrap());
+        assert_eq!(none::None, *result.value::<none::None>().unwrap());
 
         Ok(())
     }
@@ -142,7 +148,7 @@ mod test {
     fn test_safe_field_access() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"none?.test"#)?;
-        assert_eq!((), *result.value::<()>().unwrap());
+        assert_eq!(none::None, *result.value::<none::None>().unwrap());
 
         Ok(())
     }
@@ -151,7 +157,7 @@ mod test {
     fn test_nested_safe_field_access() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"{ test: none }.test?.xy"#)?;
-        assert_eq!((), *result.value::<()>().unwrap());
+        assert_eq!(none::None, *result.value::<none::None>().unwrap());
 
         Ok(())
     }
@@ -177,7 +183,7 @@ mod test {
     #[test]
     fn test_variable() -> Result<(), RuntimeError> {
         let mut context = ExecutionContext::new();
-        context.add_variable(Symbol::new("test"), ObjectRef::new(5));
+        context.add_variable(Symbol::new("test"), ObjectInstance::new(5));
         let result = context.eval_expression(r#"test + 5"#)?;
 
         assert_eq!(10, *result.value::<i64>().unwrap());
@@ -188,7 +194,7 @@ mod test {
     #[test]
     fn test_variable_from_parent_scope() -> Result<(), RuntimeError> {
         let mut context = ExecutionContext::new();
-        context.add_variable(Symbol::new("test"), ObjectRef::new(5));
+        context.add_variable(Symbol::new("test"), ObjectInstance::new(5));
         let result = context.scoped().eval_expression(r#"test + 5"#)?;
 
         assert_eq!(10, *result.value::<i64>().unwrap());
@@ -231,7 +237,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"if 5 == 6 { 10 }"#)?;
 
-        assert_eq!((), *result.value::<()>().unwrap());
+        assert_eq!(none::None, *result.value::<none::None>().unwrap());
 
         Ok(())
     }
@@ -241,7 +247,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"if 5 >= 6 { 10 }"#)?;
 
-        assert_eq!((), *result.value::<()>().unwrap());
+        assert_eq!(none::None, *result.value::<none::None>().unwrap());
 
         Ok(())
     }
@@ -251,7 +257,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression("5 + 5 ; none")?;
 
-        assert_eq!((), *result.value::<()>().unwrap());
+        assert_eq!(none::None, *result.value::<none::None>().unwrap());
 
         Ok(())
     }
@@ -260,9 +266,9 @@ mod test {
     fn test_method_call() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression("5.to_string()")?;
-        let actual = result.value::<Rc<str>>().unwrap().as_ref();
+        let actual = result.value::<RcString>().unwrap();
 
-        assert_eq!("5", actual);
+        assert_eq!("5", &**actual);
 
         Ok(())
     }
@@ -292,9 +298,9 @@ mod test {
     fn test_chained_method_call() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r##"5["#op_add"](5).to_string()"##)?;
-        let actual = result.value::<Rc<str>>().unwrap().as_ref();
+        let actual = result.value::<RcString>().unwrap();
 
-        assert_eq!("10", actual);
+        assert_eq!("10", &**actual);
 
         Ok(())
     }
@@ -303,9 +309,9 @@ mod test {
     fn test_string_concat() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r##""test" + "value""##)?;
-        let actual = result.value::<Rc<str>>().unwrap().as_ref();
+        let actual = result.value::<RcString>().unwrap();
 
-        assert_eq!("testvalue", actual);
+        assert_eq!("testvalue", &**actual);
 
         Ok(())
     }
@@ -314,7 +320,7 @@ mod test {
     fn test_list_concat() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"[5] + [5, 5]"#)?;
-        let actual = result.value::<Rc<[ObjectRef]>>().unwrap().as_ref();
+        let actual = result.value::<List>().unwrap().as_ref();
 
         assert_eq!(3, actual.len());
 
@@ -325,7 +331,7 @@ mod test {
     fn test_list_concat_with_value() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"[5] + 5"#)?;
-        let actual = result.value::<Rc<[ObjectRef]>>().unwrap().as_ref();
+        let actual = result.value::<List>().unwrap().as_ref();
 
         assert_eq!(2, actual.len());
 

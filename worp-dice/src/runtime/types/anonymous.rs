@@ -1,6 +1,6 @@
 use crate::interpreter::{
     error::RuntimeError,
-    object::{reflection::TypeData, ObjectBase, ObjectKey, ObjectRef},
+    object::{reflection::TypeData, ObjectBase, ObjectInstance, ObjectKey},
     symbol::common::types::TY_OBJECT,
 };
 use std::collections::HashMap;
@@ -10,16 +10,16 @@ thread_local! {
 }
 
 #[derive(Debug)]
-pub struct AnonymouseObject(HashMap<ObjectKey, ObjectRef>);
+pub struct AnonymouseObject(HashMap<ObjectKey, ObjectInstance>);
 
 impl AnonymouseObject {
-    pub fn new(data: HashMap<ObjectKey, ObjectRef>) -> Self {
+    pub fn new(data: HashMap<ObjectKey, ObjectInstance>) -> Self {
         Self(data)
     }
 }
 
 impl ObjectBase for AnonymouseObject {
-    fn get(&self, key: &ObjectKey) -> Result<ObjectRef, RuntimeError> {
+    fn get(&self, key: &ObjectKey) -> Result<ObjectInstance, RuntimeError> {
         self.0.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone()))
     }
 

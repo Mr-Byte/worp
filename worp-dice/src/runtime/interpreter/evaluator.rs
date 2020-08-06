@@ -1,24 +1,27 @@
-use super::{
-    context::Environment,
-    error::RuntimeError,
-    object::{AnonymouseObject, ObjectKey, ObjectRef},
-    symbol::{
-        common::{
-            operators::{OP_ADD, OP_AND, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB},
-            types::{TY_BOOL, TY_NONE},
+use super::context::Environment;
+use crate::{
+    runtime::{
+        error::RuntimeError,
+        object::{instance::ObjectInstance, key::ObjectKey},
+        symbol::{
+            common::{
+                operators::{OP_ADD, OP_AND, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB},
+                types::{TY_BOOL, TY_NONE},
+            },
+            Symbol,
         },
-        Symbol,
+        types::{list::List, string::RcString},
     },
+    syntax::{BinaryOperator, Expression, Literal, UnaryOperator},
 };
-use crate::expression::{BinaryOperator, Expression, Literal, UnaryOperator};
-use std::{collections::HashMap, iter, rc::Rc};
+use std::{collections::HashMap, iter};
 
 #[inline]
-pub fn eval(expr: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+pub fn eval(expr: &Expression, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     eval_expression(expr, environment)
 }
 
-fn eval_expression(expr: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_expression(expr: &Expression, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     match expr {
         Expression::Literal(literal) => eval_literal(literal, environment),
         Expression::SafeAccess(expr, field) => eval_safe_field_access(expr, field, environment),
@@ -32,41 +35,42 @@ fn eval_expression(expr: &Expression, environment: &Environment) -> Result<Objec
     }
 }
 
-fn eval_literal(literal: &Literal, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_literal(literal: &Literal, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     match literal {
         Literal::Identifier(ref symbol) => environment.variable(symbol),
-        Literal::None => Ok(ObjectRef::NONE),
-        Literal::Integer(int) => Ok(ObjectRef::new(*int)),
-        Literal::Float(float) => Ok(ObjectRef::new(*float)),
-        Literal::String(string) => Ok(ObjectRef::new(Into::<Rc<str>>::into(string.clone()))),
-        Literal::Boolean(bool) => Ok(ObjectRef::new(*bool)),
+        Literal::None => Ok(ObjectInstance::NONE),
+        Literal::Integer(int) => Ok(ObjectInstance::new(*int)),
+        Literal::Float(float) => Ok(ObjectInstance::new(*float)),
+        Literal::String(string) => Ok(ObjectInstance::new(Into::<RcString>::into(string.clone()))),
+        Literal::Boolean(bool) => Ok(ObjectInstance::new(*bool)),
         Literal::List(list) => eval_list_literal(list, environment),
         Literal::Object(object) => eval_object_literal(object, environment),
     }
 }
 
 #[inline]
-fn eval_list_literal(list: &[Expression], environment: &Environment) -> Result<ObjectRef, RuntimeError> {
-    let result: Rc<[ObjectRef]> = list
+fn eval_list_literal(list: &[Expression], environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
+    let result: List = list
         .iter()
         .map(|expr| eval_expression(expr, environment))
         .collect::<Result<Vec<_>, _>>()?
         .into();
 
-    Ok(ObjectRef::new(result))
+    Ok(ObjectInstance::new(result))
 }
 
 #[inline]
-fn eval_object_literal(object: &HashMap<ObjectKey, Expression>, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
-    let result = object
-        .iter()
-        .map(|(key, value)| Ok::<_, RuntimeError>((key.clone(), eval_expression(value, environment)?)))
-        .collect::<Result<_, _>>()?;
+fn eval_object_literal(object: &HashMap<ObjectKey, Expression>, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
+    // let result = object
+    //     .iter()
+    //     .map(|(key, value)| Ok::<_, RuntimeError>((key.clone(), eval_expression(value, environment)?)))
+    //     .collect::<Result<_, _>>()?;
 
-    Ok(ObjectRef::new(AnonymouseObject::new(result)))
+    todo!()
+    // Ok(ObjectInstance::new(AnonymouseObject::new(result)))
 }
 
-fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     match expr {
         Expression::Literal(Literal::Identifier(target)) => {
             let args = args.iter().map(|arg| eval_expression(arg, environment)).collect::<Result<Vec<_>, _>>()?;
@@ -85,10 +89,10 @@ fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Envi
 }
 
 #[inline]
-fn eval_method_call(method: &ObjectKey, this: &Expression, args: &[Expression], environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_method_call(method: &ObjectKey, this: &Expression, args: &[Expression], environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     let args = iter::once_with(|| eval_expression(this, environment))
         .chain(args.iter().map(|arg| eval_expression(arg, environment)))
-        .collect::<Result<Vec<ObjectRef>, RuntimeError>>()?;
+        .collect::<Result<Vec<ObjectInstance>, RuntimeError>>()?;
 
     match args.first() {
         Some(this) => {
@@ -100,14 +104,14 @@ fn eval_method_call(method: &ObjectKey, this: &Expression, args: &[Expression], 
 }
 
 #[inline]
-fn eval_index(expr: &Expression, index: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_index(expr: &Expression, index: &Expression, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     let target = eval_expression(expr, environment)?;
     let index = eval_object_key(index, environment)?;
 
     target.get(&index)
 }
 
-fn eval_unary(op: &UnaryOperator, expr: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_unary(op: &UnaryOperator, expr: &Expression, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
     match op {
@@ -116,7 +120,7 @@ fn eval_unary(op: &UnaryOperator, expr: &Expression, environment: &Environment) 
     }
 }
 
-fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     let lhs = eval_expression(lhs, environment)?;
     // TODO: Only evaluate this when needed.
     let rhs = eval_expression(rhs, environment)?;
@@ -137,7 +141,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
         BinaryOperator::LogicalAnd => lhs.get(&ObjectKey::Symbol(OP_AND))?.call(&[lhs, rhs]),
         BinaryOperator::LogicalOr => lhs.get(&ObjectKey::Symbol(OP_OR))?.call(&[lhs, rhs]),
         BinaryOperator::Coalesce => {
-            if *lhs.instance_type_data().type_tag() != TY_NONE {
+            if *lhs.reflect_type().type_name() != TY_NONE {
                 Ok(lhs)
             } else {
                 Ok(rhs)
@@ -148,18 +152,18 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
 }
 
 #[inline]
-fn eval_safe_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_safe_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
-    if *object_ref.instance_type_data().type_tag() != TY_NONE {
+    if *object_ref.reflect_type().type_name() != TY_NONE {
         object_ref.get(&ObjectKey::Symbol(field.clone()))
     } else {
-        Ok(ObjectRef::NONE)
+        Ok(ObjectInstance::NONE)
     }
 }
 
 #[inline]
-fn eval_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<ObjectRef, RuntimeError> {
+fn eval_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
     object_ref.get(&ObjectKey::Symbol(field.clone()))
 }
@@ -170,11 +174,11 @@ fn eval_object_key(expr: &Expression, environment: &Environment) -> Result<Objec
 
     if let Some(index) = index.value::<i64>() {
         Ok(ObjectKey::Index(*index))
-    } else if let Some(index) = index.value::<Rc<str>>() {
+    } else if let Some(index) = index.value::<RcString>() {
         let index: String = index.to_string();
         Ok(ObjectKey::Symbol(Symbol::new(index)))
     } else {
-        Err(RuntimeError::InvalidKeyType(index.instance_type_data().type_tag().clone()))
+        Err(RuntimeError::InvalidKeyType(index.reflect_type().type_name().clone()))
     }
 }
 
@@ -183,17 +187,17 @@ fn eval_conditional(
     body: &Expression,
     alternate: Option<&Expression>,
     environment: &Environment,
-) -> Result<ObjectRef, RuntimeError> {
+) -> Result<ObjectInstance, RuntimeError> {
     let condition_result = eval_expression(condition, environment)?;
     let condition = *condition_result
         .value::<bool>()
-        .ok_or_else(|| RuntimeError::InvalidType(TY_BOOL, condition_result.instance_type_data().type_tag().clone()))?;
+        .ok_or_else(|| RuntimeError::InvalidType(TY_BOOL, condition_result.reflect_type().type_name().clone()))?;
 
     if condition {
         eval_expression(body, environment)
     } else if let Some(alternate) = alternate {
         eval_expression(alternate, environment)
     } else {
-        Ok(ObjectRef::NONE)
+        Ok(ObjectInstance::NONE)
     }
 }

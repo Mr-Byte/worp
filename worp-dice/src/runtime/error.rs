@@ -1,5 +1,5 @@
-use super::{object::ObjectKey, symbol::Symbol};
-use crate::expression::ParseError;
+use super::{object::key::ObjectKey, symbol::Symbol};
+use crate::syntax::ParseError;
 
 #[derive(thiserror::Error, Debug)]
 #[error("Evaluation failed.")]

@@ -1,4 +1,4 @@
-use crate::interpreter::symbol::Symbol;
+use crate::runtime::symbol::Symbol;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]

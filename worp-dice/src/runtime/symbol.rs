@@ -20,8 +20,9 @@ impl Display for Symbol {
 }
 
 pub mod common {
+    use super::*;
     pub mod types {
-        use crate::interpreter::symbol::Symbol;
+        use super::*;
 
         pub const TY_NONE: Symbol = Symbol::new_static("None");
         pub const TY_BOOL: Symbol = Symbol::new_static("Bool");
@@ -34,7 +35,7 @@ pub mod common {
     }
 
     pub mod operators {
-        use crate::interpreter::symbol::Symbol;
+        use super::*;
 
         pub const OP_NEG: Symbol = Symbol::new_static("#op_neg");
         pub const OP_MUL: Symbol = Symbol::new_static("#op_mul");
@@ -57,7 +58,7 @@ pub mod common {
     }
 
     pub mod methods {
-        use crate::interpreter::symbol::Symbol;
+        use super::*;
 
         pub const FN_TO_STRING: Symbol = Symbol::new_static("to_string");
     }
