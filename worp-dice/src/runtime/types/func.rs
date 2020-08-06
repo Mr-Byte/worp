@@ -1,15 +1,48 @@
 #![allow(dead_code)]
 
 use crate::runtime::{
-    core::{reflection::Type, value::Value, TypeInstanceBase},
+    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
+    symbol::{common::types::TY_FUNC, Symbol},
 };
 use std::{
+    collections::HashMap,
     fmt::{Debug, Display},
     rc::Rc,
 };
 
-// TODO: Add TypeFunc.
+thread_local! {
+    static TYPE: Rc<TypeFunc> = Default::default();
+}
+
+#[derive(Debug)]
+pub(crate) struct TypeFunc {
+    name: Symbol,
+    members: HashMap<ValueKey, Value>,
+}
+
+impl Default for TypeFunc {
+    fn default() -> Self {
+        Self {
+            name: TY_FUNC,
+            members: HashMap::new(),
+        }
+    }
+}
+
+impl Type for TypeFunc {
+    fn name(&self) -> &Symbol {
+        &self.name
+    }
+
+    fn impl_names(&self) -> &[&Symbol] {
+        &[]
+    }
+
+    fn members(&self) -> &HashMap<ValueKey, Value> {
+        &self.members
+    }
+}
 
 #[derive(Clone)]
 enum FuncVariant {
@@ -45,7 +78,7 @@ impl TypeInstanceBase for Func {
     }
 
     fn reflect_type(&self) -> Rc<dyn Type> {
-        todo!()
+        TYPE.with(Clone::clone)
     }
 }
 
@@ -106,22 +139,4 @@ impl Func2 {
             Err(RuntimeError::InvalidFunctionArgs(2, args.len()))
         }
     }
-}
-
-#[cfg(test)]
-mod test {
-
-    // #[test]
-    // fn func1_executes_successfully_with_one_argument_to_call() -> Result<(), RuntimeError> {
-    //     let arg = ObjectInstance::new(42i64);
-    //     let test_func = ObjectInstance::new(Func::new_func1(|arg: &i64| {
-    //         assert_eq!(42, *arg);
-    //     }));
-
-    //     let result = test_func.call(&[arg])?;
-
-    //     assert_eq!(ObjectInstance::NONE.value::<()>(), result.value::<()>());
-
-    //     Ok(())
-    // }
 }
