@@ -1,114 +1,154 @@
-use crate::runtime::object::{reflection::Type, ObjectBase};
-use std::rc::Rc;
+use super::func::Func;
+use crate::runtime::{
+    error::RuntimeError,
+    object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
+    symbol::{common::operators::*, common::types::TY_FLOAT, Symbol},
+};
+use maplit::hashmap;
+use std::{collections::HashMap, rc::Rc};
 
-impl ObjectBase for f64 {
-    fn reflect_type(&self) -> Rc<dyn Type> {
-        todo!()
+thread_local! {
+    static TYPE: Rc<TypeFloat> = Rc::new(TypeFloat::new());
+}
+
+struct TypeFloat {
+    _type: Symbol,
+    instance_members: HashMap<ObjectKey, ObjectInstance>,
+}
+
+impl TypeFloat {
+    fn new() -> Self {
+        Self {
+            _type: TY_FLOAT,
+            instance_members: hashmap! [
+                ObjectKey::Symbol(OP_NEG) => ObjectInstance::new(Func::new_func1(negate)),
+                ObjectKey::Symbol(OP_MUL) => ObjectInstance::new(Func::new_func2(mul)),
+                ObjectKey::Symbol(OP_DIV) => ObjectInstance::new(Func::new_func2(div)),
+                ObjectKey::Symbol(OP_REM) => ObjectInstance::new(Func::new_func2(rem)),
+                ObjectKey::Symbol(OP_ADD) => ObjectInstance::new(Func::new_func2(add)),
+                ObjectKey::Symbol(OP_SUB) => ObjectInstance::new(Func::new_func2(sub)),
+                ObjectKey::Symbol(OP_EQ) => ObjectInstance::new(Func::new_func2(eq)),
+                ObjectKey::Symbol(OP_NE) => ObjectInstance::new(Func::new_func2(ne)),
+                ObjectKey::Symbol(OP_GT) => ObjectInstance::new(Func::new_func2(gt)),
+                ObjectKey::Symbol(OP_GTE) => ObjectInstance::new(Func::new_func2(gte)),
+                ObjectKey::Symbol(OP_LT) => ObjectInstance::new(Func::new_func2(lt)),
+                ObjectKey::Symbol(OP_LTE) => ObjectInstance::new(Func::new_func2(lte)),
+            ],
+        }
     }
 }
 
-// thread_local! {
-//     static OPERATIONS: HashMap<ObjectKey, ObjectInstance> = hashmap! [
-//         ObjectKey::Symbol(OP_NEG) => ObjectRef::new(Func::new_func1(negate)),
-//         ObjectKey::Symbol(OP_MUL) => ObjectRef::new(Func::new_func2(mul)),
-//         ObjectKey::Symbol(OP_DIV) => ObjectRef::new(Func::new_func2(div)),
-//         ObjectKey::Symbol(OP_REM) => ObjectRef::new(Func::new_func2(rem)),
-//         ObjectKey::Symbol(OP_ADD) => ObjectRef::new(Func::new_func2(add)),
-//         ObjectKey::Symbol(OP_SUB) => ObjectRef::new(Func::new_func2(sub)),
-//         ObjectKey::Symbol(OP_GT) => ObjectRef::new(Func::new_func2(gt)),
-//         ObjectKey::Symbol(OP_LT) => ObjectRef::new(Func::new_func2(lt)),
-//         ObjectKey::Symbol(OP_GTE) => ObjectRef::new(Func::new_func2(gte)),
-//         ObjectKey::Symbol(OP_LTE) => ObjectRef::new(Func::new_func2(lte)),
-//         ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func::new_func2(eq)),
-//         ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func::new_func2(ne)),
-//         ObjectKey::Symbol(FN_TO_STRING) => ObjectRef::new(Func::from_raw_func1(to_string)),
-//     ];
+impl Type for TypeFloat {
+    fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
+        Err(RuntimeError::NoConstructor(self._type.clone()))
+    }
 
-//     static TYPE_DATA: TypeData = TypeData::new(TY_FLOAT, Vec::new());
-// }
+    fn type_name(&self) -> &Symbol {
+        &self._type
+    }
 
-// fn negate(arg: &f64) -> f64 {
-//     -arg
-// }
+    fn impl_names(&self) -> &[&Symbol] {
+        &[]
+    }
 
-// fn mul(lhs: &f64, rhs: &f64) -> f64 {
-//     lhs * rhs
-// }
+    fn instance_members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+        &self.instance_members
+    }
+}
 
-// fn div(lhs: &f64, rhs: &f64) -> f64 {
-//     lhs / rhs
-// }
+impl ObjectBase for f64 {
+    fn reflect_type(&self) -> Rc<dyn Type> {
+        TYPE.with(Clone::clone)
+    }
+}
 
-// fn rem(lhs: &f64, rhs: &f64) -> f64 {
-//     lhs % rhs
-// }
+fn negate(value: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let value = value.try_value::<f64>(&TY_FLOAT)?;
 
-// fn add(lhs: &f64, rhs: &f64) -> f64 {
-//     lhs + rhs
-// }
+    Ok(ObjectInstance::new(-value))
+}
 
-// fn sub(lhs: &f64, rhs: &f64) -> f64 {
-//     lhs - rhs
-// }
+fn mul(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-// fn gt(lhs: &f64, rhs: &f64) -> bool {
-//     lhs > rhs
-// }
+    Ok(ObjectInstance::new(lhs * rhs))
+}
 
-// fn lt(lhs: &f64, rhs: &f64) -> bool {
-//     lhs < rhs
-// }
+fn div(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-// fn gte(lhs: &f64, rhs: &f64) -> bool {
-//     lhs >= rhs
-// }
+    Ok(ObjectInstance::new(lhs / rhs))
+}
 
-// fn lte(lhs: &f64, rhs: &f64) -> bool {
-//     lhs <= rhs
-// }
+fn rem(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-// fn eq(lhs: &f64, rhs: &f64) -> bool {
-//     lhs == rhs
-// }
+    Ok(ObjectInstance::new(lhs % rhs))
+}
 
-// fn ne(lhs: &f64, rhs: &f64) -> bool {
-//     lhs != rhs
-// }
+fn add(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
+    Ok(ObjectInstance::new(lhs + rhs))
+}
 
-//     #[test]
-//     fn test_add_with_two_ints() -> Result<(), RuntimeError> {
-//         let lhs = ObjectInstance::new(40.0);
-//         let rhs = ObjectInstance::new(2.0);
-//         let result = lhs.get(&ObjectKey::Symbol(OP_ADD))?.call(vec![lhs, rhs].as_slice())?;
+fn sub(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-//         assert_eq!(42.0, *result.value::<f64>().unwrap());
+    Ok(ObjectInstance::new(lhs - rhs))
+}
 
-//         Ok(())
-//     }
+fn eq(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.value::<f64>();
+    let result = match rhs {
+        Some(rhs) => lhs == rhs,
+        None => false,
+    };
 
-//     #[test]
-//     fn test_add_with_lhs_int_rhs_none() -> Result<(), RuntimeError> {
-//         let lhs = ObjectInstance::new(40.0);
-//         let rhs = ObjectInstance::NONE;
-//         let result = lhs.get(&ObjectKey::Symbol(OP_ADD))?.call(vec![lhs, rhs].as_slice());
+    Ok(ObjectInstance::new(result))
+}
 
-//         assert!(result.is_err());
+fn ne(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.value::<f64>();
+    let result = match rhs {
+        Some(rhs) => lhs != rhs,
+        None => true,
+    };
 
-//         Ok(())
-//     }
+    Ok(ObjectInstance::new(result))
+}
 
-//     #[test]
-//     fn test_eq_with_two_ints() -> Result<(), RuntimeError> {
-//         let lhs = ObjectInstance::new(40.0);
-//         let rhs = ObjectInstance::new(2.0);
-//         let result = lhs.get(&ObjectKey::Symbol(OP_EQ))?.call(vec![lhs, rhs].as_slice())?;
+fn gt(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
 
-//         assert_eq!(false, *result.value::<bool>().unwrap());
+    Ok(ObjectInstance::new(lhs > rhs))
+}
 
-//         Ok(())
-//     }
-// }
+fn gte(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
+
+    Ok(ObjectInstance::new(lhs >= rhs))
+}
+
+fn lt(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
+
+    Ok(ObjectInstance::new(lhs < rhs))
+}
+
+fn lte(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<f64>(&TY_FLOAT)?;
+    let rhs = rhs.try_value::<f64>(&TY_FLOAT)?;
+
+    Ok(ObjectInstance::new(lhs <= rhs))
+}

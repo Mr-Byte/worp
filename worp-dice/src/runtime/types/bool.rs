@@ -1,30 +1,55 @@
+use super::func::Func;
 use crate::runtime::{
     error::RuntimeError,
     object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
+    symbol::{common::operators::*, common::types::TY_BOOL, Symbol},
 };
-use std::rc::Rc;
+use maplit::hashmap;
+use std::{collections::HashMap, rc::Rc};
 
 thread_local! {
-    static TYPE: Rc<TypeBool> = Rc::new(TypeBool {});
+    static TYPE: Rc<TypeBool> = Rc::new(TypeBool::new());
 }
 
-pub struct TypeBool {}
+struct TypeBool {
+    _type: Symbol,
+    instance_members: HashMap<ObjectKey, ObjectInstance>,
+}
+
+impl TypeBool {
+    fn new() -> Self {
+        Self {
+            _type: TY_BOOL,
+            instance_members: hashmap! [
+                ObjectKey::Symbol(OP_NOT) => ObjectInstance::new(Func::new_func1(not)),
+                ObjectKey::Symbol(OP_AND) => ObjectInstance::new(Func::new_func2(and)),
+                ObjectKey::Symbol(OP_OR) => ObjectInstance::new(Func::new_func2(or)),
+                ObjectKey::Symbol(OP_EQ) => ObjectInstance::new(Func::new_func2(eq)),
+                ObjectKey::Symbol(OP_NE) => ObjectInstance::new(Func::new_func2(ne)),
+                ObjectKey::Symbol(OP_GT) => ObjectInstance::new(Func::new_func2(gt)),
+                ObjectKey::Symbol(OP_GTE) => ObjectInstance::new(Func::new_func2(gte)),
+                ObjectKey::Symbol(OP_LT) => ObjectInstance::new(Func::new_func2(lt)),
+                ObjectKey::Symbol(OP_LTE) => ObjectInstance::new(Func::new_func2(lte)),
+            ],
+        }
+    }
+}
 
 impl Type for TypeBool {
     fn construct(&self) -> Result<ObjectInstance, RuntimeError> {
-        todo!()
+        Err(RuntimeError::NoConstructor(self._type.clone()))
     }
 
-    fn type_name(&self) -> &crate::runtime::symbol::Symbol {
-        todo!()
+    fn type_name(&self) -> &Symbol {
+        &self._type
     }
 
-    fn impl_names(&self) -> &[&crate::runtime::symbol::Symbol] {
-        todo!()
+    fn impl_names(&self) -> &[&Symbol] {
+        &[]
     }
 
-    fn instance_members(&self) -> &std::collections::HashMap<ObjectKey, ObjectInstance> {
-        todo!()
+    fn instance_members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+        &self.instance_members
     }
 }
 
@@ -34,51 +59,72 @@ impl ObjectBase for bool {
     }
 }
 
-// thread_local! {
-//     static OPERATIONS: HashMap<ObjectKey, ObjectInstance> = hashmap! [
-//         ObjectKey::Symbol(OP_NOT) => ObjectRef::new(Func::new_func1(not)),
-//         ObjectKey::Symbol(OP_EQ) => ObjectRef::new(Func::new_func2(eq)),
-//         ObjectKey::Symbol(OP_NE) => ObjectRef::new(Func::new_func2(ne)),
-//         ObjectKey::Symbol(OP_AND) => ObjectRef::new(Func::new_func2(and)),
-//         ObjectKey::Symbol(OP_OR) => ObjectRef::new(Func::new_func2(or)),
-//         ObjectKey::Symbol(FN_TO_STRING) => ObjectRef::new(Func::from_raw_func1(to_string)),
-//     ];
+fn not(value: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let value = value.try_value::<bool>(&TY_BOOL)?;
 
-//     static TYPE_DATA: TypeData = TypeData::new(TY_INT, Vec::new());
-// }
+    Ok(ObjectInstance::new(!value))
+}
 
-// fn not(arg: &bool) -> bool {
-//     !arg
-// }
+fn eq(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
+    let rhs = rhs.value::<bool>();
+    let result = match rhs {
+        Some(rhs) => lhs == rhs,
+        None => false,
+    };
 
-// fn eq(lhs: &bool, rhs: &bool) -> bool {
-//     lhs == rhs
-// }
+    Ok(ObjectInstance::new(result))
+}
 
-// fn ne(lhs: &bool, rhs: &bool) -> bool {
-//     lhs != rhs
-// }
+fn ne(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
+    let rhs = rhs.value::<bool>();
+    let result = match rhs {
+        Some(rhs) => lhs != rhs,
+        None => true,
+    };
 
-// fn and(lhs: &bool, rhs: &bool) -> bool {
-//     *lhs && *rhs
-// }
+    Ok(ObjectInstance::new(result))
+}
 
-// fn or(lhs: &bool, rhs: &bool) -> bool {
-//     *lhs || *rhs
-// }
+fn and(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
+    let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
+    Ok(ObjectInstance::new(*lhs && *rhs))
+}
 
-//     #[test]
-//     fn test_eq_with_two_bools() -> Result<(), RuntimeError> {
-//         let lhs = ObjectInstance::new(true);
-//         let rhs = ObjectInstance::new(false);
-//         let result = lhs.get(&ObjectKey::Symbol(OP_EQ))?.call(vec![lhs, rhs].as_slice())?;
+fn or(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
+    let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
 
-//         assert_eq!(false, *result.value::<bool>().unwrap());
+    Ok(ObjectInstance::new(*lhs || *rhs))
+}
 
-//         Ok(())
-//     }
-// }
+fn gt(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
+    let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
+
+    Ok(ObjectInstance::new(lhs > rhs))
+}
+
+fn gte(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
+    let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
+
+    Ok(ObjectInstance::new(lhs >= rhs))
+}
+
+fn lt(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
+    let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
+
+    Ok(ObjectInstance::new(lhs < rhs))
+}
+
+fn lte(lhs: ObjectInstance, rhs: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let lhs = lhs.try_value::<bool>(&TY_BOOL)?;
+    let rhs = rhs.try_value::<bool>(&TY_BOOL)?;
+
+    Ok(ObjectInstance::new(lhs <= rhs))
+}

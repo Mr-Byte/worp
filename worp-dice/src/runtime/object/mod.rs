@@ -1,5 +1,9 @@
-use super::error::RuntimeError;
-use instance::ObjectInstance;
+use self::instance::ObjectInstance;
+use super::{
+    error::RuntimeError,
+    symbol::{common::methods::FN_TO_STRING, Symbol},
+    types::{func::Func, string::RcString},
+};
 use key::ObjectKey;
 use reflection::Type;
 use std::{
@@ -12,6 +16,15 @@ pub mod instance;
 pub mod key;
 pub mod reflection;
 
+thread_local! {
+    static TO_STRING: ObjectInstance = ObjectInstance::new(Func::new_func1(to_string));
+}
+
+fn to_string(object: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
+    let string: RcString = object.to_string().into();
+    Ok(ObjectInstance::new(string))
+}
+
 /// Trait implemented by types wishing to expose functionality to Dice.
 /// Provides several methods, with default implementations, for interacting with the Dice interpreter.
 pub trait ObjectBase: Any + Debug + Display {
@@ -19,6 +32,8 @@ pub trait ObjectBase: Any + Debug + Display {
     fn get(&self, key: &ObjectKey) -> Result<ObjectInstance, RuntimeError> {
         if let Some(member) = self.reflect_type().instance_members().get(key) {
             Ok(member.clone())
+        } else if key == &ObjectKey::Symbol(FN_TO_STRING) {
+            Ok(TO_STRING.with(Clone::clone))
         } else {
             self.get_instance_member(key)
         }
@@ -64,5 +79,10 @@ where
 impl dyn Object {
     pub fn value<V: ObjectBase + 'static>(&self) -> Option<&V> {
         self.as_any().downcast_ref::<V>()
+    }
+
+    pub fn try_value<V: ObjectBase + 'static>(&self, _type: &Symbol) -> Result<&V, RuntimeError> {
+        self.value::<V>()
+            .ok_or_else(|| RuntimeError::InvalidType(_type.clone(), self.reflect_type().type_name().clone()))
     }
 }

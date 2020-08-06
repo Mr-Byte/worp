@@ -12,6 +12,8 @@ pub enum RuntimeError {
     NotAFunction(Symbol),
     #[error("Runtime Error: Functions require a self parameter to be called as a method.")]
     NoSelfParameterProvided,
+    #[error("Runtime Error: {0} has no instructor.")]
+    NoConstructor(Symbol),
     #[error("Runtime Error: Missing field {0}.")]
     MissingField(ObjectKey),
     #[error("Runtime Error: Invalid number of parameters passed to function. Expected: {0}, Found: {1}.")]
