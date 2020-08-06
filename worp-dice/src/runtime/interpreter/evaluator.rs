@@ -10,7 +10,7 @@ use crate::{
             },
             Symbol,
         },
-        types::{list::List, string::RcString},
+        types::{anonymous::AnonymouseObject, list::List, string::RcString},
     },
     syntax::{BinaryOperator, Expression, Literal, UnaryOperator},
 };
@@ -61,13 +61,12 @@ fn eval_list_literal(list: &[Expression], environment: &Environment) -> Result<O
 
 #[inline]
 fn eval_object_literal(object: &HashMap<ObjectKey, Expression>, environment: &Environment) -> Result<ObjectInstance, RuntimeError> {
-    // let result = object
-    //     .iter()
-    //     .map(|(key, value)| Ok::<_, RuntimeError>((key.clone(), eval_expression(value, environment)?)))
-    //     .collect::<Result<_, _>>()?;
+    let result = object
+        .iter()
+        .map(|(key, value)| Ok::<_, RuntimeError>((key.clone(), eval_expression(value, environment)?)))
+        .collect::<Result<_, _>>()?;
 
-    todo!()
-    // Ok(ObjectInstance::new(AnonymouseObject::new(result)))
+    Ok(ObjectInstance::new(AnonymouseObject::new(result)))
 }
 
 fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Environment) -> Result<ObjectInstance, RuntimeError> {

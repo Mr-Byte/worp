@@ -8,7 +8,7 @@ use maplit::hashmap;
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 thread_local! {
-    static TYPE: Rc<TypeNone> = Rc::new(TypeNone::new())
+    static TYPE: Rc<TypeNone> = Default::default()
 }
 
 pub struct TypeNone {
@@ -16,10 +16,10 @@ pub struct TypeNone {
     instance_members: HashMap<ObjectKey, ObjectInstance>,
 }
 
-impl TypeNone {
-    fn new() -> Self {
+impl Default for TypeNone {
+    fn default() -> Self {
         Self {
-            _type: TY_NONE.clone(),
+            _type: TY_NONE,
             instance_members: hashmap! [
                 ObjectKey::Symbol(OP_EQ) => ObjectInstance::new(Func::new_func2(eq)),
                 ObjectKey::Symbol(OP_NE) => ObjectInstance::new(Func::new_func2(ne)),
@@ -37,7 +37,7 @@ impl Type for TypeNone {
         &[]
     }
 
-    fn instance_members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
         &self.instance_members
     }
 }

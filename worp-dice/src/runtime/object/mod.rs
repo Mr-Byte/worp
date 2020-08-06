@@ -30,7 +30,7 @@ fn to_string(object: ObjectInstance) -> Result<ObjectInstance, RuntimeError> {
 pub trait ObjectBase: Any + Debug + Display {
     /// Get a property by key from the object.
     fn get(&self, key: &ObjectKey) -> Result<ObjectInstance, RuntimeError> {
-        if let Some(member) = self.reflect_type().instance_members().get(key) {
+        if let Some(member) = self.reflect_type().members().get(key) {
             Ok(member.clone())
         } else if key == &ObjectKey::Symbol(FN_TO_STRING) {
             Ok(TO_STRING.with(Clone::clone))

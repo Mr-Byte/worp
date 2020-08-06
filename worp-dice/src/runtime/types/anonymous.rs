@@ -1,12 +1,40 @@
-use crate::interpreter::{
+use crate::runtime::{
     error::RuntimeError,
-    object::{reflection::TypeData, ObjectBase, ObjectInstance, ObjectKey},
-    symbol::common::types::TY_OBJECT,
+    object::{instance::ObjectInstance, key::ObjectKey, reflection::Type, ObjectBase},
+    symbol::{common::types::TY_OBJECT, Symbol},
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 thread_local! {
-    static TYPE_DATA: TypeData = TypeData::new(TY_OBJECT, Vec::new());
+    static TYPE: Rc<TypeAnonymousObject> = Default::default();
+}
+
+struct TypeAnonymousObject {
+    _type: Symbol,
+    members: HashMap<ObjectKey, ObjectInstance>,
+}
+
+impl Default for TypeAnonymousObject {
+    fn default() -> Self {
+        Self {
+            _type: TY_OBJECT,
+            members: HashMap::new(),
+        }
+    }
+}
+
+impl Type for TypeAnonymousObject {
+    fn type_name(&self) -> &Symbol {
+        &self._type
+    }
+
+    fn impl_names(&self) -> &[&Symbol] {
+        &[]
+    }
+
+    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+        &self.members
+    }
 }
 
 #[derive(Debug)]
@@ -19,34 +47,24 @@ impl AnonymouseObject {
 }
 
 impl ObjectBase for AnonymouseObject {
-    fn get(&self, key: &ObjectKey) -> Result<ObjectInstance, RuntimeError> {
+    fn get_instance_member(&self, key: &ObjectKey) -> Result<ObjectInstance, RuntimeError> {
         self.0.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone()))
     }
 
-    fn properties(&self) -> Vec<(ObjectKey, TypeData)> {
-        self.0
-            .clone()
-            .into_iter()
-            .map(|(key, value)| (key, value.instance_type_data()))
-            .collect::<Vec<_>>()
+    fn reflect_type(&self) -> std::rc::Rc<dyn crate::runtime::object::reflection::Type> {
+        TYPE.with(Clone::clone)
     }
+}
 
-    fn type_data() -> TypeData {
-        TYPE_DATA.with(Clone::clone)
-    }
-
-    fn instance_type_data(&self) -> TypeData {
-        Self::type_data()
-    }
-
-    fn format_value(&self) -> String {
+impl Display for AnonymouseObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let fields = self
             .0
             .iter()
-            .map(|(key, value)| format!("{}: {}", key.to_string(), value.format_value()))
+            .map(|(key, value)| format!("{}: {}", key.to_string(), value.to_string()))
             .collect::<Vec<_>>()
             .join(", ");
 
-        format!("{{ {} }}", fields)
+        write!(f, "{{ {} }}", fields)
     }
 }

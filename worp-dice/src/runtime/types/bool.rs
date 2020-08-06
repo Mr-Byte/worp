@@ -8,7 +8,7 @@ use maplit::hashmap;
 use std::{collections::HashMap, rc::Rc};
 
 thread_local! {
-    static TYPE: Rc<TypeBool> = Rc::new(TypeBool::new());
+    static TYPE: Rc<TypeBool> = Default::default();
 }
 
 struct TypeBool {
@@ -16,8 +16,8 @@ struct TypeBool {
     instance_members: HashMap<ObjectKey, ObjectInstance>,
 }
 
-impl TypeBool {
-    fn new() -> Self {
+impl Default for TypeBool {
+    fn default() -> Self {
         Self {
             _type: TY_BOOL,
             instance_members: hashmap! [
@@ -48,7 +48,7 @@ impl Type for TypeBool {
         &[]
     }
 
-    fn instance_members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
         &self.instance_members
     }
 }

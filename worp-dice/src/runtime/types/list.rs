@@ -1,6 +1,8 @@
 use crate::runtime::object::{instance::ObjectInstance, reflection::Type, ObjectBase};
 use std::{fmt::Display, ops::Deref, rc::Rc};
 
+// TODO: Implement TypeList
+
 #[derive(Debug, Clone)]
 pub struct List(Rc<[ObjectInstance]>);
 
@@ -11,7 +13,7 @@ impl ObjectBase for List {
 }
 
 impl Display for List {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }

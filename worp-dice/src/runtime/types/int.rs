@@ -8,7 +8,7 @@ use maplit::hashmap;
 use std::{collections::HashMap, rc::Rc};
 
 thread_local! {
-    static TYPE: Rc<TypeInt> = Rc::new(TypeInt::new());
+    static TYPE: Rc<TypeInt> = Default::default();
 }
 
 struct TypeInt {
@@ -16,8 +16,8 @@ struct TypeInt {
     instance_members: HashMap<ObjectKey, ObjectInstance>,
 }
 
-impl TypeInt {
-    fn new() -> Self {
+impl Default for TypeInt {
+    fn default() -> Self {
         Self {
             _type: TY_INT,
             instance_members: hashmap! [
@@ -51,7 +51,7 @@ impl Type for TypeInt {
         &[]
     }
 
-    fn instance_members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
+    fn members(&self) -> &HashMap<ObjectKey, ObjectInstance> {
         &self.instance_members
     }
 }

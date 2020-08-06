@@ -9,6 +9,8 @@ use std::{
     rc::Rc,
 };
 
+// TODO: Add TypeFunc.
+
 #[derive(Clone)]
 enum FuncVariant {
     Func0(Func0),
