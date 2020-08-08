@@ -1,8 +1,10 @@
 use super::{func::Func, string::DiceString};
 use crate::runtime::{
-    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
+    core::{
+        symbol::common::{lib::TY_INT, operators::*},
+        Symbol, Type, TypeInstanceBase, Value, ValueKey,
+    },
     error::RuntimeError,
-    symbol::{common::lib::TY_INT, common::operators::*, Symbol},
 };
 use maplit::hashmap;
 use std::{collections::HashMap, rc::Rc};
@@ -48,8 +50,7 @@ impl Default for TypeInt {
 impl Type for TypeInt {
     fn construct(&self, args: &[Value]) -> Result<Value, RuntimeError> {
         if let [value] = args {
-            match_type! {
-                value,
+            match_type! { value,
                 as_int: i64 => Ok(Value::new(*as_int)),
                 as_float: f64 => Ok(Value::new(*as_float as i64)),
                 as_string: DiceString => Ok(Value::new(as_string.parse::<i64>()?)),

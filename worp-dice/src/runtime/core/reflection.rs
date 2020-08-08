@@ -1,5 +1,5 @@
-use super::{key::ValueKey, Value};
-use crate::runtime::{error::RuntimeError, symbol::Symbol};
+use super::{Value, ValueKey};
+use crate::runtime::{core::Symbol, error::RuntimeError};
 use std::{collections::HashMap, fmt::Debug};
 
 pub trait Type: Debug {

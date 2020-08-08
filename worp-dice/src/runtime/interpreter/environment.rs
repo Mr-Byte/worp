@@ -1,7 +1,6 @@
 use crate::runtime::{
-    core::{reflection::Type, value::Value},
+    core::{symbol::Symbol, Type, Value},
     error::RuntimeError,
-    symbol::Symbol,
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
 

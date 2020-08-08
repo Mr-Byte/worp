@@ -1,9 +1,11 @@
 #![allow(dead_code)]
 
 use crate::runtime::{
-    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
+    core::{
+        symbol::{common::lib::TY_FUNC, Symbol},
+        Type, TypeInstanceBase, Value, ValueKey,
+    },
     error::RuntimeError,
-    symbol::{common::lib::TY_FUNC, Symbol},
 };
 use std::{
     collections::HashMap,

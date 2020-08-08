@@ -1,8 +1,13 @@
 use super::func::Func;
 use crate::runtime::{
-    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
+    core::{
+        symbol::{
+            common::{lib::TY_LIST, operators::OP_ADD},
+            Symbol,
+        },
+        Type, TypeInstanceBase, Value, ValueKey,
+    },
     error::RuntimeError,
-    symbol::{common::lib::TY_LIST, common::operators::OP_ADD, Symbol},
 };
 use maplit::hashmap;
 use std::{collections::HashMap, fmt::Display, iter, ops::Deref, rc::Rc};

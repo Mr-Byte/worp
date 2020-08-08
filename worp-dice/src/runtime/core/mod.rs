@@ -1,20 +1,23 @@
-use self::value::Value;
 use super::{
     error::RuntimeError,
-    lib::{func::Func, string::DiceString},
-    symbol::{common::methods::FN_TO_STRING, Symbol},
+    lib::{DiceString, Func},
 };
-use key::ValueKey;
-use reflection::Type;
 use std::{
     any::Any,
     fmt::{Debug, Display},
     rc::Rc,
 };
+use symbol::common::methods::FN_TO_STRING;
 
-pub mod key;
-pub mod reflection;
-pub mod value;
+mod key;
+mod reflection;
+pub mod symbol;
+mod value;
+
+pub use key::ValueKey;
+pub use reflection::Type;
+pub use symbol::Symbol;
+pub use value::Value;
 
 thread_local! {
     static TO_STRING: Value = Value::new(Func::new_func1(to_string));

@@ -6,10 +6,9 @@ mod evaluator;
 mod test {
     use super::*;
     use crate::runtime::{
-        core::{key::ValueKey, value::Value},
+        core::{symbol::Symbol, Value, ValueKey},
         error::RuntimeError,
-        lib::{list::List, none, string::DiceString},
-        symbol::Symbol,
+        lib::{self, DiceString, List},
     };
     use context::ExecutionContext;
 
@@ -93,7 +92,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression("none")?;
 
-        assert_eq!(none::None, *result.value::<none::None>().unwrap());
+        assert_eq!(lib::None, *result.value::<lib::None>().unwrap());
 
         Ok(())
     }
@@ -122,7 +121,7 @@ mod test {
     fn test_safe_field_access() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"none?.test"#)?;
-        assert_eq!(none::None, *result.value::<none::None>().unwrap());
+        assert_eq!(lib::None, *result.value::<lib::None>().unwrap());
 
         Ok(())
     }
@@ -131,7 +130,7 @@ mod test {
     fn test_nested_safe_field_access() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"{ test: none }.test?.xy"#)?;
-        assert_eq!(none::None, *result.value::<none::None>().unwrap());
+        assert_eq!(lib::None, *result.value::<lib::None>().unwrap());
 
         Ok(())
     }
@@ -220,7 +219,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"if 5 == 6 { 10 }"#)?;
 
-        assert_eq!(none::None, *result.value::<none::None>().unwrap());
+        assert_eq!(lib::None, *result.value::<lib::None>().unwrap());
 
         Ok(())
     }
@@ -230,7 +229,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#"if 5 >= 6 { 10 }"#)?;
 
-        assert_eq!(none::None, *result.value::<none::None>().unwrap());
+        assert_eq!(lib::None, *result.value::<lib::None>().unwrap());
 
         Ok(())
     }
@@ -240,7 +239,7 @@ mod test {
         let context = ExecutionContext::new();
         let result = context.eval_expression("5 + 5 ; none")?;
 
-        assert_eq!(none::None, *result.value::<none::None>().unwrap());
+        assert_eq!(lib::None, *result.value::<lib::None>().unwrap());
 
         Ok(())
     }

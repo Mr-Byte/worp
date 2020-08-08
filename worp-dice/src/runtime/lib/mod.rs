@@ -1,8 +1,17 @@
-pub mod anonymous;
-pub mod bool;
-pub mod float;
-pub mod func;
-pub mod int;
-pub mod list;
-pub mod none;
-pub mod string;
+mod anonymous;
+mod bool;
+mod float;
+mod func;
+mod int;
+mod list;
+mod none;
+mod string;
+
+pub use self::bool::*;
+pub use anonymous::*;
+pub use float::*;
+pub use func::*;
+pub use int::*;
+pub use list::*;
+pub use none::*;
+pub use string::*;

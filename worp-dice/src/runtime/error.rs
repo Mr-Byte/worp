@@ -1,4 +1,4 @@
-use super::{core::key::ValueKey, symbol::Symbol};
+use super::core::{symbol::Symbol, ValueKey};
 use crate::syntax::ParseError;
 use std::{error::Error, num::ParseIntError};
 

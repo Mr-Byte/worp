@@ -1,6 +1,6 @@
 use super::{environment::Environment, evaluator::eval};
 use crate::{
-    runtime::{core::value::Value, error::RuntimeError, lib::int::TypeInt},
+    runtime::{core::Value, error::RuntimeError, lib::TypeInt},
     syntax::Expression,
 };
 use std::{ops::Deref, rc::Rc};

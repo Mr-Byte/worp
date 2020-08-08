@@ -1,10 +1,10 @@
 use super::TypeInstance;
-use crate::runtime::lib::{func::Func, list::List, none, string::DiceString};
+use crate::runtime::lib::{self, DiceString, Func, List};
 use std::{ops::Deref, rc::Rc};
 
 #[derive(Clone, Debug)]
 enum Variant {
-    None(none::None),
+    None(lib::None),
     Bool(bool),
     Int(i64),
     Float(f64),
@@ -18,7 +18,7 @@ enum Variant {
 pub struct Value(Variant);
 
 impl Value {
-    pub const NONE: Self = Value(Variant::None(none::None));
+    pub const NONE: Self = Value(Variant::None(lib::None));
 
     pub fn new<O>(value: O) -> Self
     where
@@ -29,7 +29,7 @@ impl Value {
 
     fn new_object(value: impl TypeInstance + 'static) -> Self {
         let variant = match_type! { &value as &dyn TypeInstance,
-            as_none: none::None => Variant::None(*as_none),
+            as_none: lib::None => Variant::None(*as_none),
             as_bool: bool => Variant::Bool(*as_bool),
             as_int: i64 => Variant::Int(*as_int),
             as_float: f64 => Variant::Float(*as_float),

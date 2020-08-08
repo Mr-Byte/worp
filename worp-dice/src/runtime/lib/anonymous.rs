@@ -1,7 +1,6 @@
 use crate::runtime::{
-    core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
+    core::{symbol::common::lib::TY_OBJECT, Symbol, Type, TypeInstanceBase, Value, ValueKey},
     error::RuntimeError,
-    symbol::{common::lib::TY_OBJECT, Symbol},
 };
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
@@ -52,7 +51,7 @@ impl TypeInstanceBase for AnonymouseObject {
         self.0.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone()))
     }
 
-    fn reflect_type(&self) -> std::rc::Rc<dyn crate::runtime::core::reflection::Type> {
+    fn reflect_type(&self) -> std::rc::Rc<dyn crate::runtime::core::Type> {
         TYPE.with(Clone::clone)
     }
 }
