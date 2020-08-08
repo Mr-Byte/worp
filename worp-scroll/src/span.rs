@@ -10,7 +10,7 @@ use std::{
 pub enum Span {
     RawText(String),
     Expression(Expression),
-    // TODO: Should there be types to represent variable names and macro names?
+    // TODO: Should there be lib to represent variable names and macro names?
     // If so, do they belong in here or a more generic model crate?
     Reference(Symbol),
     BoldText(SpanList),
@@ -20,7 +20,7 @@ pub enum Span {
     Link(Link),
 }
 
-// TODO: Write types and names for Macro and Variable names.
+// TODO: Write lib and names for Macro and Variable names.
 
 impl TryFrom<Pairs<'_, Rule>> for Span {
     type Error = DocumentError;

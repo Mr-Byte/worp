@@ -1,9 +1,9 @@
 use super::{environment::Environment, evaluator::eval};
 use crate::{
-    runtime::{core::value::Value, error::RuntimeError, symbol::Symbol},
+    runtime::{core::value::Value, error::RuntimeError, lib::int::TypeInt},
     syntax::Expression,
 };
-use std::rc::Rc;
+use std::{ops::Deref, rc::Rc};
 
 #[derive(Debug, Default)]
 pub struct ExecutionContext {
@@ -12,12 +12,17 @@ pub struct ExecutionContext {
 
 impl ExecutionContext {
     pub fn new() -> Self {
-        Self { inner: Default::default() }
+        let inner: Rc<Environment> = Default::default();
+        inner
+            .add_known_type(TypeInt::instance())
+            .expect("Standard library types should be registerable.");
+
+        Self { inner }
     }
 
     pub fn eval_expression(&self, input: &str) -> Result<Value, RuntimeError> {
         let expr: Expression = input.parse()?;
-        eval(&expr, &self.inner)
+        eval(&expr, self)
     }
 
     pub fn scoped(&self) -> ExecutionContext {
@@ -25,12 +30,12 @@ impl ExecutionContext {
             inner: Rc::new(Environment::new(Some(self.inner.clone()))),
         }
     }
+}
 
-    pub fn variable(&self, name: &Symbol) -> Result<Value, RuntimeError> {
-        self.inner.variable(name)
-    }
+impl Deref for ExecutionContext {
+    type Target = Environment;
 
-    pub fn add_variable(&mut self, name: Symbol, instance: Value) {
-        self.inner.add_variable(name, instance);
+    fn deref(&self) -> &Self::Target {
+        &*self.inner
     }
 }

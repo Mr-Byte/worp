@@ -3,14 +3,14 @@ use crate::{
     runtime::{
         core::{key::ValueKey, value::Value},
         error::RuntimeError,
+        lib::{anonymous::AnonymouseObject, list::List, string::DiceString},
         symbol::{
             common::{
+                lib::{TY_BOOL, TY_NONE},
                 operators::{OP_ADD, OP_AND, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB},
-                types::{TY_BOOL, TY_NONE},
             },
             Symbol,
         },
-        types::{anonymous::AnonymouseObject, list::List, string::RcString},
     },
     syntax::{BinaryOperator, Expression, Literal, UnaryOperator},
 };
@@ -30,7 +30,7 @@ fn eval_expression(expr: &Expression, environment: &Environment) -> Result<Value
         Expression::Index(expr, index) => eval_index(expr, index, environment),
         Expression::Unary(op, expr) => eval_unary(op, expr, environment),
         Expression::Binary(op, lhs, rhs) => eval_binary(op, lhs, rhs, environment),
-        Expression::Range(_op, _lower, _upper) => Err(RuntimeError::Aborted),
+        Expression::Range(_op, _lower, _upper) => todo!(),
         Expression::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate.as_deref(), environment),
     }
 }
@@ -41,7 +41,7 @@ fn eval_literal(literal: &Literal, environment: &Environment) -> Result<Value, R
         Literal::None => Ok(Value::NONE),
         Literal::Integer(int) => Ok(Value::new(*int)),
         Literal::Float(float) => Ok(Value::new(*float)),
-        Literal::String(string) => Ok(Value::new(Into::<RcString>::into(string.clone()))),
+        Literal::String(string) => Ok(Value::new(Into::<DiceString>::into(string.clone()))),
         Literal::Boolean(bool) => Ok(Value::new(*bool)),
         Literal::List(list) => eval_list_literal(list, environment),
         Literal::Object(object) => eval_object_literal(object, environment),
@@ -73,7 +73,12 @@ fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Envi
     match expr {
         Expression::Literal(Literal::Identifier(target)) => {
             let args = args.iter().map(|arg| eval_expression(arg, environment)).collect::<Result<Vec<_>, _>>()?;
-            environment.variable(target)?.call(&args)
+
+            if let Some(known_type) = environment.known_type(target)? {
+                known_type.construct(&args)
+            } else {
+                environment.variable(target)?.call(&args)
+            }
         }
         Expression::FieldAccess(this, method) => {
             let method = &ValueKey::Symbol(method.clone());
@@ -125,7 +130,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
     let rhs = eval_expression(rhs, environment)?;
 
     match op {
-        BinaryOperator::DiceRoll => Err(RuntimeError::Aborted),
+        BinaryOperator::DiceRoll => todo!(),
         BinaryOperator::Multiply => lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs, rhs]),
         BinaryOperator::Divide => lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs, rhs]),
         BinaryOperator::Remainder => lhs.get(&ValueKey::Symbol(OP_REM))?.call(&[lhs, rhs]),
@@ -173,7 +178,7 @@ fn eval_object_key(expr: &Expression, environment: &Environment) -> Result<Value
 
     if let Some(index) = index.value::<i64>() {
         Ok(ValueKey::Index(*index))
-    } else if let Some(index) = index.value::<RcString>() {
+    } else if let Some(index) = index.value::<DiceString>() {
         let index: String = index.to_string();
         Ok(ValueKey::Symbol(Symbol::new(index)))
     } else {

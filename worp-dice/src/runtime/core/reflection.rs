@@ -3,7 +3,7 @@ use crate::runtime::{error::RuntimeError, symbol::Symbol};
 use std::{collections::HashMap, fmt::Debug};
 
 pub trait Type: Debug {
-    fn construct(&self) -> Result<Value, RuntimeError> {
+    fn construct(&self, _args: &[Value]) -> Result<Value, RuntimeError> {
         Err(RuntimeError::NoConstructor(self.name().clone()))
     }
 

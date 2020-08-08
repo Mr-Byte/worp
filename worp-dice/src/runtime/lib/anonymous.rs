@@ -1,7 +1,7 @@
 use crate::runtime::{
     core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    symbol::{common::types::TY_OBJECT, Symbol},
+    symbol::{common::lib::TY_OBJECT, Symbol},
 };
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 

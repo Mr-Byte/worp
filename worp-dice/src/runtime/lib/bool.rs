@@ -2,7 +2,7 @@ use super::func::Func;
 use crate::runtime::{
     core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    symbol::{common::operators::*, common::types::TY_BOOL, Symbol},
+    symbol::{common::lib::TY_BOOL, common::operators::*, Symbol},
 };
 use maplit::hashmap;
 use std::{collections::HashMap, rc::Rc};
@@ -37,10 +37,6 @@ impl Default for TypeBool {
 }
 
 impl Type for TypeBool {
-    fn construct(&self) -> Result<Value, RuntimeError> {
-        Err(RuntimeError::NoConstructor(self.name.clone()))
-    }
-
     fn name(&self) -> &Symbol {
         &self.name
     }

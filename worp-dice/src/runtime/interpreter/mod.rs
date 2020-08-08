@@ -8,8 +8,11 @@ mod test {
     use crate::runtime::{
         core::{key::ValueKey, value::Value},
         error::RuntimeError,
-        symbol::Symbol,
-        types::{list::List, none, string::RcString},
+        lib::{list::List, none, string::DiceString},
+        symbol::{
+            common::lib::{TY_FLOAT, TY_INT},
+            Symbol,
+        },
     };
     use context::ExecutionContext;
 
@@ -165,8 +168,8 @@ mod test {
 
     #[test]
     fn test_variable() -> Result<(), RuntimeError> {
-        let mut context = ExecutionContext::new();
-        context.add_variable(Symbol::new("test"), Value::new(5));
+        let context = ExecutionContext::new();
+        context.add_variable(Symbol::new("test"), Value::new(5))?;
         let result = context.eval_expression(r#"test + 5"#)?;
 
         assert_eq!(10, *result.value::<i64>().unwrap());
@@ -176,8 +179,8 @@ mod test {
 
     #[test]
     fn test_variable_from_parent_scope() -> Result<(), RuntimeError> {
-        let mut context = ExecutionContext::new();
-        context.add_variable(Symbol::new("test"), Value::new(5));
+        let context = ExecutionContext::new();
+        context.add_variable(Symbol::new("test"), Value::new(5))?;
         let result = context.scoped().eval_expression(r#"test + 5"#)?;
 
         assert_eq!(10, *result.value::<i64>().unwrap());
@@ -249,7 +252,7 @@ mod test {
     fn test_method_call() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression("5.to_string()")?;
-        let actual = result.value::<RcString>().unwrap();
+        let actual = result.value::<DiceString>().unwrap();
 
         assert_eq!("5", &**actual);
 
@@ -281,9 +284,30 @@ mod test {
     fn test_chained_method_call() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r##"5["#op_add"](5).to_string()"##)?;
-        let actual = result.value::<RcString>().unwrap();
+        let actual = result.value::<DiceString>().unwrap();
 
         assert_eq!("10", &**actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_int_constructor() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression("Int(5)")?;
+        let actual = result.value::<i64>().unwrap();
+
+        assert_eq!(5, *actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_int_constructor_should_fail_with_float() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression("Int(5.0)");
+
+        assert!(matches!(result, Err(RuntimeError::InvalidType(ex, ac)) if ex == TY_INT && ac == TY_FLOAT));
 
         Ok(())
     }
@@ -292,7 +316,7 @@ mod test {
     fn test_string_concat() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r##""test" + "value""##)?;
-        let actual = result.value::<RcString>().unwrap();
+        let actual = result.value::<DiceString>().unwrap();
 
         assert_eq!("testvalue", &**actual);
 
@@ -303,7 +327,7 @@ mod test {
     fn test_string_concat_with_number() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
         let result = context.eval_expression(r#""test" + 5"#)?;
-        let actual = result.value::<RcString>().unwrap();
+        let actual = result.value::<DiceString>().unwrap();
 
         assert_eq!("test5", &**actual);
 

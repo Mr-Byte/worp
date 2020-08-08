@@ -3,7 +3,7 @@
 use crate::runtime::{
     core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    symbol::{common::types::TY_FUNC, Symbol},
+    symbol::{common::lib::TY_FUNC, Symbol},
 };
 use std::{
     collections::HashMap,

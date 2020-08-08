@@ -2,7 +2,7 @@ use super::func::Func;
 use crate::runtime::{
     core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    symbol::{common::operators::OP_ADD, common::types::TY_STRING, Symbol},
+    symbol::{common::lib::TY_STRING, common::operators::OP_ADD, Symbol},
 };
 use maplit::hashmap;
 use std::{collections::HashMap, fmt::Display, ops::Deref, rc::Rc};
@@ -12,7 +12,7 @@ thread_local! {
 }
 
 #[derive(Debug)]
-struct TypeString {
+pub(crate) struct TypeString {
     name: Symbol,
     members: HashMap<ValueKey, Value>,
 }
@@ -45,21 +45,21 @@ impl Type for TypeString {
 }
 
 #[derive(Debug, Clone)]
-pub struct RcString(Rc<str>);
+pub struct DiceString(Rc<str>);
 
-impl TypeInstanceBase for RcString {
+impl TypeInstanceBase for DiceString {
     fn reflect_type(&self) -> Rc<dyn Type> {
         TYPE.with(Clone::clone)
     }
 }
 
-impl Display for RcString {
+impl Display for DiceString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl Deref for RcString {
+impl Deref for DiceString {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
@@ -67,27 +67,27 @@ impl Deref for RcString {
     }
 }
 
-impl From<String> for RcString {
+impl From<String> for DiceString {
     fn from(value: String) -> Self {
-        RcString(value.into())
+        DiceString(value.into())
     }
 }
 
 fn concat(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<RcString>(&TY_STRING)?;
-    let result: RcString = format!("{}{}", lhs, &*rhs).into();
+    let lhs = lhs.try_value::<DiceString>(&TY_STRING)?;
+    let result: DiceString = format!("{}{}", lhs, &*rhs).into();
 
     Ok(Value::new(result))
 }
 
 fn length(this: Value) -> Result<Value, RuntimeError> {
-    let this = this.try_value::<RcString>(&TY_STRING)?;
+    let this = this.try_value::<DiceString>(&TY_STRING)?;
 
     Ok(Value::new(this.len() as i64))
 }
 
 fn is_empty(this: Value) -> Result<Value, RuntimeError> {
-    let this = this.try_value::<RcString>(&TY_STRING)?;
+    let this = this.try_value::<DiceString>(&TY_STRING)?;
 
     Ok(Value::new(this.is_empty() as bool))
 }

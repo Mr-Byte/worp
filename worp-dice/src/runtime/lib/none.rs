@@ -2,7 +2,7 @@ use super::func::Func;
 use crate::runtime::{
     core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    symbol::{common::operators::*, common::types::TY_NONE, Symbol},
+    symbol::{common::lib::TY_NONE, common::operators::*, Symbol},
 };
 use maplit::hashmap;
 use std::{collections::HashMap, fmt::Display, rc::Rc};

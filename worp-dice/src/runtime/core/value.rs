@@ -1,5 +1,5 @@
 use super::TypeInstance;
-use crate::runtime::types::{func::Func, list::List, none, string::RcString};
+use crate::runtime::lib::{func::Func, list::List, none, string::DiceString};
 use std::{ops::Deref, rc::Rc};
 
 #[derive(Clone, Debug)]
@@ -10,7 +10,7 @@ enum Variant {
     Float(f64),
     Function(Func),
     List(List),
-    String(RcString),
+    String(DiceString),
     Object(Rc<dyn TypeInstance>),
 }
 
@@ -41,7 +41,7 @@ impl Value {
             Variant::Function(value.clone())
         } else if let Some(value) = value_ref.value::<List>() {
             Variant::List(value.clone())
-        } else if let Some(value) = value_ref.value::<RcString>() {
+        } else if let Some(value) = value_ref.value::<DiceString>() {
             Variant::String(value.clone())
         } else {
             Variant::Object(Rc::new(value))

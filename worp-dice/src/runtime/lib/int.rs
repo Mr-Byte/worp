@@ -2,7 +2,7 @@ use super::func::Func;
 use crate::runtime::{
     core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    symbol::{common::operators::*, common::types::TY_INT, Symbol},
+    symbol::{common::lib::TY_INT, common::operators::*, Symbol},
 };
 use maplit::hashmap;
 use std::{collections::HashMap, rc::Rc};
@@ -12,9 +12,15 @@ thread_local! {
 }
 
 #[derive(Debug)]
-struct TypeInt {
+pub(crate) struct TypeInt {
     name: Symbol,
     instance_members: HashMap<ValueKey, Value>,
+}
+
+impl TypeInt {
+    pub fn instance() -> Rc<TypeInt> {
+        TYPE.with(Clone::clone)
+    }
 }
 
 impl Default for TypeInt {
@@ -40,8 +46,16 @@ impl Default for TypeInt {
 }
 
 impl Type for TypeInt {
-    fn construct(&self) -> Result<Value, RuntimeError> {
-        Err(RuntimeError::NoConstructor(self.name.clone()))
+    fn construct(&self, args: &[Value]) -> Result<Value, RuntimeError> {
+        if let [value] = args {
+            if *value.reflect_type().name() == TY_INT {
+                Ok(value.clone())
+            } else {
+                Err(RuntimeError::InvalidType(TY_INT, value.reflect_type().name().clone()))
+            }
+        } else {
+            Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
+        }
     }
 
     fn name(&self) -> &Symbol {

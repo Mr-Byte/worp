@@ -1,8 +1,8 @@
 use self::value::Value;
 use super::{
     error::RuntimeError,
+    lib::{func::Func, string::DiceString},
     symbol::{common::methods::FN_TO_STRING, Symbol},
-    types::{func::Func, string::RcString},
 };
 use key::ValueKey;
 use reflection::Type;
@@ -21,11 +21,11 @@ thread_local! {
 }
 
 fn to_string(object: Value) -> Result<Value, RuntimeError> {
-    let string: RcString = object.to_string().into();
+    let string: DiceString = object.to_string().into();
     Ok(Value::new(string))
 }
 
-/// Trait implemented by types wishing to expose functionality to Dice.
+/// Trait implemented by lib wishing to expose functionality to Dice.
 /// Provides several methods, with default implementations, for interacting with the Dice interpreter.
 pub trait TypeInstanceBase: Any + Debug + Display {
     /// Get a property by key from the object.
@@ -57,7 +57,7 @@ pub trait TypeInstanceBase: Any + Debug + Display {
     }
 }
 
-/// Trait that's automatically impelemented over all TypeInstanceBase types that provides common functionality to the interpreter.
+/// Trait that's automatically impelemented over all TypeInstanceBase lib that provides common functionality to the interpreter.
 pub trait TypeInstance: TypeInstanceBase {
     fn as_any(&self) -> &dyn Any;
 }

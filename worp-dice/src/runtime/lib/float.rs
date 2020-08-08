@@ -2,7 +2,7 @@ use super::func::Func;
 use crate::runtime::{
     core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
-    symbol::{common::operators::*, common::types::TY_FLOAT, Symbol},
+    symbol::{common::lib::TY_FLOAT, common::operators::*, Symbol},
 };
 use maplit::hashmap;
 use std::{collections::HashMap, rc::Rc};
@@ -40,10 +40,6 @@ impl Default for TypeFloat {
 }
 
 impl Type for TypeFloat {
-    fn construct(&self) -> Result<Value, RuntimeError> {
-        Err(RuntimeError::NoConstructor(self.name.clone()))
-    }
-
     fn name(&self) -> &Symbol {
         &self.name
     }

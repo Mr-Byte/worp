@@ -21,7 +21,7 @@ impl Display for Symbol {
 
 pub mod common {
     use super::*;
-    pub mod types {
+    pub mod lib {
         use super::*;
 
         pub const TY_NONE: Symbol = Symbol::new_static("None");
