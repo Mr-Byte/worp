@@ -26,10 +26,94 @@ macro_rules! match_type {
 #[doc(hidden)]
 macro_rules! type_member {
     // Operators
+    (op_not => $arg1:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_NOT),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func1(op_not)),
+        )
+    };
+
+    (op_neg => $arg1:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_NEG),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func1(op_neg)),
+        )
+    };
+
+    (op_mul => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_MUL),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_mul)),
+        )
+    };
+
+    (op_div => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_DIV),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_div)),
+        )
+    };
+
+    (op_rem => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_REM),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_rem)),
+        )
+    };
+
     (op_add => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_ADD),
             $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_add)),
+        )
+    };
+
+    (op_sub => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_SUB),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_sub)),
+        )
+    };
+
+    (op_eq => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_EQ),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_eq)),
+        )
+    };
+
+    (op_ne => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_NE),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_ne)),
+        )
+    };
+
+    (op_gt => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_GT),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_gt)),
+        )
+    };
+
+    (op_lt => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_LT),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_lt)),
+        )
+    };
+
+    (op_gte => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_GTE),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_gte)),
+        )
+    };
+
+    (op_lte => $arg1:ident, $arg2:ident) => {
+        (
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_LTE),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_lte)),
         )
     };
 
@@ -59,19 +143,31 @@ macro_rules! type_member {
 macro_rules! decl_type {
     (
         type $ty_ident:ident = $ty_name:expr;
-        $(fn construct(&self, args: &[$crate::runtime::core::Value]) -> $crate::runtime::core::Value $constructor_body:block)?
+        $(constructor(&self, $constructor_args:ident: $constructor_args_ty:ty) $constructor_body:block)?
         $(fn $name:ident ($($arg:ident : $typ:ty),*) $(-> $ret:ty)? $rest:block)*
     ) => {
         #[derive(Debug)]
-        struct $ty_ident {
+        pub(crate) struct $ty_ident {
             name: $crate::runtime::core::Symbol,
             members: std::collections::HashMap<$crate::runtime::core::ValueKey, $crate::runtime::core::Value>
+        }
+
+        thread_local! {
+            static TYPE: std::rc::Rc<$ty_ident> = Default::default();
+        }
+
+        impl $ty_ident {
+            pub const NAME: $crate::runtime::core::Symbol = $crate::runtime::core::Symbol::new_static($ty_name);
+
+            pub fn instance() -> std::rc::Rc<Self> {
+                TYPE.with(Clone::clone)
+            }
         }
 
         impl Default for $ty_ident {
             fn default() -> Self {
                 Self {
-                    name: Symbol::new($ty_name),
+                    name: Self::NAME,
                     members: {
                         vec! [
                             $(type_member!($name => $($arg),*),)*
@@ -83,7 +179,7 @@ macro_rules! decl_type {
 
         impl $crate::runtime::core::Type for $ty_ident {
             $(
-                fn construct(&self, args: &[$crate::runtime::core::Value]) -> $crate::runtime::core::Value
+                fn construct(&self, $constructor_args: $constructor_args_ty) -> Result<$crate::runtime::core::Value, $crate::runtime::error::RuntimeError>
                 $constructor_body
             )?
 

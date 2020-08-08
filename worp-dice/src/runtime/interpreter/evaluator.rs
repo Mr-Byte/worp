@@ -3,16 +3,15 @@ use crate::{
     runtime::{
         core::{
             symbol::{
-                common::{
-                    lib::{TY_BOOL, TY_NONE},
-                    operators::{OP_ADD, OP_AND, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB},
+                common::operators::{
+                    OP_ADD, OP_AND, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB,
                 },
                 Symbol,
             },
             Value, ValueKey,
         },
         error::RuntimeError,
-        lib::{AnonymouseObject, DiceString, List},
+        lib::{DiceString, List, Object, TypeBool, TypeNone},
     },
     syntax::{BinaryOperator, Expression, Literal, UnaryOperator},
 };
@@ -68,7 +67,7 @@ fn eval_object_literal(object: &HashMap<ValueKey, Expression>, environment: &Env
         .map(|(key, value)| Ok::<_, RuntimeError>((key.clone(), eval_expression(value, environment)?)))
         .collect::<Result<_, _>>()?;
 
-    Ok(Value::new(AnonymouseObject::new(result)))
+    Ok(Value::new(Object::new(result)))
 }
 
 fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Environment) -> Result<Value, RuntimeError> {
@@ -147,7 +146,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
         BinaryOperator::LogicalAnd => lhs.get(&ValueKey::Symbol(OP_AND))?.call(&[lhs, rhs]),
         BinaryOperator::LogicalOr => lhs.get(&ValueKey::Symbol(OP_OR))?.call(&[lhs, rhs]),
         BinaryOperator::Coalesce => {
-            if *lhs.reflect_type().name() != TY_NONE {
+            if *lhs.reflect_type().name() != TypeNone::NAME {
                 Ok(lhs)
             } else {
                 Ok(rhs)
@@ -161,7 +160,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
 fn eval_safe_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<Value, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
-    if *object_ref.reflect_type().name() != TY_NONE {
+    if *object_ref.reflect_type().name() != TypeNone::NAME {
         object_ref.get(&ValueKey::Symbol(field.clone()))
     } else {
         Ok(Value::NONE)
@@ -197,7 +196,7 @@ fn eval_conditional(
     let condition_result = eval_expression(condition, environment)?;
     let condition = *condition_result
         .value::<bool>()
-        .ok_or_else(|| RuntimeError::InvalidType(TY_BOOL, condition_result.reflect_type().name().clone()))?;
+        .ok_or_else(|| RuntimeError::InvalidType(TypeBool::NAME, condition_result.reflect_type().name().clone()))?;
 
     if condition {
         eval_expression(body, environment)

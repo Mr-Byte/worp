@@ -1,172 +1,120 @@
-use super::{func::Func, string::DiceString};
+use super::DiceString;
 use crate::runtime::{
-    core::{
-        symbol::common::{lib::TY_INT, operators::*},
-        Symbol, Type, TypeInstanceBase, Value, ValueKey,
-    },
+    core::{Type, TypeInstanceBase, Value},
     error::RuntimeError,
 };
-use maplit::hashmap;
 use std::{collections::HashMap, rc::Rc};
 
-thread_local! {
-    static TYPE: Rc<TypeInt> = Default::default();
-}
+decl_type! {
+    type TypeInt = "Int";
 
-#[derive(Debug)]
-pub(crate) struct TypeInt {
-    name: Symbol,
-    instance_members: HashMap<ValueKey, Value>,
-}
-
-impl TypeInt {
-    pub fn instance() -> Rc<TypeInt> {
-        TYPE.with(Clone::clone)
-    }
-}
-
-impl Default for TypeInt {
-    fn default() -> Self {
-        Self {
-            name: TY_INT,
-            instance_members: hashmap! [
-                ValueKey::Symbol(OP_NEG) => Value::new(Func::new_func1(negate)),
-                ValueKey::Symbol(OP_MUL) => Value::new(Func::new_func2(mul)),
-                ValueKey::Symbol(OP_DIV) => Value::new(Func::new_func2(div)),
-                ValueKey::Symbol(OP_REM) => Value::new(Func::new_func2(rem)),
-                ValueKey::Symbol(OP_ADD) => Value::new(Func::new_func2(add)),
-                ValueKey::Symbol(OP_SUB) => Value::new(Func::new_func2(sub)),
-                ValueKey::Symbol(OP_EQ) => Value::new(Func::new_func2(eq)),
-                ValueKey::Symbol(OP_NE) => Value::new(Func::new_func2(ne)),
-                ValueKey::Symbol(OP_GT) => Value::new(Func::new_func2(gt)),
-                ValueKey::Symbol(OP_GTE) => Value::new(Func::new_func2(gte)),
-                ValueKey::Symbol(OP_LT) => Value::new(Func::new_func2(lt)),
-                ValueKey::Symbol(OP_LTE) => Value::new(Func::new_func2(lte)),
-            ],
-        }
-    }
-}
-
-impl Type for TypeInt {
-    fn construct(&self, args: &[Value]) -> Result<Value, RuntimeError> {
+    constructor(&self, args: &[Value]) {
         if let [value] = args {
             match_type! { value,
                 as_int: i64 => Ok(Value::new(*as_int)),
                 as_float: f64 => Ok(Value::new(*as_float as i64)),
                 as_string: DiceString => Ok(Value::new(as_string.parse::<i64>()?)),
-                _ => Err(RuntimeError::InvalidType(TY_INT, value.reflect_type().name().clone()))
+                _ => Err(RuntimeError::InvalidType(TypeInt::NAME, value.reflect_type().name().clone()))
             }
         } else {
             Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
         }
     }
 
-    fn name(&self) -> &Symbol {
-        &self.name
+    fn op_neg(value: Value) -> Result<Value, RuntimeError> {
+        let value = value.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(-value))
     }
 
-    fn impl_names(&self) -> &[&Symbol] {
-        &[]
+    fn op_mul(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs * rhs))
     }
 
-    fn members(&self) -> &HashMap<ValueKey, Value> {
-        &self.instance_members
+    fn op_div(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs / rhs))
+    }
+
+    fn op_rem(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs % rhs))
+    }
+
+    fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs + rhs))
+    }
+
+    fn op_sub(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs - rhs))
+    }
+
+    fn op_eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.value::<i64>();
+        let result = match rhs {
+            Some(rhs) => lhs == rhs,
+            None => false,
+        };
+
+        Ok(Value::new(result))
+    }
+
+    fn op_ne(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.value::<i64>();
+        let result = match rhs {
+            Some(rhs) => lhs != rhs,
+            None => true,
+        };
+
+        Ok(Value::new(result))
+    }
+
+    fn op_gt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs > rhs))
+    }
+
+    fn op_gte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs >= rhs))
+    }
+
+    fn op_lt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs < rhs))
+    }
+
+    fn op_lte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let lhs = lhs.try_value::<i64>(&TypeInt::NAME)?;
+        let rhs = rhs.try_value::<i64>(&TypeInt::NAME)?;
+
+        Ok(Value::new(lhs <= rhs))
     }
 }
 
 impl TypeInstanceBase for i64 {
     fn reflect_type(&self) -> Rc<dyn Type> {
-        TYPE.with(Clone::clone)
+        TypeInt::instance()
     }
-}
-
-fn negate(value: Value) -> Result<Value, RuntimeError> {
-    let value = value.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(-value))
-}
-
-fn mul(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs * rhs))
-}
-
-fn div(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs / rhs))
-}
-
-fn rem(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs % rhs))
-}
-
-fn add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs + rhs))
-}
-
-fn sub(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs - rhs))
-}
-
-fn eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.value::<i64>();
-    let result = match rhs {
-        Some(rhs) => lhs == rhs,
-        None => false,
-    };
-
-    Ok(Value::new(result))
-}
-
-fn ne(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.value::<i64>();
-    let result = match rhs {
-        Some(rhs) => lhs != rhs,
-        None => true,
-    };
-
-    Ok(Value::new(result))
-}
-
-fn gt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs > rhs))
-}
-
-fn gte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs >= rhs))
-}
-
-fn lt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs < rhs))
-}
-
-fn lte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    let lhs = lhs.try_value::<i64>(&TY_INT)?;
-    let rhs = rhs.try_value::<i64>(&TY_INT)?;
-
-    Ok(Value::new(lhs <= rhs))
 }

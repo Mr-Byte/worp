@@ -1,10 +1,7 @@
 #![allow(dead_code)]
 
 use crate::runtime::{
-    core::{
-        symbol::{common::lib::TY_FUNC, Symbol},
-        Type, TypeInstanceBase, Value, ValueKey,
-    },
+    core::{Type, TypeInstanceBase, Value},
     error::RuntimeError,
 };
 use std::{
@@ -13,37 +10,8 @@ use std::{
     rc::Rc,
 };
 
-thread_local! {
-    static TYPE: Rc<TypeFunc> = Default::default();
-}
-
-#[derive(Debug)]
-pub(crate) struct TypeFunc {
-    name: Symbol,
-    members: HashMap<ValueKey, Value>,
-}
-
-impl Default for TypeFunc {
-    fn default() -> Self {
-        Self {
-            name: TY_FUNC,
-            members: HashMap::new(),
-        }
-    }
-}
-
-impl Type for TypeFunc {
-    fn name(&self) -> &Symbol {
-        &self.name
-    }
-
-    fn impl_names(&self) -> &[&Symbol] {
-        &[]
-    }
-
-    fn members(&self) -> &HashMap<ValueKey, Value> {
-        &self.members
-    }
+decl_type! {
+    type TypeFunc = "Func";
 }
 
 #[derive(Clone)]
@@ -80,7 +48,7 @@ impl TypeInstanceBase for Func {
     }
 
     fn reflect_type(&self) -> Rc<dyn Type> {
-        TYPE.with(Clone::clone)
+        TypeFunc::instance()
     }
 }
 

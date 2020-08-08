@@ -1,17 +1,17 @@
-mod anonymous;
 mod bool;
 mod float;
 mod func;
 mod int;
 mod list;
 mod none;
+mod object;
 mod string;
 
-pub use self::bool::*;
-pub use anonymous::*;
-pub use float::*;
-pub use func::*;
-pub use int::*;
-pub use list::*;
-pub use none::*;
-pub use string::*;
+pub(crate) use self::bool::*;
+pub(crate) use float::*;
+pub(crate) use func::*;
+pub(crate) use int::*;
+pub(crate) use list::*;
+pub(crate) use none::*;
+pub(crate) use object::*;
+pub(crate) use string::*;

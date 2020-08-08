@@ -21,18 +21,6 @@ impl Display for Symbol {
 
 pub mod common {
     use super::*;
-    pub mod lib {
-        use super::*;
-
-        pub const TY_NONE: Symbol = Symbol::new_static("None");
-        pub const TY_BOOL: Symbol = Symbol::new_static("Bool");
-        pub const TY_INT: Symbol = Symbol::new_static("Int");
-        pub const TY_FLOAT: Symbol = Symbol::new_static("Float");
-        pub const TY_STRING: Symbol = Symbol::new_static("String");
-        pub const TY_LIST: Symbol = Symbol::new_static("List");
-        pub const TY_FUNC: Symbol = Symbol::new_static("Function");
-        pub const TY_OBJECT: Symbol = Symbol::new_static("Object");
-    }
 
     pub mod operators {
         use super::*;

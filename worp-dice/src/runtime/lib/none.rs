@@ -1,50 +1,24 @@
-use super::func::Func;
 use crate::runtime::{
-    core::{
-        symbol::{
-            common::{lib::TY_NONE, operators::*},
-            Symbol,
-        },
-        Type, TypeInstanceBase, Value, ValueKey,
-    },
+    core::{Type, TypeInstanceBase, Value},
     error::RuntimeError,
 };
-use maplit::hashmap;
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
-thread_local! {
-    static TYPE: Rc<TypeNone> = Default::default()
-}
+decl_type! {
+    type TypeNone = "None";
 
-#[derive(Debug)]
-pub struct TypeNone {
-    name: Symbol,
-    instance_members: HashMap<ValueKey, Value>,
-}
+    fn op_eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        lhs.try_value::<None>(&TypeNone::NAME)?;
+        let rhs = rhs.value::<None>();
 
-impl Default for TypeNone {
-    fn default() -> Self {
-        Self {
-            name: TY_NONE,
-            instance_members: hashmap! [
-                ValueKey::Symbol(OP_EQ) => Value::new(Func::new_func2(eq)),
-                ValueKey::Symbol(OP_NE) => Value::new(Func::new_func2(ne)),
-            ],
-        }
-    }
-}
-
-impl Type for TypeNone {
-    fn name(&self) -> &Symbol {
-        &self.name
+        Ok(Value::new(rhs.is_some()))
     }
 
-    fn impl_names(&self) -> &[&Symbol] {
-        &[]
-    }
+    fn op_ne(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        lhs.try_value::<None>(&TypeNone::NAME)?;
+        let rhs = rhs.value::<None>();
 
-    fn members(&self) -> &HashMap<ValueKey, Value> {
-        &self.instance_members
+        Ok(Value::new(rhs.is_none()))
     }
 }
 
@@ -53,7 +27,7 @@ pub struct None;
 
 impl TypeInstanceBase for None {
     fn reflect_type(&self) -> Rc<dyn Type> {
-        TYPE.with(Clone::clone)
+        TypeNone::instance()
     }
 }
 
@@ -61,18 +35,4 @@ impl Display for None {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "none")
     }
-}
-
-fn eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    lhs.try_value::<None>(&TY_NONE)?;
-    let rhs = rhs.value::<None>();
-
-    Ok(Value::new(rhs.is_some()))
-}
-
-fn ne(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    lhs.try_value::<None>(&TY_NONE)?;
-    let rhs = rhs.value::<None>();
-
-    Ok(Value::new(rhs.is_none()))
 }

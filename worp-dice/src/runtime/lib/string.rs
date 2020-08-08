@@ -1,34 +1,27 @@
 use crate::runtime::{
-    core::{
-        symbol::{common::lib::TY_STRING, Symbol},
-        Type, TypeInstanceBase, Value,
-    },
+    core::{Type, TypeInstanceBase, Value},
     error::RuntimeError,
 };
 use std::{collections::HashMap, fmt::Display, ops::Deref, rc::Rc};
-
-thread_local! {
-    static TYPE: Rc<TypeString> = Default::default();
-}
 
 decl_type! {
     type TypeString = "String";
 
     fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<DiceString>(&TY_STRING)?;
+        let lhs = lhs.try_value::<DiceString>(&TypeString::NAME)?;
         let result: DiceString = format!("{}{}", lhs, &*rhs).into();
 
         Ok(Value::new(result))
     }
 
     fn length(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<DiceString>(&TY_STRING)?;
+        let this = this.try_value::<DiceString>(&TypeString::NAME)?;
 
         Ok(Value::new(this.len() as i64))
     }
 
     fn is_empty(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<DiceString>(&TY_STRING)?;
+        let this = this.try_value::<DiceString>(&TypeString::NAME)?;
 
         Ok(Value::new(this.is_empty() as bool))
     }
@@ -39,7 +32,7 @@ pub struct DiceString(Rc<str>);
 
 impl TypeInstanceBase for DiceString {
     fn reflect_type(&self) -> Rc<dyn Type> {
-        TYPE.with(Clone::clone)
+        TypeString::instance()
     }
 }
 

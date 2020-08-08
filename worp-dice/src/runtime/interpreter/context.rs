@@ -1,6 +1,10 @@
 use super::{environment::Environment, evaluator::eval};
 use crate::{
-    runtime::{core::Value, error::RuntimeError, lib::TypeInt},
+    runtime::{
+        core::Value,
+        error::RuntimeError,
+        lib::{TypeFloat, TypeInt},
+    },
     syntax::Expression,
 };
 use std::{ops::Deref, rc::Rc};
@@ -11,13 +15,12 @@ pub struct ExecutionContext {
 }
 
 impl ExecutionContext {
-    pub fn new() -> Self {
+    pub fn try_new() -> Result<Self, RuntimeError> {
         let inner: Rc<Environment> = Default::default();
-        inner
-            .add_known_type(TypeInt::instance())
-            .expect("Standard library types should be registerable.");
+        inner.add_known_type(TypeInt::instance())?;
+        inner.add_known_type(TypeFloat::instance())?;
 
-        Self { inner }
+        Ok(Self { inner })
     }
 
     pub fn eval_expression(&self, input: &str) -> Result<Value, RuntimeError> {
