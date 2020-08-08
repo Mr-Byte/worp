@@ -1,6 +1,6 @@
 use super::{core::key::ValueKey, symbol::Symbol};
 use crate::syntax::ParseError;
-use std::error::Error;
+use std::{error::Error, num::ParseIntError};
 
 #[derive(thiserror::Error, Debug)]
 #[error("Evaluation failed.")]
@@ -31,4 +31,6 @@ pub enum RuntimeError {
     TypeNotFound(Symbol),
     #[error("Runtime Error: Index out of bounds. Length: {0}, Index: {1}.")]
     IndexOutOfBounds(usize, i64),
+    #[error("Runtime Error: Unable to parse value to Int.")]
+    ParseIntError(#[from] ParseIntError),
 }

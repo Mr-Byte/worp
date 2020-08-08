@@ -9,10 +9,7 @@ mod test {
         core::{key::ValueKey, value::Value},
         error::RuntimeError,
         lib::{list::List, none, string::DiceString},
-        symbol::{
-            common::lib::{TY_FLOAT, TY_INT},
-            Symbol,
-        },
+        symbol::Symbol,
     };
     use context::ExecutionContext;
 
@@ -303,11 +300,23 @@ mod test {
     }
 
     #[test]
-    fn test_int_constructor_should_fail_with_float() -> Result<(), RuntimeError> {
+    fn test_int_constructor_with_float() -> Result<(), RuntimeError> {
         let context = ExecutionContext::new();
-        let result = context.eval_expression("Int(5.0)");
+        let result = context.eval_expression("Int(5.99)")?;
+        let actual = result.value::<i64>().unwrap();
 
-        assert!(matches!(result, Err(RuntimeError::InvalidType(ex, ac)) if ex == TY_INT && ac == TY_FLOAT));
+        assert_eq!(5, *actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_int_constructor_with_string() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::new();
+        let result = context.eval_expression(r#"Int("5")"#)?;
+        let actual = result.value::<i64>().unwrap();
+
+        assert_eq!(5, *actual);
 
         Ok(())
     }

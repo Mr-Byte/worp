@@ -43,7 +43,7 @@ impl Type for TypeNone {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct None;
 
 impl TypeInstanceBase for None {

@@ -1,4 +1,4 @@
-use super::func::Func;
+use super::{func::Func, string::DiceString};
 use crate::runtime::{
     core::{key::ValueKey, reflection::Type, value::Value, TypeInstanceBase},
     error::RuntimeError,
@@ -48,10 +48,12 @@ impl Default for TypeInt {
 impl Type for TypeInt {
     fn construct(&self, args: &[Value]) -> Result<Value, RuntimeError> {
         if let [value] = args {
-            if *value.reflect_type().name() == TY_INT {
-                Ok(value.clone())
-            } else {
-                Err(RuntimeError::InvalidType(TY_INT, value.reflect_type().name().clone()))
+            match_type! {
+                value,
+                as_int: i64 => Ok(Value::new(*as_int)),
+                as_float: f64 => Ok(Value::new(*as_float as i64)),
+                as_string: DiceString => Ok(Value::new(as_string.parse::<i64>()?)),
+                _ => Err(RuntimeError::InvalidType(TY_INT, value.reflect_type().name().clone()))
             }
         } else {
             Err(RuntimeError::InvalidFunctionArgs(1, args.len()))

@@ -28,23 +28,15 @@ impl Value {
     }
 
     fn new_object(value: impl TypeInstance + 'static) -> Self {
-        let value_ref = &value as &dyn TypeInstance;
-        let variant = if value_ref.value::<none::None>().is_some() {
-            Variant::None(none::None)
-        } else if let Some(value) = value_ref.value::<bool>() {
-            Variant::Bool(*value)
-        } else if let Some(value) = value_ref.value::<i64>() {
-            Variant::Int(*value)
-        } else if let Some(value) = value_ref.value::<f64>() {
-            Variant::Float(*value)
-        } else if let Some(value) = value_ref.value::<Func>() {
-            Variant::Function(value.clone())
-        } else if let Some(value) = value_ref.value::<List>() {
-            Variant::List(value.clone())
-        } else if let Some(value) = value_ref.value::<DiceString>() {
-            Variant::String(value.clone())
-        } else {
-            Variant::Object(Rc::new(value))
+        let variant = match_type! { &value as &dyn TypeInstance,
+            as_none: none::None => Variant::None(*as_none),
+            as_bool: bool => Variant::Bool(*as_bool),
+            as_int: i64 => Variant::Int(*as_int),
+            as_float: f64 => Variant::Float(*as_float),
+            as_func: Func => Variant::Function(as_func.clone()),
+            as_list: List => Variant::List(as_list.clone()),
+            as_string: DiceString => Variant::String(as_string.clone()),
+            _ => Variant::Object(Rc::new(value))
         };
 
         Self(variant)
