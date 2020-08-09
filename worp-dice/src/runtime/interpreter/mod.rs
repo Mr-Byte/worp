@@ -237,9 +237,29 @@ mod test {
     #[test]
     fn test_discard_expression_seps() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
-        let result = context.eval_expression("5 + 5 ; none")?;
+        let result = context.eval_expression("5 + 5\nnone")?;
 
         assert_eq!(lib::None, *result.value::<lib::None>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_discard_expression_seps_complex() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression(r##"5["#op_add"](5) 15 20 25 25["#op_add"](5)"##)?;
+
+        assert_eq!(30, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_discard_expression_seps_complex_if() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression(r##"if false { 5 } if true { 10 }"##)?;
+
+        assert_eq!(10, *result.value::<i64>().unwrap());
 
         Ok(())
     }

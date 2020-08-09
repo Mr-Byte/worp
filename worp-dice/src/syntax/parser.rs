@@ -433,15 +433,15 @@ fn coalesce(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     })(input)
 }
 
-fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let (input, init) = coalesce(input)?;
+// fn discard(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+//     let (input, init) = coalesce(input)?;
 
-    let discard_op = context("discard operator", char(';'));
+//     let discard_op = context("discard operator", char(';'));
 
-    fold_many0(preceded(discard_op, coalesce), init, |acc, expr| {
-        Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
-    })(input)
-}
+//     fold_many0(preceded(discard_op, coalesce), init, |acc, expr| {
+//         Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
+//     })(input)
+// }
 
 fn block_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     delimited(open_curly, expression, close_curly)(input)
@@ -451,7 +451,7 @@ fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     // TODO: Figure out better error handling here.
     map(
         tuple((
-            preceded(if_keyword, discard),
+            preceded(if_keyword, expression),
             context("primary condition", block_expression),
             opt(context(
                 "alternate condition",
@@ -462,12 +462,21 @@ fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     )(input)
 }
 
-fn expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
-    let (input, init) = alt((if_expression, discard))(input)?;
+fn statements(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    let (input, init) = alt((if_expression, coalesce))(input)?;
+    let init = vec![init];
 
-    fold_many0(alt((if_expression, discard)), init, |acc, expr| {
-        Expression::Binary(BinaryOperator::Discard, Box::new(acc), Box::new(expr))
-    })(input)
+    map(
+        fold_many0(alt((if_expression, coalesce)), init, |mut acc, expr| {
+            acc.push(expr);
+            acc
+        }),
+        Expression::Statements,
+    )(input)
+}
+
+fn expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+    statements(input)
 }
 
 pub fn parse(input: &str) -> Result<Expression, error::ParseError> {
@@ -490,7 +499,7 @@ mod test {
 
     #[test]
     fn test_debug() {
-        let result = parse("5.to_string()");
+        let result = parse("5.to_string() if x == 30 { 5 5 5 5 5 } 5 5 5 5 5 5 { x: 5 } 5 5 5 5 5");
 
         match result {
             Ok(ast) => println!("{}", ast),
@@ -505,32 +514,6 @@ mod test {
     }
 
     #[test]
-    fn subsequent_if_should_produce_discard_node() {
-        let result = parse(r#"if x { y } if y { z }"#).unwrap();
-
-        match result {
-            Expression::Binary(BinaryOperator::Discard, _, rhs) => match *rhs {
-                Expression::Conditional(_, _, _) => (),
-                _ => unreachable!(),
-            },
-            _ => unreachable!(),
-        }
-    }
-
-    #[test]
-    fn subsequent_non_if_expression_should_produce_discard_node() {
-        let result = parse(r#"if x { y } x"#).unwrap();
-
-        match result {
-            Expression::Binary(BinaryOperator::Discard, _, rhs) => match *rhs {
-                Expression::Literal(_) => (),
-                _ => unreachable!(),
-            },
-            _ => unreachable!(),
-        }
-    }
-
-    #[test]
     fn dangling_else_should_fail() {
         let result = parse(r#"if x { y } else"#);
 
@@ -538,23 +521,10 @@ mod test {
     }
 
     #[test]
-    fn method_call() {
-        let result = parse(r#"5.to_string()"#).unwrap();
-
-        match result {
-            Expression::FunctionCall(_, _) => (),
-            _ => unreachable!(),
-        }
-    }
-
-    #[test]
     #[ignore]
     fn method_call_on_block_expression() {
-        let result = parse(r#"if true { 5 }.to_string()"#).unwrap();
+        let result = parse(r#"if true { 5 }.to_string()"#);
 
-        match result {
-            Expression::FunctionCall(_, _) => (),
-            _ => unreachable!(),
-        }
+        println!("{:?}", result);
     }
 }

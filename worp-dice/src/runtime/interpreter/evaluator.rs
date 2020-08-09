@@ -33,6 +33,20 @@ fn eval_expression(expr: &Expression, environment: &Environment) -> Result<Value
         Expression::Binary(op, lhs, rhs) => eval_binary(op, lhs, rhs, environment),
         Expression::Range(_op, _lower, _upper) => todo!(),
         Expression::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate.as_deref(), environment),
+        Expression::Statements(statements) => {
+            let mut iter = statements.iter().peekable();
+            loop {
+                if let Some(statement) = iter.next() {
+                    let result = eval_expression(statement, environment)?;
+
+                    if iter.peek().is_none() {
+                        break Ok(result);
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+        }
     }
 }
 
@@ -152,7 +166,6 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
                 Ok(rhs)
             }
         }
-        BinaryOperator::Discard => Ok(rhs),
     }
 }
 

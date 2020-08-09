@@ -99,9 +99,6 @@ pub enum BinaryOperator {
 
     /// The `:?` operator (null-coalesce)
     Coalesce,
-
-    /// The `;` operator (discard)
-    Discard,
 }
 
 impl Display for BinaryOperator {
@@ -122,7 +119,6 @@ impl Display for BinaryOperator {
             BinaryOperator::LogicalAnd => write!(fmt, "&&"),
             BinaryOperator::LogicalOr => write!(fmt, "||"),
             BinaryOperator::Coalesce => write!(fmt, ":?"),
-            BinaryOperator::Discard => write!(fmt, ";"),
         }
     }
 }
@@ -163,6 +159,9 @@ pub enum Expression {
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
     Range(RangeOperator, Box<Expression>, Box<Expression>),
     Conditional(Box<Expression>, Box<Expression>, Option<Box<Expression>>),
+
+    // Statements
+    Statements(Vec<Expression>),
 }
 
 impl Display for Expression {
@@ -186,6 +185,7 @@ impl Display for Expression {
                 body,
                 else_body.as_ref().map(ToString::to_string).unwrap_or_default()
             ),
+            Expression::Statements(statements) => write!(fmt, "{}", statements.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n")),
         }
     }
 }
