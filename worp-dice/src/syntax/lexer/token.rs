@@ -138,6 +138,12 @@ pub enum Token {
     Final,
     #[token("where")]
     Where,
+    #[token("impl")]
+    Impl,
+    #[token("import")]
+    Import,
+    #[token("from")]
+    From,
 
     #[error]
     #[regex(r"[ \t\r\n\f]+", logos::skip)]

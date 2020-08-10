@@ -77,7 +77,7 @@ pub mod test {
 
     #[test]
     fn tokenize_keywords() {
-        let delimeters = "\
+        let delimeters = "
             false
             true
             none
@@ -110,6 +110,9 @@ pub mod test {
             abstract
             final
             where
+            impl
+            import
+            from
         ";
         let mut tokens = Token::lexer(delimeters);
 
@@ -144,6 +147,9 @@ pub mod test {
         assert_next_token!(tokens, Token::Abstract);
         assert_next_token!(tokens, Token::Final);
         assert_next_token!(tokens, Token::Where);
+        assert_next_token!(tokens, Token::Impl);
+        assert_next_token!(tokens, Token::Import);
+        assert_next_token!(tokens, Token::From);
     }
 
     #[test]
