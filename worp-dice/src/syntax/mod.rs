@@ -1,4 +1,5 @@
 mod expression;
+mod lexer;
 mod parser;
 
 pub use expression::*;
