@@ -1,7 +1,51 @@
+use crate::syntax::span::Span;
 use logos::Logos;
+use std::iter::{Iterator, Peekable};
 
-#[derive(Logos, Debug, PartialEq)]
-pub enum Token {
+pub struct TokenIterator<'a> {
+    inner: Peekable<Box<dyn Iterator<Item = Token<'a>> + 'a>>,
+}
+
+impl<'a> TokenIterator<'a> {
+    pub fn peek(&mut self) -> Option<&<Self as Iterator>::Item> {
+        self.inner.peek()
+    }
+}
+
+impl<'a> Iterator for TokenIterator<'a> {
+    type Item = Token<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Token<'a> {
+    pub kind: TokenKind,
+    pub span: Span,
+    slice: &'a str,
+}
+
+impl Token<'_> {
+    pub fn tokenize(input: &str) -> TokenIterator<'_> {
+        let inner = (Box::new(TokenKind::lexer(input).spanned().map(move |(kind, span)| Token {
+            kind: kind.clone(),
+            span: span.clone().into(),
+            slice: &input[span],
+        })) as Box<dyn Iterator<Item = Token<'_>> + '_>)
+            .peekable();
+
+        TokenIterator { inner }
+    }
+
+    pub fn slice(&self) -> &str {
+        self.slice
+    }
+}
+
+#[derive(Logos, Clone, Debug, PartialEq)]
+pub enum TokenKind {
     // Delimeters
     #[token("(")]
     LeftParen,
@@ -22,6 +66,10 @@ pub enum Token {
     #[token(",")]
     Comma,
     // Operators
+    #[token("..")]
+    ExclusiveRange,
+    #[token("..=")]
+    InclusiveRange,
     #[token("->")]
     Arrow,
     #[token("=>")]
@@ -146,6 +194,6 @@ pub enum Token {
     From,
 
     #[error]
-    #[regex(r"[ \t\r\n\f]+", logos::skip)]
+    #[regex(r"[ \t\r\n\f]+|//[^\r\n]+", logos::skip)]
     Error,
 }

@@ -5,7 +5,7 @@ use crate::{
         error::RuntimeError,
         lib::{TypeFloat, TypeInt},
     },
-    syntax::Expression,
+    syntax::SyntaxTree,
 };
 use std::{ops::Deref, rc::Rc};
 
@@ -24,7 +24,7 @@ impl ExecutionContext {
     }
 
     pub fn eval_expression(&self, input: &str) -> Result<Value, RuntimeError> {
-        let expr: Expression = input.parse()?;
+        let expr: SyntaxTree = input.parse()?;
         eval(&expr, self)
     }
 

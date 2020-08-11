@@ -13,27 +13,27 @@ use crate::{
         error::RuntimeError,
         lib::{DiceString, List, Object, TypeBool, TypeNone},
     },
-    syntax::{BinaryOperator, Expression, Literal, UnaryOperator},
+    syntax::{BinaryOperator, Literal, SyntaxTree, UnaryOperator},
 };
 use std::{collections::HashMap, iter};
 
 #[inline]
-pub fn eval(expr: &Expression, environment: &Environment) -> Result<Value, RuntimeError> {
+pub fn eval(expr: &SyntaxTree, environment: &Environment) -> Result<Value, RuntimeError> {
     eval_expression(expr, environment)
 }
 
-fn eval_expression(expr: &Expression, environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_expression(expr: &SyntaxTree, environment: &Environment) -> Result<Value, RuntimeError> {
     match expr {
-        Expression::Literal(literal) => eval_literal(literal, environment),
-        Expression::SafeAccess(expr, field) => eval_safe_field_access(expr, field, environment),
-        Expression::FieldAccess(expr, field) => eval_field_access(expr, field, environment),
-        Expression::FunctionCall(expr, args) => eval_function_call(expr, args, environment),
-        Expression::Index(expr, index) => eval_index(expr, index, environment),
-        Expression::Unary(op, expr) => eval_unary(op, expr, environment),
-        Expression::Binary(op, lhs, rhs) => eval_binary(op, lhs, rhs, environment),
-        Expression::Range(_op, _lower, _upper) => todo!(),
-        Expression::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate.as_deref(), environment),
-        Expression::Statements(statements) => {
+        SyntaxTree::Literal(literal, _) => eval_literal(literal, environment),
+        SyntaxTree::SafeAccess(expr, field, _) => eval_safe_field_access(expr, field, environment),
+        SyntaxTree::FieldAccess(expr, field, _) => eval_field_access(expr, field, environment),
+        SyntaxTree::FunctionCall(expr, args) => eval_function_call(expr, args, environment),
+        SyntaxTree::Index(expr, index) => eval_index(expr, index, environment),
+        SyntaxTree::Unary(op, expr) => eval_unary(op, expr, environment),
+        SyntaxTree::Binary(op, lhs, rhs) => eval_binary(op, lhs, rhs, environment),
+        SyntaxTree::Range(_op, _lower, _upper) => todo!(),
+        SyntaxTree::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate.as_deref(), environment),
+        SyntaxTree::Statements(statements) => {
             let mut iter = statements.iter().peekable();
             loop {
                 if let Some(statement) = iter.next() {
@@ -64,7 +64,7 @@ fn eval_literal(literal: &Literal, environment: &Environment) -> Result<Value, R
 }
 
 #[inline]
-fn eval_list_literal(list: &[Expression], environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_list_literal(list: &[SyntaxTree], environment: &Environment) -> Result<Value, RuntimeError> {
     let result: List = list
         .iter()
         .map(|expr| eval_expression(expr, environment))
@@ -75,7 +75,7 @@ fn eval_list_literal(list: &[Expression], environment: &Environment) -> Result<V
 }
 
 #[inline]
-fn eval_object_literal(object: &HashMap<ValueKey, Expression>, environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_object_literal(object: &HashMap<ValueKey, SyntaxTree>, environment: &Environment) -> Result<Value, RuntimeError> {
     let result = object
         .iter()
         .map(|(key, value)| Ok::<_, RuntimeError>((key.clone(), eval_expression(value, environment)?)))
@@ -84,9 +84,9 @@ fn eval_object_literal(object: &HashMap<ValueKey, Expression>, environment: &Env
     Ok(Value::new(Object::new(result)))
 }
 
-fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_function_call(expr: &SyntaxTree, args: &[SyntaxTree], environment: &Environment) -> Result<Value, RuntimeError> {
     match expr {
-        Expression::Literal(Literal::Identifier(target)) => {
+        SyntaxTree::Literal(Literal::Identifier(target), _) => {
             let args = args.iter().map(|arg| eval_expression(arg, environment)).collect::<Result<Vec<_>, _>>()?;
 
             if let Some(known_type) = environment.known_type(target)? {
@@ -95,11 +95,11 @@ fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Envi
                 environment.variable(target)?.call(&args)
             }
         }
-        Expression::FieldAccess(this, method) => {
+        SyntaxTree::FieldAccess(this, method, _) => {
             let method = &ValueKey::Symbol(method.clone());
             eval_method_call(&method, this, args, environment)
         }
-        Expression::Index(this, method) => {
+        SyntaxTree::Index(this, method) => {
             let method = eval_object_key(method, environment)?;
             eval_method_call(&method, this, args, environment)
         }
@@ -108,7 +108,7 @@ fn eval_function_call(expr: &Expression, args: &[Expression], environment: &Envi
 }
 
 #[inline]
-fn eval_method_call(method: &ValueKey, this: &Expression, args: &[Expression], environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_method_call(method: &ValueKey, this: &SyntaxTree, args: &[SyntaxTree], environment: &Environment) -> Result<Value, RuntimeError> {
     let args = iter::once_with(|| eval_expression(this, environment))
         .chain(args.iter().map(|arg| eval_expression(arg, environment)))
         .collect::<Result<Vec<Value>, RuntimeError>>()?;
@@ -123,43 +123,43 @@ fn eval_method_call(method: &ValueKey, this: &Expression, args: &[Expression], e
 }
 
 #[inline]
-fn eval_index(expr: &Expression, index: &Expression, environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_index(expr: &SyntaxTree, index: &SyntaxTree, environment: &Environment) -> Result<Value, RuntimeError> {
     let target = eval_expression(expr, environment)?;
     let index = eval_object_key(index, environment)?;
 
     target.get(&index)
 }
 
-fn eval_unary(op: &UnaryOperator, expr: &Expression, environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_unary(op: &UnaryOperator, expr: &SyntaxTree, environment: &Environment) -> Result<Value, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
     match op {
-        UnaryOperator::Negate => object_ref.get(&ValueKey::Symbol(OP_NEG))?.call(&[object_ref]),
-        UnaryOperator::Not => object_ref.get(&ValueKey::Symbol(OP_NOT))?.call(&[object_ref]),
+        UnaryOperator::Negate(_) => object_ref.get(&ValueKey::Symbol(OP_NEG))?.call(&[object_ref]),
+        UnaryOperator::Not(_) => object_ref.get(&ValueKey::Symbol(OP_NOT))?.call(&[object_ref]),
     }
 }
 
-fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environment: &Environment) -> Result<Value, RuntimeError> {
     let lhs = eval_expression(lhs, environment)?;
     // TODO: Only evaluate this when needed.
     let rhs = eval_expression(rhs, environment)?;
 
     match op {
-        BinaryOperator::DiceRoll => todo!(),
-        BinaryOperator::Multiply => lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs, rhs]),
-        BinaryOperator::Divide => lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs, rhs]),
-        BinaryOperator::Remainder => lhs.get(&ValueKey::Symbol(OP_REM))?.call(&[lhs, rhs]),
-        BinaryOperator::Add => lhs.get(&ValueKey::Symbol(OP_ADD))?.call(&[lhs, rhs]),
-        BinaryOperator::Subtract => lhs.get(&ValueKey::Symbol(OP_SUB))?.call(&[lhs, rhs]),
-        BinaryOperator::Equals => lhs.get(&ValueKey::Symbol(OP_EQ))?.call(&[lhs, rhs]),
-        BinaryOperator::NotEquals => lhs.get(&ValueKey::Symbol(OP_NE))?.call(&[lhs, rhs]),
-        BinaryOperator::GreaterThan => lhs.get(&ValueKey::Symbol(OP_GT))?.call(&[lhs, rhs]),
-        BinaryOperator::GreaterThanOrEquals => lhs.get(&ValueKey::Symbol(OP_GTE))?.call(&[lhs, rhs]),
-        BinaryOperator::LessThan => lhs.get(&ValueKey::Symbol(OP_LT))?.call(&[lhs, rhs]),
-        BinaryOperator::LessThanOrEquals => lhs.get(&ValueKey::Symbol(OP_LTE))?.call(&[lhs, rhs]),
-        BinaryOperator::LogicalAnd => lhs.get(&ValueKey::Symbol(OP_AND))?.call(&[lhs, rhs]),
-        BinaryOperator::LogicalOr => lhs.get(&ValueKey::Symbol(OP_OR))?.call(&[lhs, rhs]),
-        BinaryOperator::Coalesce => {
+        BinaryOperator::DiceRoll(_) => todo!(),
+        BinaryOperator::Multiply(_) => lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs, rhs]),
+        BinaryOperator::Divide(_) => lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs, rhs]),
+        BinaryOperator::Remainder(_) => lhs.get(&ValueKey::Symbol(OP_REM))?.call(&[lhs, rhs]),
+        BinaryOperator::Add(_) => lhs.get(&ValueKey::Symbol(OP_ADD))?.call(&[lhs, rhs]),
+        BinaryOperator::Subtract(_) => lhs.get(&ValueKey::Symbol(OP_SUB))?.call(&[lhs, rhs]),
+        BinaryOperator::Equals(_) => lhs.get(&ValueKey::Symbol(OP_EQ))?.call(&[lhs, rhs]),
+        BinaryOperator::NotEquals(_) => lhs.get(&ValueKey::Symbol(OP_NE))?.call(&[lhs, rhs]),
+        BinaryOperator::GreaterThan(_) => lhs.get(&ValueKey::Symbol(OP_GT))?.call(&[lhs, rhs]),
+        BinaryOperator::GreaterThanOrEquals(_) => lhs.get(&ValueKey::Symbol(OP_GTE))?.call(&[lhs, rhs]),
+        BinaryOperator::LessThan(_) => lhs.get(&ValueKey::Symbol(OP_LT))?.call(&[lhs, rhs]),
+        BinaryOperator::LessThanOrEquals(_) => lhs.get(&ValueKey::Symbol(OP_LTE))?.call(&[lhs, rhs]),
+        BinaryOperator::LogicalAnd(_) => lhs.get(&ValueKey::Symbol(OP_AND))?.call(&[lhs, rhs]),
+        BinaryOperator::LogicalOr(_) => lhs.get(&ValueKey::Symbol(OP_OR))?.call(&[lhs, rhs]),
+        BinaryOperator::Coalesce(_) => {
             if *lhs.reflect_type().name() != TypeNone::NAME {
                 Ok(lhs)
             } else {
@@ -170,7 +170,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &Expression, rhs: &Expression, environm
 }
 
 #[inline]
-fn eval_safe_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_safe_field_access(expr: &SyntaxTree, field: &Symbol, environment: &Environment) -> Result<Value, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
     if *object_ref.reflect_type().name() != TypeNone::NAME {
@@ -181,13 +181,13 @@ fn eval_safe_field_access(expr: &Expression, field: &Symbol, environment: &Envir
 }
 
 #[inline]
-fn eval_field_access(expr: &Expression, field: &Symbol, environment: &Environment) -> Result<Value, RuntimeError> {
+fn eval_field_access(expr: &SyntaxTree, field: &Symbol, environment: &Environment) -> Result<Value, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
     object_ref.get(&ValueKey::Symbol(field.clone()))
 }
 
 #[inline]
-fn eval_object_key(expr: &Expression, environment: &Environment) -> Result<ValueKey, RuntimeError> {
+fn eval_object_key(expr: &SyntaxTree, environment: &Environment) -> Result<ValueKey, RuntimeError> {
     let index = eval_expression(expr, environment)?;
 
     if let Some(index) = index.value::<i64>() {
@@ -201,9 +201,9 @@ fn eval_object_key(expr: &Expression, environment: &Environment) -> Result<Value
 }
 
 fn eval_conditional(
-    condition: &Expression,
-    body: &Expression,
-    alternate: Option<&Expression>,
+    condition: &SyntaxTree,
+    body: &SyntaxTree,
+    alternate: Option<&SyntaxTree>,
     environment: &Environment,
 ) -> Result<Value, RuntimeError> {
     let condition_result = eval_expression(condition, environment)?;

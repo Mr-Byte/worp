@@ -1,6 +1,7 @@
-mod expression;
 mod lexer;
 mod parser;
+mod span;
+mod tree;
 
-pub use expression::*;
-pub use parser::error::ParseError;
+pub use parser::error::ParserError;
+pub use tree::*;

@@ -4,10 +4,8 @@ version = "0.1.0"
 authors = ["Joshua Rodgers <bytemr@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 thiserror = "1.0"
-nom = "6.0.0-alpha"
 maplit = "1.0"
 logos = "0.11"
+# source-span = { version = "2.2", default-features = false }

@@ -1,4 +1,4 @@
-use super::expression::{BinaryOperator, Expression, Literal, RangeOperator, UnaryOperator};
+use super::tree::{BinaryOperator, Literal, RangeOperator, SyntaxTree, UnaryOperator};
 use crate::runtime::core::{symbol::Symbol, ValueKey};
 use nom::{
     branch::alt,
@@ -197,7 +197,7 @@ fn object_literal(input: &str) -> IResult<&str, Literal, VerboseError<&str>> {
     )(input)
 }
 
-fn literal(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn literal(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     map(
         preceded(
             reserved,
@@ -212,33 +212,33 @@ fn literal(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
                 object_literal,
             )),
         ),
-        Expression::Literal,
+        SyntaxTree::Literal,
     )(input)
 }
 
-fn parens(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn parens(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     context(
         "parnenthesized expression",
         delimited(multispace0, delimited(open_paren, expression, cut(close_paren)), multispace0),
     )(input)
 }
 
-fn primary(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn primary(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     alt((literal, parens))(input)
 }
 
-fn dice_roll(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn dice_roll(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = primary(input)?;
     let dice_roll_op = context("dice roll operator", char('d'));
 
     fold_many0(preceded(delimited(multispace0, dice_roll_op, multispace0), primary), init, |acc, expr| {
-        Expression::Binary(BinaryOperator::DiceRoll, Box::new(acc), Box::new(expr))
+        SyntaxTree::Binary(BinaryOperator::DiceRoll, Box::new(acc), Box::new(expr))
     })(input)
 }
 
 enum CallType {
-    Function(Vec<Expression>),
-    ArrayIndex(Expression),
+    Function(Vec<SyntaxTree>),
+    ArrayIndex(SyntaxTree),
     FieldAccess(Symbol),
     SafeAccess(Symbol),
 }
@@ -291,29 +291,29 @@ fn field_access(input: &str) -> IResult<&str, CallType, VerboseError<&str>> {
     )(input)
 }
 
-fn access(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn access(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = dice_roll(input)?;
 
     let call = alt((safe_access, function_call, array_index, field_access));
 
     fold_many0(call, init, |acc, call_type| match call_type {
-        CallType::Function(args) => Expression::FunctionCall(Box::new(acc), args),
-        CallType::ArrayIndex(arg) => Expression::Index(Box::new(acc), Box::new(arg)),
-        CallType::FieldAccess(field) => Expression::FieldAccess(Box::new(acc), field),
-        CallType::SafeAccess(field) => Expression::SafeAccess(Box::new(acc), field),
+        CallType::Function(args) => SyntaxTree::FunctionCall(Box::new(acc), args),
+        CallType::ArrayIndex(arg) => SyntaxTree::Index(Box::new(acc), Box::new(arg)),
+        CallType::FieldAccess(field) => SyntaxTree::FieldAccess(Box::new(acc), field),
+        CallType::SafeAccess(field) => SyntaxTree::SafeAccess(Box::new(acc), field),
     })(input)
 }
 
 // TODO: Refactor this to produce better errors?
-fn unary(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn unary(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let negation = context("negation operator", char('-'));
     let not = context("not operator", char('!'));
 
     let unary_rule = map(
         delimited(multispace0, pair(alt((negation, not)), unary), multispace0),
         |(op, expr)| match op {
-            '-' => Expression::Unary(UnaryOperator::Negate, Box::new(expr)),
-            '!' => Expression::Unary(UnaryOperator::Not, Box::new(expr)),
+            '-' => SyntaxTree::Unary(UnaryOperator::Negate, Box::new(expr)),
+            '!' => SyntaxTree::Unary(UnaryOperator::Not, Box::new(expr)),
             _ => unreachable!(),
         },
     );
@@ -321,7 +321,7 @@ fn unary(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     alt((access, unary_rule))(input)
 }
 
-fn multiplicative(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn multiplicative(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = unary(input)?;
 
     let multiply = context("multiply operator", char('*'));
@@ -336,11 +336,11 @@ fn multiplicative(input: &str) -> IResult<&str, Expression, VerboseError<&str>> 
             _ => unreachable!(),
         };
 
-        Expression::Binary(op, Box::new(acc), Box::new(value))
+        SyntaxTree::Binary(op, Box::new(acc), Box::new(value))
     })(input)
 }
 
-fn additive(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn additive(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = multiplicative(input)?;
 
     let add = context("add operator", char('+'));
@@ -353,11 +353,11 @@ fn additive(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
             _ => unreachable!(),
         };
 
-        Expression::Binary(op, Box::new(acc), Box::new(value))
+        SyntaxTree::Binary(op, Box::new(acc), Box::new(value))
     })(input)
 }
 
-fn comparison(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn comparison(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = additive(input)?;
 
     let eq_op = context("equals operator", tag("=="));
@@ -381,32 +381,32 @@ fn comparison(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
                 _ => unreachable!(),
             };
 
-            Expression::Binary(op, Box::new(acc), Box::new(value))
+            SyntaxTree::Binary(op, Box::new(acc), Box::new(value))
         },
     )(input)
 }
 
-fn logical_and(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn logical_and(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = comparison(input)?;
 
     let logical_and_op = context("logical and operator", tag("&&"));
 
     fold_many0(preceded(logical_and_op, comparison), init, |acc, expr| {
-        Expression::Binary(BinaryOperator::LogicalAnd, Box::new(acc), Box::new(expr))
+        SyntaxTree::Binary(BinaryOperator::LogicalAnd, Box::new(acc), Box::new(expr))
     })(input)
 }
 
-fn logical_or(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn logical_or(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = logical_and(input)?;
 
     let logical_or_op = context("logical or operator", tag("||"));
 
     fold_many0(preceded(logical_or_op, logical_and), init, |acc, expr| {
-        Expression::Binary(BinaryOperator::LogicalOr, Box::new(acc), Box::new(expr))
+        SyntaxTree::Binary(BinaryOperator::LogicalOr, Box::new(acc), Box::new(expr))
     })(input)
 }
 
-fn range(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn range(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let exclusive_range_op = context("exclusive range operator", tag(".."));
     let inclusive_range_op = context("inclusive range operator", tag("..="));
 
@@ -414,8 +414,8 @@ fn range(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
         map(
             tuple((logical_or, alt((exclusive_range_op, inclusive_range_op)), logical_or)),
             |(lhs, op, rhs)| match op {
-                ".." => Expression::Range(RangeOperator::Exclusive, Box::new(lhs), Box::new(rhs)),
-                "..=" => Expression::Range(RangeOperator::Inclusive, Box::new(lhs), Box::new(rhs)),
+                ".." => SyntaxTree::Range(RangeOperator::Exclusive, Box::new(lhs), Box::new(rhs)),
+                "..=" => SyntaxTree::Range(RangeOperator::Inclusive, Box::new(lhs), Box::new(rhs)),
                 _ => unreachable!(),
             },
         ),
@@ -423,13 +423,13 @@ fn range(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
     ))(input)
 }
 
-fn coalesce(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn coalesce(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = range(input)?;
 
     let coalesce_op = context("none coalesce operator", tag("??"));
 
     fold_many0(preceded(coalesce_op, range), init, |acc, expr| {
-        Expression::Binary(BinaryOperator::Coalesce, Box::new(acc), Box::new(expr))
+        SyntaxTree::Binary(BinaryOperator::Coalesce, Box::new(acc), Box::new(expr))
     })(input)
 }
 
@@ -443,11 +443,11 @@ fn coalesce(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
 //     })(input)
 // }
 
-fn block_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn block_expression(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     delimited(open_curly, expression, close_curly)(input)
 }
 
-fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn if_expression(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     // TODO: Figure out better error handling here.
     map(
         tuple((
@@ -458,11 +458,11 @@ fn if_expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
                 alt((preceded(else_keyword, block_expression), preceded(else_keyword, cut(if_expression)))),
             )),
         )),
-        |(condition, body, alt)| Expression::Conditional(Box::new(condition), Box::new(body), alt.map(Box::new)),
+        |(condition, body, alt)| SyntaxTree::Conditional(Box::new(condition), Box::new(body), alt.map(Box::new)),
     )(input)
 }
 
-fn statements(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn statements(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     let (input, init) = alt((if_expression, coalesce))(input)?;
     let init = vec![init];
 
@@ -471,15 +471,15 @@ fn statements(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
             acc.push(expr);
             acc
         }),
-        Expression::Statements,
+        SyntaxTree::Statements,
     )(input)
 }
 
-fn expression(input: &str) -> IResult<&str, Expression, VerboseError<&str>> {
+fn expression(input: &str) -> IResult<&str, SyntaxTree, VerboseError<&str>> {
     statements(input)
 }
 
-pub fn parse(input: &str) -> Result<Expression, error::ParseError> {
+pub fn parse(input: &str) -> Result<SyntaxTree, error::ParseError> {
     match all_consuming(terminated(expression, multispace0))(input) {
         Ok((_, result)) => Ok(result),
         Err(nom::Err::Error(err)) | Err(nom::Err::Failure(err)) => Err(error::ParseError(convert_error(input, err))),
