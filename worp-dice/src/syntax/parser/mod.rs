@@ -222,6 +222,14 @@ pub mod test {
     }
 
     #[test]
+    fn parse_access_rule_index_access() {
+        let input = "x[y]";
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::Index(_, _))), "Unexpexted syntax tree {:?}", parsed);
+    }
+
+    #[test]
     fn parse_identifier_literal_rule() {
         let input = "_abc";
         let parsed = Parser::parse_str(input);

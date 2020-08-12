@@ -14,9 +14,10 @@ impl<'a> Parser<'a> {
         {
             self.next();
 
-            match &self.current_token.kind {
-                TokenKind::Dot | TokenKind::SafeDot => expression = self.parse_field_access(expression)?,
-                TokenKind::LeftParen | TokenKind::LeftSquare => todo!(),
+            expression = match &self.current_token.kind {
+                TokenKind::Dot | TokenKind::SafeDot => self.parse_field_access(expression)?,
+                TokenKind::LeftSquare => self.parse_index_access(expression)?,
+                TokenKind::LeftParen => self.parse_function_call(expression)?,
                 _ => unreachable!(),
             }
         }
@@ -49,5 +50,29 @@ impl<'a> Parser<'a> {
                 Some(self.current_token.span.clone()),
             ))
         }
+    }
+
+    fn parse_index_access(&mut self, expression: SyntaxTree) -> ParseResult {
+        let span_start = self.current_token.span.clone();
+
+        let index_expression = self.parse_expression()?;
+
+        if !self.next_token.is_kind(TokenKind::RightSquare) {
+            return Err(ParserError::unexpected_token(
+                self.next_token.kind,
+                &[TokenKind::RightSquare],
+                Some(self.next_token.span.clone()),
+            ));
+        }
+
+        self.next();
+
+        // TODO: Provide span information.
+
+        Ok(SyntaxTree::Index(Box::new(expression), Box::new(index_expression)))
+    }
+
+    fn parse_function_call(&mut self, expression: SyntaxTree) -> ParseResult {
+        unreachable!()
     }
 }
