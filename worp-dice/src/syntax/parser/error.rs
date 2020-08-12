@@ -8,8 +8,8 @@ use std::{
 pub enum ErrorKind {
     InvalidIntegerLiteral,
     InvalidFloatLiteral,
-    UnexpectedEndOfInput,
     UnexpectedToken { expected: Vec<TokenKind>, found: TokenKind },
+    UnknownToken { value: String },
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -23,6 +23,17 @@ pub struct ParserError {
 impl ParserError {
     pub fn new(kind: ErrorKind, span: Option<Span>) -> Self {
         Self { kind, span, source: None }
+    }
+
+    pub fn unexpected_token(found: TokenKind, expected: &[TokenKind], span: Option<Span>) -> Self {
+        Self {
+            kind: ErrorKind::UnexpectedToken {
+                found,
+                expected: expected.to_owned(),
+            },
+            span,
+            source: None,
+        }
     }
 }
 

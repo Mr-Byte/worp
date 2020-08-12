@@ -22,21 +22,22 @@ impl<'a> Parser<'a> {
                 if self.next_token.is_kind(TokenKind::RightParen) {
                     expression
                 } else {
-                    return Err(ParserError::new(
-                        ErrorKind::UnexpectedToken {
-                            expected: vec![TokenKind::RightParen],
-                            found: token.kind,
-                        },
-                        Some(token.span),
-                    ));
+                    return Err(ParserError::unexpected_token(token.kind, &[TokenKind::RightParen], Some(token.span)));
                 }
             }
             TokenKind::None => SyntaxTree::Literal(Literal::None, token.span),
             TokenKind::Identifier => SyntaxTree::Literal(Literal::Identifier(Symbol::new(token.slice().to_owned())), token.span),
             TokenKind::LeftCurly => self.parse_object_literal()?,
             TokenKind::LeftSquare => self.parse_list_literal()?,
-            TokenKind::Empty => return Err(ParserError::new(ErrorKind::UnexpectedEndOfInput, Some(token.span))),
-            TokenKind::Error => return Err(ParserError::new(ErrorKind::UnexpectedEndOfInput, Some(token.span))),
+            TokenKind::EndOfInput => return Err(ParserError::unexpected_token(token.kind, &[TokenKind::String], Some(token.span))),
+            TokenKind::Error => {
+                return Err(ParserError::new(
+                    ErrorKind::UnknownToken {
+                        value: token.slice().to_owned(),
+                    },
+                    Some(token.span),
+                ))
+            }
             _ => unreachable!("Invalid token kind found: {:?}", token.kind),
         };
 
@@ -65,12 +66,10 @@ impl<'a> Parser<'a> {
         if self.next_token.is_kind(TokenKind::Colon) {
             self.next();
         } else {
-            return Err(ParserError::new(
-                ErrorKind::UnexpectedToken {
-                    expected: vec![TokenKind::Colon],
-                    found: self.current_token.kind,
-                },
-                Some(self.current_token.span.clone()),
+            return Err(ParserError::unexpected_token(
+                self.current_token.kind,
+                &[TokenKind::Colon],
+                Some(self.next_token.span.clone()),
             ));
         }
 
@@ -79,11 +78,9 @@ impl<'a> Parser<'a> {
         if self.next_token.is_kind(TokenKind::Comma) {
             self.next();
         } else if !self.next_token.is_kind(TokenKind::RightCurly) {
-            return Err(ParserError::new(
-                ErrorKind::UnexpectedToken {
-                    expected: vec![TokenKind::Comma, TokenKind::RightCurly],
-                    found: self.next_token.kind,
-                },
+            return Err(ParserError::unexpected_token(
+                self.next_token.kind,
+                &[TokenKind::Comma, TokenKind::RightCurly],
                 Some(self.next_token.span.clone()),
             ));
         }
@@ -100,13 +97,11 @@ impl<'a> Parser<'a> {
             TokenKind::String => ValueKey::Symbol(token.slice().trim_matches('"').into()),
             TokenKind::Integer => ValueKey::Index(token.slice().parse()?),
             _ => {
-                return Err(ParserError::new(
-                    ErrorKind::UnexpectedToken {
-                        expected: vec![TokenKind::Identifier, TokenKind::String, TokenKind::Integer],
-                        found: self.current_token.kind,
-                    },
-                    Some(token.span),
-                ))
+                return Err(ParserError::unexpected_token(
+                    self.next_token.kind,
+                    &[TokenKind::Identifier, TokenKind::String, TokenKind::Integer],
+                    Some(self.current_token.span.clone()),
+                ));
             }
         };
 
@@ -124,11 +119,9 @@ impl<'a> Parser<'a> {
             if self.next_token.is_kind(TokenKind::Comma) {
                 self.next();
             } else if !self.next_token.is_kind(TokenKind::RightSquare) {
-                return Err(ParserError::new(
-                    ErrorKind::UnexpectedToken {
-                        expected: vec![TokenKind::Comma, TokenKind::RightSquare],
-                        found: self.next_token.kind,
-                    },
+                return Err(ParserError::unexpected_token(
+                    self.next_token.kind,
+                    &[TokenKind::Comma, TokenKind::RightSquare],
                     Some(self.next_token.span.clone()),
                 ));
             }

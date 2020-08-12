@@ -18,7 +18,7 @@ pub struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     fn new(mut token_stream: TokenIterator<'a>) -> Self {
-        let next_token = token_stream.peek().cloned().unwrap_or_else(Token::empty);
+        let next_token = token_stream.next().unwrap_or_else(Token::empty);
 
         Self {
             token_stream,
@@ -28,11 +28,8 @@ impl<'a> Parser<'a> {
     }
 
     fn next(&mut self) {
-        let current_token = self.token_stream.next().unwrap_or_else(Token::empty);
-        let next_token = self.token_stream.peek().cloned().unwrap_or_else(Token::empty);
-
-        self.current_token = current_token;
-        self.next_token = next_token;
+        self.current_token = self.next_token.clone();
+        self.next_token = self.token_stream.next().unwrap_or_else(Token::empty);
     }
 
     pub fn parse_str(input: &'a str) -> ParseResult {
@@ -361,7 +358,10 @@ pub mod test {
         assert!(matches!(
             parsed,
             Err(ParserError {
-                kind: ErrorKind::UnexpectedEndOfInput,
+                kind: ErrorKind::UnexpectedToken {
+                    found: TokenKind::EndOfInput,
+                    ..
+                },
                 ..
             })
         ));
@@ -375,7 +375,7 @@ pub mod test {
         assert!(matches!(
             parsed,
             Err(ParserError {
-                kind: ErrorKind::UnexpectedEndOfInput,
+                kind: ErrorKind::UnknownToken { .. },
                 ..
             })
         ));
@@ -418,7 +418,7 @@ pub mod test {
         assert!(matches!(
             parsed,
             Err(ParserError {
-                kind: ErrorKind::UnexpectedEndOfInput,
+                kind: ErrorKind::UnexpectedToken { .. },
                 ..
             })
         ));

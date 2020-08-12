@@ -1,15 +1,9 @@
 use crate::syntax::span::Span;
 use logos::Logos;
-use std::iter::{Iterator, Peekable};
+use std::iter::Iterator;
 
 pub struct TokenIterator<'a> {
-    inner: Peekable<Box<dyn Iterator<Item = Token<'a>> + 'a>>,
-}
-
-impl<'a> TokenIterator<'a> {
-    pub fn peek(&mut self) -> Option<&<Self as Iterator>::Item> {
-        self.inner.peek()
-    }
+    inner: Box<dyn Iterator<Item = Token<'a>> + 'a>,
 }
 
 impl<'a> Iterator for TokenIterator<'a> {
@@ -29,12 +23,11 @@ pub struct Token<'a> {
 
 impl<'a> Token<'a> {
     pub fn tokenize(input: &'a str) -> TokenIterator<'a> {
-        let inner = (Box::new(TokenKind::lexer(input).spanned().map(move |(kind, span)| Token {
+        let inner = Box::new(TokenKind::lexer(input).spanned().map(move |(kind, span)| Token {
             kind,
             span: span.clone().into(),
             slice: &input[span],
-        })) as Box<dyn Iterator<Item = Token<'a>>>)
-            .peekable();
+        })) as Box<dyn Iterator<Item = Token<'a>>>;
 
         TokenIterator { inner }
     }
@@ -45,7 +38,7 @@ impl<'a> Token<'a> {
 
     pub const fn empty() -> Token<'a> {
         Self {
-            kind: TokenKind::Empty,
+            kind: TokenKind::EndOfInput,
             span: Span::new(0..0),
             slice: "",
         }
@@ -62,8 +55,8 @@ impl<'a> Token<'a> {
 
 #[derive(Logos, Clone, Copy, Debug, PartialEq)]
 pub enum TokenKind {
-    // Empty token kind.
-    Empty,
+    // End of input.
+    EndOfInput,
     // Delimeters
     #[token("(")]
     LeftParen,
