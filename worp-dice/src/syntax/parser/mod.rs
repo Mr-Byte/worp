@@ -230,6 +230,58 @@ pub mod test {
     }
 
     #[test]
+    fn parse_access_rule_function_call() {
+        let input = "x(y)";
+        let parsed = Parser::parse_str(input);
+
+        assert!(
+            matches!(parsed, Ok(SyntaxTree::FunctionCall(_, _))),
+            "Unexpexted syntax tree {:?}",
+            parsed
+        );
+    }
+
+    #[test]
+    fn parse_access_rule_function_call_trailing_comma() {
+        let input = "x(y,)";
+        let parsed = Parser::parse_str(input);
+
+        assert!(
+            matches!(parsed, Ok(SyntaxTree::FunctionCall(_, _))),
+            "Unexpexted syntax tree {:?}",
+            parsed
+        );
+    }
+
+    #[test]
+    fn parse_access_rule_function_call_multiple_parameters() {
+        let input = "x(y,z)";
+        let parsed = Parser::parse_str(input);
+
+        assert!(
+            matches!(parsed, Ok(SyntaxTree::FunctionCall(_, _))),
+            "Unexpexted syntax tree {:?}",
+            parsed
+        );
+    }
+
+    #[test]
+    fn parse_access_rule_function_call_no_closing_paren() {
+        let input = "x(y,z";
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(
+            parsed,
+            Err(ParserError {
+                kind: ErrorKind::UnexpectedToken { found, expected },
+                ..
+            }) if found == TokenKind::EndOfInput
+                && expected.contains(&TokenKind::Comma)
+                && expected.contains(&TokenKind::RightParen)
+        ));
+    }
+
+    #[test]
     fn parse_identifier_literal_rule() {
         let input = "_abc";
         let parsed = Parser::parse_str(input);

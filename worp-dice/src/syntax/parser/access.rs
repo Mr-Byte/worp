@@ -53,7 +53,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_index_access(&mut self, expression: SyntaxTree) -> ParseResult {
-        let span_start = self.current_token.span.clone();
+        // let span_start = self.current_token.span.clone();
 
         let index_expression = self.parse_expression()?;
 
@@ -73,6 +73,26 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_function_call(&mut self, expression: SyntaxTree) -> ParseResult {
-        unreachable!()
+        let mut args = Vec::new();
+        // let span_start = self.current_token.span.clone();
+
+        while !self.next_token.is_kind(TokenKind::RightParen) {
+            args.push(self.parse_expression()?);
+
+            if self.next_token.is_kind(TokenKind::Comma) {
+                self.next();
+            } else if !self.next_token.is_kind(TokenKind::RightParen) {
+                return Err(ParserError::unexpected_token(
+                    self.next_token.kind,
+                    &[TokenKind::Comma, TokenKind::RightParen],
+                    Some(self.next_token.span.clone()),
+                ));
+            }
+        }
+
+        self.next();
+        // let span_end = self.current_token.span.clone();
+
+        Ok(SyntaxTree::FunctionCall(Box::new(expression), args))
     }
 }
