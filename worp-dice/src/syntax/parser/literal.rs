@@ -1,8 +1,9 @@
 use super::{error::ErrorKind, ParseResult, Parser};
 use crate::{
-    runtime::core::Symbol,
+    runtime::core::{Symbol, ValueKey},
     syntax::{lexer::TokenKind, Literal, ParserError, SyntaxTree},
 };
+use std::collections::HashMap;
 
 impl<'a> Parser<'a> {
     pub(super) fn parse_literal(&mut self) -> ParseResult {
@@ -21,17 +22,105 @@ impl<'a> Parser<'a> {
                 if self.next_token.is_kind(TokenKind::RightParen) {
                     expression
                 } else {
-                    return Err(ParserError::new(ErrorKind::UnexpectedToken, Some(token.span)));
+                    return Err(ParserError::new(
+                        ErrorKind::UnexpectedToken {
+                            expected: vec![TokenKind::RightParen],
+                            found: token.kind.clone(),
+                        },
+                        Some(token.span),
+                    ));
                 }
             }
             TokenKind::None => SyntaxTree::Literal(Literal::None, token.span),
             TokenKind::Identifier => SyntaxTree::Literal(Literal::Identifier(Symbol::new(token.slice().to_owned())), token.span),
-            TokenKind::LeftCurly => todo!(),
-            TokenKind::LeftSquare => todo!(),
+            TokenKind::LeftCurly => self.parse_object_literal()?,
+            TokenKind::LeftSquare => self.parse_list_literal()?,
             TokenKind::Empty => return Err(ParserError::new(ErrorKind::UnexpectedEndOfInput, Some(token.span))),
-            _ => return Err(ParserError::new(ErrorKind::UnexpectedToken, Some(token.span))),
+            TokenKind::Error => return Err(ParserError::new(ErrorKind::UnexpectedEndOfInput, Some(token.span))),
+            _ => unreachable!("Invalid token kind found: {:?}", token.kind),
         };
 
         Ok(result)
+    }
+
+    // TODO: Improve this to detect a missing, closing curly.
+    fn parse_object_literal(&mut self) -> ParseResult {
+        let mut properties = HashMap::new();
+        let span_start = self.current_token.span.clone();
+
+        while !self.next_token.is_kind(TokenKind::RightCurly) {
+            let (key, value) = self.parse_object_literal_property()?;
+            properties.insert(key, value);
+        }
+
+        self.next();
+        let span_end = self.current_token.span.clone();
+
+        Ok(SyntaxTree::Literal(Literal::Object(properties), span_start + span_end))
+    }
+
+    fn parse_object_literal_property(&mut self) -> ParseResult<(ValueKey, SyntaxTree)> {
+        let key = self.parse_object_literal_key()?;
+
+        if self.next_token.is_kind(TokenKind::Colon) {
+            self.next();
+        } else {
+            return Err(ParserError::new(
+                ErrorKind::UnexpectedToken {
+                    expected: vec![TokenKind::Colon],
+                    found: self.current_token.kind.clone(),
+                },
+                Some(self.current_token.span.clone()),
+            ));
+        }
+
+        let value = self.parse_expression()?;
+
+        if self.next_token.is_kind(TokenKind::Comma) {
+            self.next();
+        }
+
+        Ok((key, value))
+    }
+
+    fn parse_object_literal_key(&mut self) -> ParseResult<ValueKey> {
+        self.next();
+        let token = self.current_token.clone();
+
+        let result = match token.kind {
+            TokenKind::Identifier => ValueKey::Symbol(token.slice().into()),
+            TokenKind::String => ValueKey::Symbol(token.slice().trim_matches('"').into()),
+            TokenKind::Integer => ValueKey::Index(token.slice().parse()?),
+            _ => {
+                return Err(ParserError::new(
+                    ErrorKind::UnexpectedToken {
+                        expected: vec![TokenKind::Identifier, TokenKind::String, TokenKind::Integer],
+                        found: self.current_token.kind.clone(),
+                    },
+                    Some(token.span.clone()),
+                ))
+            }
+        };
+
+        Ok(result)
+    }
+
+    // TODO: Improve this to detect a missing, closing square brace.
+    fn parse_list_literal(&mut self) -> ParseResult {
+        let mut items = Vec::new();
+        let span_start = self.current_token.span.clone();
+
+        while !self.next_token.is_kind(TokenKind::RightSquare) {
+            items.push(self.parse_expression()?);
+
+            if self.next_token.is_kind(TokenKind::Comma) {
+                self.next();
+            }
+        }
+
+        self.next();
+        let span_end = self.current_token.span.clone();
+
+        Ok(SyntaxTree::Literal(Literal::List(items), span_start + span_end))
     }
 }

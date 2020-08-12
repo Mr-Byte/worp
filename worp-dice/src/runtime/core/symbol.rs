@@ -19,6 +19,12 @@ impl Display for Symbol {
     }
 }
 
+impl From<&str> for Symbol {
+    fn from(value: &str) -> Self {
+        Symbol::new(value)
+    }
+}
+
 pub mod common {
     use super::*;
 

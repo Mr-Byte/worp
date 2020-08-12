@@ -7,7 +7,7 @@ pub mod error;
 mod expr;
 mod literal;
 
-type ParseResult = Result<SyntaxTree, ParserError>;
+type ParseResult<T = SyntaxTree> = Result<T, ParserError>;
 
 pub struct Parser<'a> {
     token_stream: TokenIterator<'a>,
@@ -51,7 +51,7 @@ pub mod test {
     use super::*;
     use crate::{
         runtime::core::Symbol,
-        syntax::{BinaryOperator, Literal},
+        syntax::{BinaryOperator, Literal, RangeOperator},
     };
     use error::ErrorKind;
 
@@ -61,6 +61,22 @@ pub mod test {
         let parsed = Parser::parse_str(input);
 
         assert!(matches!(parsed, Ok(SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, _))));
+    }
+
+    #[test]
+    fn parse_range_rule_exclusive() {
+        let input = "5 .. 5";
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::Range(RangeOperator::Exclusive(_), _, _))));
+    }
+
+    #[test]
+    fn parse_range_rule_inclusive() {
+        let input = "5 ..= 5";
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::Range(RangeOperator::Inclusive(_), _, _))));
     }
 
     #[test]
@@ -235,6 +251,88 @@ pub mod test {
     }
 
     #[test]
+    fn parse_string_literal_rule() {
+        let input = r#""test""#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::Literal(Literal::String(value), _)) if value == "test"));
+    }
+
+    #[test]
+    fn parse_object_literal_rule() {
+        let input = r#"{ x: 5, "y": "test", 5: "y", z: { "test": 5 } }"#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::Literal(Literal::Object(_), _))));
+    }
+
+    #[test]
+    fn parse_object_literal_rule_with_trailing_comma() {
+        let input = r#"{ x: 5, "y": "test", 5: "y", }"#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::Literal(Literal::Object(_), _))));
+    }
+
+    #[test]
+    fn parse_object_literal_rule_with_no_closing_brace() {
+        let input = r#"{ x: 5, "y": "test", 5: "y", "#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(
+            parsed,
+            Err(ParserError {
+                kind: ErrorKind::UnexpectedToken { .. },
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn parse_list_literal_rule() {
+        let input = r#"[1, 2, 3, 4, 5]"#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::Literal(Literal::List(_), _))));
+    }
+
+    #[test]
+    fn parse_list_literal_rule_with_trailing_comma() {
+        let input = r#"[1, 2, 3, 4, 5, ]"#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::Literal(Literal::List(_), _))));
+    }
+
+    #[test]
+    fn parse_list_literal_rule_with_no_closing_brace() {
+        let input = r#"[1, 2, 3, 4, 5"#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(
+            parsed,
+            Err(ParserError {
+                kind: ErrorKind::UnexpectedEndOfInput,
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn parse_string_literal_unclosed_rule() {
+        let input = r#""test"#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(
+            parsed,
+            Err(ParserError {
+                kind: ErrorKind::UnexpectedEndOfInput,
+                ..
+            })
+        ));
+    }
+
+    #[test]
     fn parse_subexpression_literal_rule() {
         let input = "5 ?? (5 ?? 5)";
         let parsed = Parser::parse_str(input);
@@ -260,7 +358,7 @@ pub mod test {
         assert!(matches!(
             parsed,
             Err(ParserError {
-                kind: ErrorKind::UnexpectedToken,
+                kind: ErrorKind::UnexpectedToken { .. },
                 ..
             })
         ));

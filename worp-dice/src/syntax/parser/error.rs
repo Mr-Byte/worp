@@ -1,4 +1,4 @@
-use crate::syntax::span::Span;
+use crate::syntax::{lexer::TokenKind, span::Span};
 use std::{
     error::Error,
     num::{ParseFloatError, ParseIntError},
@@ -9,7 +9,7 @@ pub enum ErrorKind {
     InvalidIntegerLiteral,
     InvalidFloatLiteral,
     UnexpectedEndOfInput,
-    UnexpectedToken,
+    UnexpectedToken { expected: Vec<TokenKind>, found: TokenKind },
 }
 
 #[derive(thiserror::Error, Debug)]

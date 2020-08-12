@@ -26,7 +26,7 @@ impl From<&Range<usize>> for Span {
 impl Deref for Span {
     type Target = Range<usize>;
     fn deref(&self) -> &Self::Target {
-        todo!()
+        &self.range
     }
 }
 

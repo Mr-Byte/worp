@@ -1,5 +1,5 @@
 use super::{ParseResult, Parser};
-use crate::syntax::{lexer::TokenKind, BinaryOperator, SyntaxTree, UnaryOperator};
+use crate::syntax::{lexer::TokenKind, BinaryOperator, RangeOperator, SyntaxTree, UnaryOperator};
 
 impl<'a> Parser<'a> {
     pub(super) fn parse_expression(&mut self) -> ParseResult {
@@ -7,13 +7,32 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_coalesce(&mut self) -> ParseResult {
-        let mut expression = self.parse_lazy_and()?;
+        let mut expression = self.parse_range()?;
 
         while self.next_token.is_kind(TokenKind::Coalesce) {
             self.next();
             let operator = self.current_token.clone();
-            let rhs = self.parse_lazy_and()?;
+            let rhs = self.parse_range()?;
             expression = SyntaxTree::Binary(BinaryOperator::Coalesce(operator.span.clone()), Box::new(expression), Box::new(rhs));
+        }
+
+        Ok(expression)
+    }
+
+    fn parse_range(&mut self) -> ParseResult {
+        let mut expression = self.parse_lazy_and()?;
+
+        while self.next_token.is_any_kind(&[TokenKind::InclusiveRange, TokenKind::ExclusiveRange]) {
+            self.next();
+            let operator = self.current_token.clone();
+            let operator = match operator.kind {
+                TokenKind::InclusiveRange => RangeOperator::Inclusive(operator.span.clone()),
+                TokenKind::ExclusiveRange => RangeOperator::Exclusive(operator.span.clone()),
+                _ => unreachable!(),
+            };
+
+            let rhs = self.parse_lazy_and()?;
+            expression = SyntaxTree::Range(operator, Box::new(expression), Box::new(rhs));
         }
 
         Ok(expression)
