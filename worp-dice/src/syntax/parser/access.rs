@@ -44,7 +44,7 @@ impl<'a> Parser<'a> {
             Err(ParserError::new(
                 ErrorKind::UnexpectedToken {
                     expected: vec![TokenKind::Identifier],
-                    found: self.current_token.kind.clone(),
+                    found: self.current_token.kind,
                 },
                 Some(self.current_token.span.clone()),
             ))

@@ -25,7 +25,7 @@ impl<'a> Parser<'a> {
                     return Err(ParserError::new(
                         ErrorKind::UnexpectedToken {
                             expected: vec![TokenKind::RightParen],
-                            found: token.kind.clone(),
+                            found: token.kind,
                         },
                         Some(token.span),
                     ));
@@ -68,7 +68,7 @@ impl<'a> Parser<'a> {
             return Err(ParserError::new(
                 ErrorKind::UnexpectedToken {
                     expected: vec![TokenKind::Colon],
-                    found: self.current_token.kind.clone(),
+                    found: self.current_token.kind,
                 },
                 Some(self.current_token.span.clone()),
             ));
@@ -82,7 +82,7 @@ impl<'a> Parser<'a> {
             return Err(ParserError::new(
                 ErrorKind::UnexpectedToken {
                     expected: vec![TokenKind::Comma, TokenKind::RightCurly],
-                    found: self.next_token.kind.clone(),
+                    found: self.next_token.kind,
                 },
                 Some(self.next_token.span.clone()),
             ));
@@ -103,7 +103,7 @@ impl<'a> Parser<'a> {
                 return Err(ParserError::new(
                     ErrorKind::UnexpectedToken {
                         expected: vec![TokenKind::Identifier, TokenKind::String, TokenKind::Integer],
-                        found: self.current_token.kind.clone(),
+                        found: self.current_token.kind,
                     },
                     Some(token.span),
                 ))
@@ -127,7 +127,7 @@ impl<'a> Parser<'a> {
                 return Err(ParserError::new(
                     ErrorKind::UnexpectedToken {
                         expected: vec![TokenKind::Comma, TokenKind::RightSquare],
-                        found: self.next_token.kind.clone(),
+                        found: self.next_token.kind,
                     },
                     Some(self.next_token.span.clone()),
                 ));

@@ -60,7 +60,7 @@ impl<'a> Token<'a> {
     }
 }
 
-#[derive(Logos, Clone, Debug, PartialEq)]
+#[derive(Logos, Clone, Copy, Debug, PartialEq)]
 pub enum TokenKind {
     // Empty token kind.
     Empty,
