@@ -78,6 +78,14 @@ impl<'a> Parser<'a> {
 
         if self.next_token.is_kind(TokenKind::Comma) {
             self.next();
+        } else if !self.next_token.is_kind(TokenKind::RightCurly) {
+            return Err(ParserError::new(
+                ErrorKind::UnexpectedToken {
+                    expected: vec![TokenKind::Comma, TokenKind::RightCurly],
+                    found: self.next_token.kind.clone(),
+                },
+                Some(self.next_token.span.clone()),
+            ));
         }
 
         Ok((key, value))
@@ -115,6 +123,14 @@ impl<'a> Parser<'a> {
 
             if self.next_token.is_kind(TokenKind::Comma) {
                 self.next();
+            } else if !self.next_token.is_kind(TokenKind::RightSquare) {
+                return Err(ParserError::new(
+                    ErrorKind::UnexpectedToken {
+                        expected: vec![TokenKind::Comma, TokenKind::RightSquare],
+                        found: self.next_token.kind.clone(),
+                    },
+                    Some(self.next_token.span.clone()),
+                ));
             }
         }
 

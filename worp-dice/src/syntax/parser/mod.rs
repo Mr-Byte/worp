@@ -52,7 +52,7 @@ pub mod test {
     use super::*;
     use crate::{
         runtime::core::Symbol,
-        syntax::{BinaryOperator, Literal, RangeOperator, UnaryOperator},
+        syntax::{lexer::TokenKind, BinaryOperator, Literal, RangeOperator, UnaryOperator},
     };
     use error::ErrorKind;
 
@@ -292,6 +292,22 @@ pub mod test {
     }
 
     #[test]
+    fn parse_object_literal_rule_with_no_commas() {
+        let input = r#"{ x: 5 "y": "test" 5: "y" }"#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(
+            parsed,
+            Err(ParserError {
+                kind: ErrorKind::UnexpectedToken { found, expected },
+                ..
+            }) if found == TokenKind::String
+                && expected.contains(&TokenKind::Comma)
+                && expected.contains(&TokenKind::RightCurly)
+        ));
+    }
+
+    #[test]
     fn parse_object_literal_rule_with_no_closing_brace() {
         let input = r#"{ x: 5, "y": "test", 5: "y", "#;
         let parsed = Parser::parse_str(input);
@@ -319,6 +335,22 @@ pub mod test {
         let parsed = Parser::parse_str(input);
 
         assert!(matches!(parsed, Ok(SyntaxTree::Literal(Literal::List(_), _))));
+    }
+
+    #[test]
+    fn parse_list_literal_rule_with_no_commas() {
+        let input = r#"[1 2 3 4 5 ]"#;
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(
+            parsed,
+            Err(ParserError {
+                kind: ErrorKind::UnexpectedToken { found, expected },
+                ..
+            }) if found == TokenKind::Integer
+                && expected.contains(&TokenKind::Comma)
+                && expected.contains(&TokenKind::RightSquare)
+        ));
     }
 
     #[test]

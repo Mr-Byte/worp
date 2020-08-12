@@ -146,7 +146,7 @@ impl<'a> Parser<'a> {
 
             Ok(SyntaxTree::Unary(operator, Box::new(expression)))
         } else {
-            self.parse_field_access()
+            self.parse_accessor()
         }
     }
 }
