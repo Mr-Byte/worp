@@ -124,7 +124,7 @@ pub enum TokenKind {
     #[token("||")]
     LazyOr,
     // Literals,
-    #[regex("[_a-zA-Z][_a-zA-Z0-9]*")]
+    #[regex("[_a-ce-zA-Z][_a-zA-Z0-9]*")]
     Identifier,
     #[regex(r#""((?:[^"\\]|\\.)*)""#)]
     String,

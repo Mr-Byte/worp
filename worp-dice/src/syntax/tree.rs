@@ -26,6 +26,7 @@ pub enum Literal {
 pub enum UnaryOperator {
     Negate(Span),
     Not(Span),
+    DiceRoll(Span),
 }
 
 #[derive(Debug, Clone)]

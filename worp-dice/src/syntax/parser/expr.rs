@@ -134,19 +134,38 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_unary(&mut self) -> ParseResult {
-        if self.next_token.is_any_kind(&[TokenKind::Not, TokenKind::Minus]) {
+        if self.next_token.is_any_kind(&[TokenKind::Not, TokenKind::Minus, TokenKind::DiceRoll]) {
             self.next();
             let operator = self.current_token.clone();
             let operator = match operator.kind {
                 TokenKind::Not => UnaryOperator::Not(operator.span),
                 TokenKind::Minus => UnaryOperator::Negate(operator.span),
+                TokenKind::DiceRoll => UnaryOperator::DiceRoll(operator.span),
                 _ => unreachable!(),
             };
             let expression = self.parse_unary()?;
 
             Ok(SyntaxTree::Unary(operator, Box::new(expression)))
         } else {
-            self.parse_accessor()
+            self.parse_dice_roll()
         }
+    }
+
+    fn parse_dice_roll(&mut self) -> ParseResult {
+        let mut expression = self.parse_accessor()?;
+
+        while self.next_token.is_any_kind(&[TokenKind::DiceRoll]) {
+            self.next();
+            let operator = self.current_token.clone();
+            let operator = match operator.kind {
+                TokenKind::DiceRoll => BinaryOperator::DiceRoll(operator.span.clone()),
+                _ => unreachable!(),
+            };
+
+            let rhs = self.parse_accessor()?;
+            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs));
+        }
+
+        Ok(expression)
     }
 }

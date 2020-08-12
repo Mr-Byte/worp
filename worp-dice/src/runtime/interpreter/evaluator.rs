@@ -136,6 +136,7 @@ fn eval_unary(op: &UnaryOperator, expr: &SyntaxTree, environment: &Environment) 
     match op {
         UnaryOperator::Negate(_) => object_ref.get(&ValueKey::Symbol(OP_NEG))?.call(&[object_ref]),
         UnaryOperator::Not(_) => object_ref.get(&ValueKey::Symbol(OP_NOT))?.call(&[object_ref]),
+        _ => todo!(),
     }
 }
 

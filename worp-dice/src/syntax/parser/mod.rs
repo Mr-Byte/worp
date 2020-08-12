@@ -206,6 +206,30 @@ pub mod test {
     }
 
     #[test]
+    fn parse_unary_rule_dice_roll() {
+        let input = "d5";
+        let parsed = Parser::parse_str(input);
+
+        assert!(
+            matches!(parsed, Ok(SyntaxTree::Unary(UnaryOperator::DiceRoll(_), _))),
+            "Unexpected syntax tree: {:?}",
+            parsed
+        );
+    }
+
+    #[test]
+    fn parse_dice_roll_rule() {
+        let input = "6d8";
+        let parsed = Parser::parse_str(input);
+
+        assert!(
+            matches!(parsed, Ok(SyntaxTree::Binary(BinaryOperator::DiceRoll(_), _, _))),
+            "Unexpected syntax tree: {:?}",
+            parsed
+        );
+    }
+
+    #[test]
     fn parse_access_rule_field_access() {
         let input = "x.y";
         let parsed = Parser::parse_str(input);
