@@ -389,10 +389,7 @@ pub mod test {
         assert!(matches!(parsed, Ok(SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, _))));
 
         let is_sub_match = match parsed {
-            Ok(SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, rhs)) => match *rhs {
-                SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, _) => true,
-                _ => false,
-            },
+            Ok(SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, rhs)) => matches!(*rhs, SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, _)),
             _ => false,
         };
 

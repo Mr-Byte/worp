@@ -138,8 +138,8 @@ impl<'a> Parser<'a> {
             self.next();
             let operator = self.current_token.clone();
             let operator = match operator.kind {
-                TokenKind::Not => UnaryOperator::Not(operator.span.clone()),
-                TokenKind::Minus => UnaryOperator::Negate(operator.span.clone()),
+                TokenKind::Not => UnaryOperator::Not(operator.span),
+                TokenKind::Minus => UnaryOperator::Negate(operator.span),
                 _ => unreachable!(),
             };
             let expression = self.parse_unary()?;

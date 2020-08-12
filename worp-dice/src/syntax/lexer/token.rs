@@ -30,7 +30,7 @@ pub struct Token<'a> {
 impl<'a> Token<'a> {
     pub fn tokenize(input: &'a str) -> TokenIterator<'a> {
         let inner = (Box::new(TokenKind::lexer(input).spanned().map(move |(kind, span)| Token {
-            kind: kind.clone(),
+            kind,
             span: span.clone().into(),
             slice: &input[span],
         })) as Box<dyn Iterator<Item = Token<'a>>>)

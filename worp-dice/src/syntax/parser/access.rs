@@ -41,13 +41,13 @@ impl<'a> Parser<'a> {
 
             Ok(result)
         } else {
-            return Err(ParserError::new(
+            Err(ParserError::new(
                 ErrorKind::UnexpectedToken {
                     expected: vec![TokenKind::Identifier],
                     found: self.current_token.kind.clone(),
                 },
                 Some(self.current_token.span.clone()),
-            ));
+            ))
         }
     }
 }

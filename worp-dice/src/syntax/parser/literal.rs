@@ -105,7 +105,7 @@ impl<'a> Parser<'a> {
                         expected: vec![TokenKind::Identifier, TokenKind::String, TokenKind::Integer],
                         found: self.current_token.kind.clone(),
                     },
-                    Some(token.span.clone()),
+                    Some(token.span),
                 ))
             }
         };
