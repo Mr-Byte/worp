@@ -33,6 +33,16 @@ mod test {
     }
 
     #[test]
+    fn test_precedence() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("5 + 5 * 5")?;
+
+        assert_eq!(30, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
     fn test_negate() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
         let result = context.eval_expression("- -5")?;

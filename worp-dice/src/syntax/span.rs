@@ -6,7 +6,7 @@ pub struct Span {
 }
 
 impl Span {
-    pub fn new(range: Range<usize>) -> Self {
+    pub const fn new(range: Range<usize>) -> Self {
         Self { range }
     }
 }

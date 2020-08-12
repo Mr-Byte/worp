@@ -27,13 +27,13 @@ pub struct Token<'a> {
     slice: &'a str,
 }
 
-impl Token<'_> {
-    pub fn tokenize(input: &str) -> TokenIterator<'_> {
+impl<'a> Token<'a> {
+    pub fn tokenize(input: &'a str) -> TokenIterator<'a> {
         let inner = (Box::new(TokenKind::lexer(input).spanned().map(move |(kind, span)| Token {
             kind: kind.clone(),
             span: span.clone().into(),
             slice: &input[span],
-        })) as Box<dyn Iterator<Item = Token<'_>> + '_>)
+        })) as Box<dyn Iterator<Item = Token<'a>>>)
             .peekable();
 
         TokenIterator { inner }
@@ -42,10 +42,28 @@ impl Token<'_> {
     pub fn slice(&self) -> &str {
         self.slice
     }
+
+    pub const fn empty() -> Token<'a> {
+        Self {
+            kind: TokenKind::Empty,
+            span: Span::new(0..0),
+            slice: "",
+        }
+    }
+
+    pub fn is_kind(&self, kind: TokenKind) -> bool {
+        self.kind == kind
+    }
+
+    pub fn is_any_kind(&self, kinds: &[TokenKind]) -> bool {
+        kinds.contains(&self.kind)
+    }
 }
 
 #[derive(Logos, Clone, Debug, PartialEq)]
 pub enum TokenKind {
+    // Empty token kind.
+    Empty,
     // Delimeters
     #[token("(")]
     LeftParen,

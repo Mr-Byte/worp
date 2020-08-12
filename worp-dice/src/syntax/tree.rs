@@ -126,6 +126,6 @@ impl FromStr for SyntaxTree {
     type Err = ParserError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        super::parser::parse(input)
+        super::parser::Parser::parse_str(input)
     }
 }
