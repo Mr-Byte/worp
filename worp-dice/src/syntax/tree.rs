@@ -84,7 +84,7 @@ pub enum SyntaxTree {
 
     //Primary operators
     /// Access to a field, (e.g. `x.y`)
-    FieldAccess(Box<SyntaxTree>, Symbol, Span), // TODO: Figure out if this should be expr -> ident, or expr -> expr
+    FieldAccess(Box<SyntaxTree>, Symbol, Span),
     /// Function call (e.g. `y(1, 2)`
     /// First part evaluates to a function, second part is the parameters
     FunctionCall(Box<SyntaxTree>, Vec<SyntaxTree>),

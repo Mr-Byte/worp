@@ -3,6 +3,7 @@ use super::{
     ParserError, SyntaxTree,
 };
 
+mod access;
 pub mod error;
 mod expr;
 mod literal;
@@ -51,7 +52,7 @@ pub mod test {
     use super::*;
     use crate::{
         runtime::core::Symbol,
-        syntax::{BinaryOperator, Literal, RangeOperator},
+        syntax::{BinaryOperator, Literal, RangeOperator, UnaryOperator},
     };
     use error::ErrorKind;
 
@@ -196,7 +197,7 @@ pub mod test {
         let input = "!5";
         let parsed = Parser::parse_str(input);
 
-        assert!(matches!(parsed, Ok(SyntaxTree::Unary(crate::syntax::UnaryOperator::Not(_), _))));
+        assert!(matches!(parsed, Ok(SyntaxTree::Unary(UnaryOperator::Not(_), _))));
     }
 
     #[test]
@@ -204,7 +205,23 @@ pub mod test {
         let input = "-x";
         let parsed = Parser::parse_str(input);
 
-        assert!(matches!(parsed, Ok(SyntaxTree::Unary(crate::syntax::UnaryOperator::Negate(_), _))));
+        assert!(matches!(parsed, Ok(SyntaxTree::Unary(UnaryOperator::Negate(_), _))));
+    }
+
+    #[test]
+    fn parse_access_rule_field_access() {
+        let input = "x.y";
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::FieldAccess(_, symbol, _)) if symbol == Symbol::new_static("y")));
+    }
+
+    #[test]
+    fn parse_access_rule_field_safe_access() {
+        let input = "x?.y";
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(parsed, Ok(SyntaxTree::SafeAccess(_, symbol, _)) if symbol == Symbol::new_static("y")));
     }
 
     #[test]
