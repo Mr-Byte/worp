@@ -3,11 +3,35 @@ use crate::syntax::{lexer::TokenKind, SyntaxTree};
 
 impl<'a> Parser<'a> {
     pub(super) fn parse_statements(&mut self) -> ParseResult {
-        // TODO: Parse list of expression statements.
-        match self.next_token.kind {
-            TokenKind::If => self.parse_if_expression(),
-            _ => self.parse_expression(),
+        let mut statements = Vec::new();
+
+        loop {
+            if self.next_token.kind == TokenKind::If {
+                statements.push(self.parse_if_expression()?);
+
+                if self
+                    .next_token
+                    .is_any_kind(&[TokenKind::RightParen, TokenKind::RightCurly, TokenKind::EndOfInput])
+                {
+                    break;
+                }
+            } else {
+                statements.push(self.parse_expression()?);
+
+                if self.next_token.is_kind(TokenKind::Semicolon) {
+                    self.next();
+                }
+
+                if self
+                    .next_token
+                    .is_any_kind(&[TokenKind::RightParen, TokenKind::RightCurly, TokenKind::EndOfInput])
+                {
+                    break;
+                }
+            }
         }
+
+        Ok(SyntaxTree::Statements(statements))
     }
 
     fn parse_if_expression(&mut self) -> ParseResult {

@@ -245,7 +245,6 @@ mod test {
     }
 
     #[test]
-    #[ignore = "Needs fixed to represent new grammar"]
     fn test_discard_expression_seps() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
         let result = context.eval_expression("5 + 5; none")?;
@@ -256,7 +255,6 @@ mod test {
     }
 
     #[test]
-    #[ignore = "Needs fixed to represent new grammar"]
     fn test_discard_expression_seps_complex() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
         let result = context.eval_expression(r##"5["#op_add"](5); 15; 20; 25; 25["#op_add"](5)"##)?;
@@ -267,7 +265,6 @@ mod test {
     }
 
     #[test]
-    #[ignore = "Needs fixed to represent new grammar"]
     fn test_discard_expression_seps_complex_if() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
         let result = context.eval_expression(r##"if false { 5 } if true { 10 }"##)?;

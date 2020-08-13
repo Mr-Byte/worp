@@ -39,9 +39,9 @@ impl<'a> Parser<'a> {
             Ok(())
         } else {
             Err(ParserError::unexpected_token(
-                self.current_token.kind,
+                self.next_token.kind,
                 kinds,
-                Some(self.current_token.span.clone()),
+                Some(self.next_token.span.clone()),
             ))
         }
     }

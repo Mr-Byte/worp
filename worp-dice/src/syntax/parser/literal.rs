@@ -17,7 +17,7 @@ impl<'a> Parser<'a> {
             TokenKind::Float => SyntaxTree::Literal(Literal::Float(token.slice().parse()?), token.span),
             TokenKind::String => SyntaxTree::Literal(Literal::String(token.slice().trim_matches('"').to_owned()), token.span),
             TokenKind::LeftParen => {
-                let expression = self.parse_expression()?;
+                let expression = self.parse_statements()?;
 
                 if self.next_token.is_kind(TokenKind::RightParen) {
                     expression

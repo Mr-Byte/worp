@@ -20,7 +20,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_range(&mut self) -> ParseResult {
-        let mut expression = self.parse_lazy_and()?;
+        let mut expression = self.parse_lazy_or()?;
 
         while self.next_token.is_any_kind(&[TokenKind::InclusiveRange, TokenKind::ExclusiveRange]) {
             self.next();
@@ -31,34 +31,34 @@ impl<'a> Parser<'a> {
                 _ => unreachable!(),
             };
 
-            let rhs = self.parse_lazy_and()?;
+            let rhs = self.parse_lazy_or()?;
             expression = SyntaxTree::Range(operator, Box::new(expression), Box::new(rhs));
         }
 
         Ok(expression)
     }
 
-    fn parse_lazy_and(&mut self) -> ParseResult {
-        let mut expression = self.parse_lazy_or()?;
+    fn parse_lazy_or(&mut self) -> ParseResult {
+        let mut expression = self.parse_lazy_and()?;
 
-        while self.next_token.is_kind(TokenKind::LazyAnd) {
+        while self.next_token.is_kind(TokenKind::LazyOr) {
             self.next();
             let operator = self.current_token.clone();
-            let rhs = self.parse_lazy_or()?;
-            expression = SyntaxTree::Binary(BinaryOperator::LogicalAnd(operator.span.clone()), Box::new(expression), Box::new(rhs));
+            let rhs = self.parse_lazy_and()?;
+            expression = SyntaxTree::Binary(BinaryOperator::LogicalOr(operator.span.clone()), Box::new(expression), Box::new(rhs));
         }
 
         Ok(expression)
     }
 
-    fn parse_lazy_or(&mut self) -> ParseResult {
+    fn parse_lazy_and(&mut self) -> ParseResult {
         let mut expression = self.parse_comparison()?;
 
-        while self.next_token.is_kind(TokenKind::LazyOr) {
+        while self.next_token.is_kind(TokenKind::LazyAnd) {
             self.next();
             let operator = self.current_token.clone();
             let rhs = self.parse_comparison()?;
-            expression = SyntaxTree::Binary(BinaryOperator::LogicalOr(operator.span.clone()), Box::new(expression), Box::new(rhs));
+            expression = SyntaxTree::Binary(BinaryOperator::LogicalAnd(operator.span.clone()), Box::new(expression), Box::new(rhs));
         }
 
         Ok(expression)
