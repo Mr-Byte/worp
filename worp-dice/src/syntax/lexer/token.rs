@@ -128,9 +128,9 @@ pub enum TokenKind {
     Identifier,
     #[regex(r#""((?:[^"\\]|\\.)*)""#)]
     String,
-    #[regex("[+-]?[0-9]+")]
+    #[regex("[0-9]+")]
     Integer,
-    #[regex(r"[+-]?[0-9]+\.[0-9]+")]
+    #[regex(r"[0-9]+\.[0-9]+")]
     Float,
     // Keywords
     #[token("false")]

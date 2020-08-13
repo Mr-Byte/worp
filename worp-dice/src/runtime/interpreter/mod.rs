@@ -43,6 +43,26 @@ mod test {
     }
 
     #[test]
+    fn test_subtraction() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("5-5")?;
+
+        assert_eq!(0, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_negative() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("5+-5")?;
+
+        assert_eq!(0, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
     fn test_negate() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
         let result = context.eval_expression("- -5")?;
