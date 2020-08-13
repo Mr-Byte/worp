@@ -1,12 +1,13 @@
 use super::{
-    lexer::{Token, TokenIterator},
+    lexer::{Token, TokenIterator, TokenKind},
     ParserError, SyntaxTree,
 };
 
 mod access;
 pub mod error;
-mod expr;
+mod expression;
 mod literal;
+mod statement;
 
 type ParseResult<T = SyntaxTree> = Result<T, ParserError>;
 
@@ -32,6 +33,19 @@ impl<'a> Parser<'a> {
         self.next_token = self.token_stream.next().unwrap_or_else(Token::empty);
     }
 
+    fn consume(&mut self, kinds: &[TokenKind]) -> ParseResult<()> {
+        if self.next_token.is_any_kind(kinds) {
+            self.next();
+            Ok(())
+        } else {
+            Err(ParserError::unexpected_token(
+                self.current_token.kind,
+                kinds,
+                Some(self.current_token.span.clone()),
+            ))
+        }
+    }
+
     pub fn parse_str(input: &'a str) -> ParseResult {
         let token_stream = Token::tokenize(input);
         let mut parser = Self::new(token_stream);
@@ -40,7 +54,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse(&mut self) -> ParseResult {
-        self.parse_expression()
+        self.parse_statements()
     }
 }
 
@@ -212,6 +226,18 @@ pub mod test {
 
         assert!(
             matches!(parsed, Ok(SyntaxTree::Unary(UnaryOperator::DiceRoll(_), _))),
+            "Unexpected syntax tree: {:?}",
+            parsed
+        );
+    }
+
+    #[test]
+    fn parse_unary_rule_dice_roll_with_arithmetic() {
+        let input = "d4 + 4";
+        let parsed = Parser::parse_str(input);
+
+        assert!(
+            matches!(parsed, Ok(SyntaxTree::Binary(BinaryOperator::Add(_), _, _))),
             "Unexpected syntax tree: {:?}",
             parsed
         );
