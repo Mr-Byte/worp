@@ -46,9 +46,6 @@ pub mod common {
         pub const OP_NE: Symbol = Symbol::new_static("#op_ne");
 
         pub const OP_NOT: Symbol = Symbol::new_static("#op_not");
-        // Don't allow these to be overloaded.
-        pub const OP_AND: Symbol = Symbol::new_static("#op_and");
-        pub const OP_OR: Symbol = Symbol::new_static("#op_or");
     }
 
     pub mod methods {

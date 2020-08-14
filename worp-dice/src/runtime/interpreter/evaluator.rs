@@ -2,12 +2,7 @@ use super::environment::Environment;
 use crate::{
     runtime::{
         core::{
-            symbol::{
-                common::operators::{
-                    OP_ADD, OP_AND, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NE, OP_NEG, OP_NOT, OP_OR, OP_REM, OP_SUB,
-                },
-                Symbol,
-            },
+            symbol::{common::operators::*, Symbol},
             Value, ValueKey,
         },
         error::RuntimeError,
@@ -142,29 +137,45 @@ fn eval_unary(op: &UnaryOperator, expr: &SyntaxTree, environment: &Environment) 
 
 fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environment: &Environment) -> Result<Value, RuntimeError> {
     let lhs = eval_expression(lhs, environment)?;
-    // TODO: Only evaluate this when needed.
-    let rhs = eval_expression(rhs, environment)?;
-
     match op {
-        BinaryOperator::DiceRoll(_) => todo!(),
-        BinaryOperator::Multiply(_) => lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs, rhs]),
-        BinaryOperator::Divide(_) => lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs, rhs]),
-        BinaryOperator::Remainder(_) => lhs.get(&ValueKey::Symbol(OP_REM))?.call(&[lhs, rhs]),
-        BinaryOperator::Add(_) => lhs.get(&ValueKey::Symbol(OP_ADD))?.call(&[lhs, rhs]),
-        BinaryOperator::Subtract(_) => lhs.get(&ValueKey::Symbol(OP_SUB))?.call(&[lhs, rhs]),
-        BinaryOperator::Equals(_) => lhs.get(&ValueKey::Symbol(OP_EQ))?.call(&[lhs, rhs]),
-        BinaryOperator::NotEquals(_) => lhs.get(&ValueKey::Symbol(OP_NE))?.call(&[lhs, rhs]),
-        BinaryOperator::GreaterThan(_) => lhs.get(&ValueKey::Symbol(OP_GT))?.call(&[lhs, rhs]),
-        BinaryOperator::GreaterThanOrEquals(_) => lhs.get(&ValueKey::Symbol(OP_GTE))?.call(&[lhs, rhs]),
-        BinaryOperator::LessThan(_) => lhs.get(&ValueKey::Symbol(OP_LT))?.call(&[lhs, rhs]),
-        BinaryOperator::LessThanOrEquals(_) => lhs.get(&ValueKey::Symbol(OP_LTE))?.call(&[lhs, rhs]),
-        BinaryOperator::LogicalAnd(_) => lhs.get(&ValueKey::Symbol(OP_AND))?.call(&[lhs, rhs]),
-        BinaryOperator::LogicalOr(_) => lhs.get(&ValueKey::Symbol(OP_OR))?.call(&[lhs, rhs]),
-        BinaryOperator::Coalesce(_) => {
-            if *lhs.reflect_type().name() != TypeNone::NAME {
-                Ok(lhs)
+        BinaryOperator::LogicalAnd(_) => {
+            if let Some(true) = lhs.value::<bool>() {
+                eval_expression(rhs, environment)
             } else {
-                Ok(rhs)
+                Ok(Value::new(false))
+            }
+        }
+        BinaryOperator::LogicalOr(_) => {
+            if let Some(false) = lhs.value::<bool>() {
+                eval_expression(rhs, environment)
+            } else {
+                Ok(Value::new(true))
+            }
+        }
+        op @ _ => {
+            let rhs = eval_expression(rhs, environment)?;
+            match op {
+                BinaryOperator::DiceRoll(_) => todo!(),
+                BinaryOperator::Multiply(_) => lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs, rhs]),
+                BinaryOperator::Divide(_) => lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs, rhs]),
+                BinaryOperator::Remainder(_) => lhs.get(&ValueKey::Symbol(OP_REM))?.call(&[lhs, rhs]),
+                BinaryOperator::Add(_) => lhs.get(&ValueKey::Symbol(OP_ADD))?.call(&[lhs, rhs]),
+                BinaryOperator::Subtract(_) => lhs.get(&ValueKey::Symbol(OP_SUB))?.call(&[lhs, rhs]),
+                BinaryOperator::Equals(_) => lhs.get(&ValueKey::Symbol(OP_EQ))?.call(&[lhs, rhs]),
+                BinaryOperator::NotEquals(_) => lhs.get(&ValueKey::Symbol(OP_NE))?.call(&[lhs, rhs]),
+                BinaryOperator::GreaterThan(_) => lhs.get(&ValueKey::Symbol(OP_GT))?.call(&[lhs, rhs]),
+                BinaryOperator::GreaterThanOrEquals(_) => lhs.get(&ValueKey::Symbol(OP_GTE))?.call(&[lhs, rhs]),
+                BinaryOperator::LessThan(_) => lhs.get(&ValueKey::Symbol(OP_LT))?.call(&[lhs, rhs]),
+                BinaryOperator::LessThanOrEquals(_) => lhs.get(&ValueKey::Symbol(OP_LTE))?.call(&[lhs, rhs]),
+
+                BinaryOperator::Coalesce(_) => {
+                    if *lhs.reflect_type().name() != TypeNone::NAME {
+                        Ok(lhs)
+                    } else {
+                        Ok(rhs)
+                    }
+                }
+                _ => unreachable!(),
             }
         }
     }

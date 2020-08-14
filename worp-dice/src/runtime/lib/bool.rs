@@ -35,20 +35,6 @@ decl_type! {
         Ok(Value::new(result))
     }
 
-    fn op_and(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<bool>(&TypeBool::NAME)?;
-        let rhs = rhs.try_value::<bool>(&TypeBool::NAME)?;
-
-        Ok(Value::new(*lhs && *rhs))
-    }
-
-    fn op_or(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<bool>(&TypeBool::NAME)?;
-        let rhs = rhs.try_value::<bool>(&TypeBool::NAME)?;
-
-        Ok(Value::new(*lhs || *rhs))
-    }
-
     fn op_gt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         let lhs = lhs.try_value::<bool>(&TypeBool::NAME)?;
         let rhs = rhs.try_value::<bool>(&TypeBool::NAME)?;

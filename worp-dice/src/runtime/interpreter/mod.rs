@@ -13,6 +13,86 @@ mod test {
     use context::ExecutionContext;
 
     #[test]
+    fn test_lazy_and_both_true() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("true && true")?;
+
+        assert_eq!(true, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_and_lhs_true() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("true && false")?;
+
+        assert_eq!(false, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_and_rhs_true() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("false && true")?;
+
+        assert_eq!(false, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_and_both_false() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("false && false")?;
+
+        assert_eq!(false, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_or_both_true() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("true || true")?;
+
+        assert_eq!(true, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_or_lhs_true() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("true || false")?;
+
+        assert_eq!(true, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_or_rhs_true() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("false || true")?;
+
+        assert_eq!(true, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_or_both_false() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("false || false")?;
+
+        assert_eq!(false, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
     fn test_multiplication() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
         let result = context.eval_expression("5 * 5 * 5")?;
