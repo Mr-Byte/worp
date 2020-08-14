@@ -45,6 +45,7 @@ impl Value {
         Self(variant)
     }
 
+    #[inline]
     pub fn assert_type(self, expected: &Symbol) -> Result<Self, RuntimeError> {
         if self.reflect_type().name() == expected {
             Ok(self)

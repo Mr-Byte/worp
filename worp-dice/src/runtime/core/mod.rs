@@ -28,7 +28,7 @@ fn to_string(object: Value) -> Result<Value, RuntimeError> {
     Ok(Value::new(string))
 }
 
-/// Trait implemented by lib wishing to expose functionality to Dice.
+/// Trait implemented by types wishing to expose functionality to Dice.
 /// Provides several methods, with default implementations, for interacting with the Dice interpreter.
 pub trait TypeInstanceBase: Any + Debug + Display {
     /// Get a property by key from the object.
@@ -79,8 +79,8 @@ impl dyn TypeInstance {
         self.as_any().downcast_ref::<V>()
     }
 
-    pub fn try_value<V: TypeInstanceBase + 'static>(&self, _type: &Symbol) -> Result<&V, RuntimeError> {
+    pub fn try_value<V: TypeInstanceBase + 'static>(&self, expected: &Symbol) -> Result<&V, RuntimeError> {
         self.value::<V>()
-            .ok_or_else(|| RuntimeError::InvalidType(_type.clone(), self.reflect_type().name().clone()))
+            .ok_or_else(|| RuntimeError::InvalidType(expected.clone(), self.reflect_type().name().clone()))
     }
 }

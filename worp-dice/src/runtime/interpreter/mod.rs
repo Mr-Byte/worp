@@ -53,6 +53,26 @@ mod test {
     }
 
     #[test]
+    fn test_lazy_and_lhs_none_fails() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("none && false");
+
+        assert!(result.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_and_rhs_none_fails() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("true && none");
+
+        assert!(result.is_err());
+
+        Ok(())
+    }
+
+    #[test]
     fn test_lazy_or_both_true() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
         let result = context.eval_expression("true || true")?;
@@ -88,6 +108,26 @@ mod test {
         let result = context.eval_expression("false || false")?;
 
         assert_eq!(false, *result.value::<bool>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_or_lhs_none_fails() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("none || false");
+
+        assert!(result.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lazy_or_rhs_none_fails() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("false || none");
+
+        assert!(result.is_err());
 
         Ok(())
     }

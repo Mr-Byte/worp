@@ -139,18 +139,14 @@ fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environm
     let lhs = eval_expression(lhs, environment)?;
     match op {
         BinaryOperator::LogicalAnd(_) => {
-            let lhs = lhs.assert_type(&TypeBool::NAME)?;
-
-            if let Some(true) = lhs.value::<bool>() {
+            if *lhs.try_value::<bool>(&TypeBool::NAME)? {
                 eval_expression(rhs, environment)?.assert_type(&TypeBool::NAME)
             } else {
                 Ok(Value::new(false))
             }
         }
         BinaryOperator::LogicalOr(_) => {
-            let lhs = lhs.assert_type(&TypeBool::NAME)?;
-
-            if let Some(false) = lhs.value::<bool>() {
+            if !*lhs.try_value::<bool>(&TypeBool::NAME)? {
                 eval_expression(rhs, environment)?.assert_type(&TypeBool::NAME)
             } else {
                 Ok(Value::new(true))

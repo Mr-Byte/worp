@@ -69,16 +69,26 @@ pub mod test {
 
     type TestResult = Result<(), ParserError>;
 
+    macro_rules! assert_statement {
+        ($tree:expr, $pattern:pat) => {
+            if let SyntaxTree::Statements(statements, _) = $tree {
+                assert!(
+                    matches!(statements.as_slice(), [$pattern, ..]),
+                    "Unexpected syntax tree. Found: {:?}",
+                    statements
+                );
+            } else {
+                panic!("Syntax tree is not rooted with statements node.");
+            }
+        };
+    }
+
     #[test]
     fn parse_coalesce_rule() -> TestResult {
         let input = "5 ?? 5";
-        let _parsed = Parser::parse_str(input)?;
+        let parsed = Parser::parse_str(input)?;
 
-        // assert!(
-        //     matches!(parsed, Ok(SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, _))),
-        //     "Unexpected syntax tree: {:?}",
-        //     parsed
-        // );
+        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, _, _));
 
         Ok(())
     }
@@ -86,29 +96,27 @@ pub mod test {
     #[test]
     fn parse_range_rule_exclusive() -> TestResult {
         let input = "5 .. 5";
-        let _parsed = Parser::parse_str(input)?;
+        let parsed = Parser::parse_str(input)?;
 
-        // assert!(matches!(parsed, Ok(SyntaxTree::Range(RangeOperator::Exclusive(_), _, _))));
-
+        assert_statement!(parsed, SyntaxTree::Range(RangeOperator::Exclusive(_), _, _, _));
         Ok(())
     }
 
     #[test]
     fn parse_range_rule_inclusive() -> TestResult {
         let input = "5 ..= 5";
-        let _parsed = Parser::parse_str(input)?;
+        let parsed = Parser::parse_str(input)?;
 
-        // assert!(matches!(parsed, Ok(SyntaxTree::Range(RangeOperator::Inclusive(_), _, _))));
-
+        assert_statement!(parsed, SyntaxTree::Range(RangeOperator::Inclusive(_), _, _, _));
         Ok(())
     }
 
     #[test]
     fn parse_lazy_and_rule() -> TestResult {
         let input = "5 && 5";
-        let _parsed = Parser::parse_str(input)?;
+        let parsed = Parser::parse_str(input)?;
 
-        // assert!(matches!(parsed, Ok(SyntaxTree::Binary(BinaryOperator::LogicalAnd(_), _, _))));
+        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::LogicalAnd(_), _, _, _));
         Ok(())
     }
 
