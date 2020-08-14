@@ -1,5 +1,8 @@
-use super::TypeInstance;
-use crate::runtime::lib::{self, DiceString, Func, List};
+use super::{Symbol, TypeInstance};
+use crate::runtime::{
+    error::RuntimeError,
+    lib::{self, DiceString, Func, List},
+};
 use std::{ops::Deref, rc::Rc};
 
 #[derive(Clone, Debug)]
@@ -40,6 +43,14 @@ impl Value {
         };
 
         Self(variant)
+    }
+
+    pub fn assert_type(self, expected: &Symbol) -> Result<Self, RuntimeError> {
+        if self.reflect_type().name() == expected {
+            Ok(self)
+        } else {
+            Err(RuntimeError::InvalidType(expected.clone(), self.reflect_type().name().clone()))
+        }
     }
 }
 
