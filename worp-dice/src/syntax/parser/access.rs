@@ -53,8 +53,6 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_index_access(&mut self, expression: SyntaxTree) -> ParseResult {
-        // let span_start = self.current_token.span.clone();
-
         let index_expression = self.parse_expression()?;
 
         if !self.next_token.is_kind(TokenKind::RightSquare) {
@@ -67,14 +65,14 @@ impl<'a> Parser<'a> {
 
         self.next();
 
-        // TODO: Provide span information.
+        let span_start = expression.span();
+        let span_end = self.current_token.span.clone();
 
-        Ok(SyntaxTree::Index(Box::new(expression), Box::new(index_expression)))
+        Ok(SyntaxTree::Index(Box::new(expression), Box::new(index_expression), span_start + span_end))
     }
 
     fn parse_function_call(&mut self, expression: SyntaxTree) -> ParseResult {
         let mut args = Vec::new();
-        // let span_start = self.current_token.span.clone();
 
         while !self.next_token.is_kind(TokenKind::RightParen) {
             args.push(self.parse_expression()?);
@@ -91,8 +89,9 @@ impl<'a> Parser<'a> {
         }
 
         self.next();
-        // let span_end = self.current_token.span.clone();
+        let span_start = expression.span();
+        let span_end = self.current_token.span.clone();
 
-        Ok(SyntaxTree::FunctionCall(Box::new(expression), args))
+        Ok(SyntaxTree::FunctionCall(Box::new(expression), args, span_start + span_end))
     }
 }

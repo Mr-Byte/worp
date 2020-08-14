@@ -5,6 +5,7 @@ impl<'a> Parser<'a> {
     pub(super) fn parse_statements(&mut self) -> ParseResult {
         let mut statements = Vec::new();
 
+        let span_start = self.current_token.span.clone();
         loop {
             if self.next_token.kind == TokenKind::If {
                 statements.push(self.parse_if_expression()?);
@@ -30,13 +31,15 @@ impl<'a> Parser<'a> {
                 }
             }
         }
+        let span_end = self.current_token.span.clone();
 
-        Ok(SyntaxTree::Statements(statements))
+        Ok(SyntaxTree::Statements(statements, span_start + span_end))
     }
 
     fn parse_if_expression(&mut self) -> ParseResult {
         self.consume(&[TokenKind::If])?;
 
+        let span_start = self.current_token.span.clone();
         let condition = self.parse_expression()?;
         let primary_condition = self.parse_block()?;
         let else_condition = {
@@ -52,11 +55,13 @@ impl<'a> Parser<'a> {
                 None
             }
         };
+        let span_end = self.current_token.span.clone();
 
         Ok(SyntaxTree::Conditional(
             Box::new(condition),
             Box::new(primary_condition),
             else_condition.map(Box::new),
+            span_start + span_end,
         ))
     }
 

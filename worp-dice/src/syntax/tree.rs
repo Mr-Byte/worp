@@ -88,39 +88,35 @@ pub enum SyntaxTree {
     FieldAccess(Box<SyntaxTree>, Symbol, Span),
     /// Function call (e.g. `y(1, 2)`
     /// First part evaluates to a function, second part is the parameters
-    FunctionCall(Box<SyntaxTree>, Vec<SyntaxTree>),
+    FunctionCall(Box<SyntaxTree>, Vec<SyntaxTree>, Span),
     /// Indexed access (e.g. `x.y[1]` or `y["x"]`)
-    Index(Box<SyntaxTree>, Box<SyntaxTree>),
+    Index(Box<SyntaxTree>, Box<SyntaxTree>, Span),
 
     // Operators
-    Unary(UnaryOperator, Box<SyntaxTree>),
-    Binary(BinaryOperator, Box<SyntaxTree>, Box<SyntaxTree>),
-    Range(RangeOperator, Box<SyntaxTree>, Box<SyntaxTree>),
-    Conditional(Box<SyntaxTree>, Box<SyntaxTree>, Option<Box<SyntaxTree>>),
+    Unary(UnaryOperator, Box<SyntaxTree>, Span),
+    Binary(BinaryOperator, Box<SyntaxTree>, Box<SyntaxTree>, Span),
+    Range(RangeOperator, Box<SyntaxTree>, Box<SyntaxTree>, Span),
+    Conditional(Box<SyntaxTree>, Box<SyntaxTree>, Option<Box<SyntaxTree>>, Span),
 
     // Statements
-    Statements(Vec<SyntaxTree>),
+    Statements(Vec<SyntaxTree>, Span),
 }
 
 impl SyntaxTree {
-    // fn span(&self) -> Span {
-    //     match self {
-    //         SyntaxTree::Literal(_, span) => span.clone(),
-    //         SyntaxTree::SafeAccess(lhs, _, span) => lhs.span() + span,
-    //         SyntaxTree::FieldAccess(lhs, _, span) => lhs.span() + span,
-    //         SyntaxTree::FunctionCall(call, args) => call.span() + Self::sum_spans(args),
-    //         SyntaxTree::Index(_, _) => {}
-    //         SyntaxTree::Unary(_, _) => {}
-    //         SyntaxTree::Binary(_, _, _) => {}
-    //         SyntaxTree::Range(_, _, _) => {}
-    //         SyntaxTree::Conditional(_, _, _) => {}
-    //         SyntaxTree::Statements(_) => {}
-    //     }
-    // }
-
-    // fn sum_spans(spans: &[SyntaxTree]) -> Span {
-    //     spans.iter().map(|tree| tree.span()).sum()
-    // }
+    pub fn span(&self) -> Span {
+        match self {
+            SyntaxTree::Literal(_, span) => span.clone(),
+            SyntaxTree::SafeAccess(_, _, span) => span.clone(),
+            SyntaxTree::FieldAccess(_, _, span) => span.clone(),
+            SyntaxTree::FunctionCall(_, _, span) => span.clone(),
+            SyntaxTree::Index(_, _, span) => span.clone(),
+            SyntaxTree::Unary(_, _, span) => span.clone(),
+            SyntaxTree::Binary(_, _, _, span) => span.clone(),
+            SyntaxTree::Range(_, _, _, span) => span.clone(),
+            SyntaxTree::Conditional(_, _, _, span) => span.clone(),
+            SyntaxTree::Statements(_, span) => span.clone(),
+        }
+    }
 }
 
 impl FromStr for SyntaxTree {

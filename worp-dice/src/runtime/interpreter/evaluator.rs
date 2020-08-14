@@ -27,13 +27,13 @@ fn eval_expression(expr: &SyntaxTree, environment: &Environment) -> Result<Value
         SyntaxTree::Literal(literal, _) => eval_literal(literal, environment),
         SyntaxTree::SafeAccess(expr, field, _) => eval_safe_field_access(expr, field, environment),
         SyntaxTree::FieldAccess(expr, field, _) => eval_field_access(expr, field, environment),
-        SyntaxTree::FunctionCall(expr, args) => eval_function_call(expr, args, environment),
-        SyntaxTree::Index(expr, index) => eval_index(expr, index, environment),
-        SyntaxTree::Unary(op, expr) => eval_unary(op, expr, environment),
-        SyntaxTree::Binary(op, lhs, rhs) => eval_binary(op, lhs, rhs, environment),
-        SyntaxTree::Range(_op, _lower, _upper) => todo!(),
-        SyntaxTree::Conditional(condition, body, alternate) => eval_conditional(condition, body, alternate.as_deref(), environment),
-        SyntaxTree::Statements(statements) => {
+        SyntaxTree::FunctionCall(expr, args, _) => eval_function_call(expr, args, environment),
+        SyntaxTree::Index(expr, index, _) => eval_index(expr, index, environment),
+        SyntaxTree::Unary(op, expr, _) => eval_unary(op, expr, environment),
+        SyntaxTree::Binary(op, lhs, rhs, _) => eval_binary(op, lhs, rhs, environment),
+        SyntaxTree::Range(_op, _lower, _upper, _) => todo!(),
+        SyntaxTree::Conditional(condition, body, alternate, _) => eval_conditional(condition, body, alternate.as_deref(), environment),
+        SyntaxTree::Statements(statements, _) => {
             let mut iter = statements.iter().peekable();
             loop {
                 if let Some(statement) = iter.next() {
@@ -99,7 +99,7 @@ fn eval_function_call(expr: &SyntaxTree, args: &[SyntaxTree], environment: &Envi
             let method = &ValueKey::Symbol(method.clone());
             eval_method_call(&method, this, args, environment)
         }
-        SyntaxTree::Index(this, method) => {
+        SyntaxTree::Index(this, method, _) => {
             let method = eval_object_key(method, environment)?;
             eval_method_call(&method, this, args, environment)
         }

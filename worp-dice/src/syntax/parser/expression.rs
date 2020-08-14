@@ -7,19 +7,27 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_coalesce(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         let mut expression = self.parse_range()?;
 
         while self.next_token.is_kind(TokenKind::Coalesce) {
             self.next();
             let operator = self.current_token.clone();
             let rhs = self.parse_range()?;
-            expression = SyntaxTree::Binary(BinaryOperator::Coalesce(operator.span.clone()), Box::new(expression), Box::new(rhs));
+            let span_end = self.current_token.span.clone();
+            expression = SyntaxTree::Binary(
+                BinaryOperator::Coalesce(operator.span.clone()),
+                Box::new(expression),
+                Box::new(rhs),
+                span_start.clone() + span_end,
+            );
         }
 
         Ok(expression)
     }
 
     fn parse_range(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         let mut expression = self.parse_lazy_or()?;
 
         while self.next_token.is_any_kind(&[TokenKind::InclusiveRange, TokenKind::ExclusiveRange]) {
@@ -32,39 +40,55 @@ impl<'a> Parser<'a> {
             };
 
             let rhs = self.parse_lazy_or()?;
-            expression = SyntaxTree::Range(operator, Box::new(expression), Box::new(rhs));
+            let span_end = self.current_token.span.clone();
+            expression = SyntaxTree::Range(operator, Box::new(expression), Box::new(rhs), span_start.clone() + span_end);
         }
 
         Ok(expression)
     }
 
     fn parse_lazy_or(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         let mut expression = self.parse_lazy_and()?;
 
         while self.next_token.is_kind(TokenKind::LazyOr) {
             self.next();
             let operator = self.current_token.clone();
             let rhs = self.parse_lazy_and()?;
-            expression = SyntaxTree::Binary(BinaryOperator::LogicalOr(operator.span.clone()), Box::new(expression), Box::new(rhs));
+            let span_end = self.current_token.span.clone();
+            expression = SyntaxTree::Binary(
+                BinaryOperator::LogicalOr(operator.span.clone()),
+                Box::new(expression),
+                Box::new(rhs),
+                span_start.clone() + span_end,
+            );
         }
 
         Ok(expression)
     }
 
     fn parse_lazy_and(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         let mut expression = self.parse_comparison()?;
 
         while self.next_token.is_kind(TokenKind::LazyAnd) {
             self.next();
             let operator = self.current_token.clone();
             let rhs = self.parse_comparison()?;
-            expression = SyntaxTree::Binary(BinaryOperator::LogicalAnd(operator.span.clone()), Box::new(expression), Box::new(rhs));
+            let span_end = self.current_token.span.clone();
+            expression = SyntaxTree::Binary(
+                BinaryOperator::LogicalAnd(operator.span.clone()),
+                Box::new(expression),
+                Box::new(rhs),
+                span_start.clone() + span_end,
+            );
         }
 
         Ok(expression)
     }
 
     fn parse_comparison(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         let mut expression = self.parse_additive()?;
 
         while self.next_token.is_any_kind(&[
@@ -88,13 +112,15 @@ impl<'a> Parser<'a> {
             };
 
             let rhs = self.parse_additive()?;
-            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs));
+            let span_end = self.current_token.span.clone();
+            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs), span_start.clone() + span_end);
         }
 
         Ok(expression)
     }
 
     fn parse_additive(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         let mut expression = self.parse_multiplicative()?;
 
         while self.next_token.is_any_kind(&[TokenKind::Plus, TokenKind::Minus]) {
@@ -107,13 +133,15 @@ impl<'a> Parser<'a> {
             };
 
             let rhs = self.parse_multiplicative()?;
-            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs));
+            let span_end = self.current_token.span.clone();
+            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs), span_start.clone() + span_end);
         }
 
         Ok(expression)
     }
 
     fn parse_multiplicative(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         let mut expression = self.parse_unary()?;
 
         while self.next_token.is_any_kind(&[TokenKind::Star, TokenKind::Slash, TokenKind::Remainder]) {
@@ -127,13 +155,15 @@ impl<'a> Parser<'a> {
             };
 
             let rhs = self.parse_unary()?;
-            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs));
+            let span_end = self.current_token.span.clone();
+            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs), span_start.clone() + span_end);
         }
 
         Ok(expression)
     }
 
     fn parse_unary(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         if self.next_token.is_any_kind(&[TokenKind::Not, TokenKind::Minus, TokenKind::DiceRoll]) {
             self.next();
             let operator = self.current_token.clone();
@@ -144,14 +174,16 @@ impl<'a> Parser<'a> {
                 _ => unreachable!(),
             };
             let expression = self.parse_unary()?;
+            let span_end = self.current_token.span.clone();
 
-            Ok(SyntaxTree::Unary(operator, Box::new(expression)))
+            Ok(SyntaxTree::Unary(operator, Box::new(expression), span_start + span_end))
         } else {
             self.parse_dice_roll()
         }
     }
 
     fn parse_dice_roll(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
         let mut expression = self.parse_accessor()?;
 
         while self.next_token.is_any_kind(&[TokenKind::DiceRoll]) {
@@ -163,7 +195,9 @@ impl<'a> Parser<'a> {
             };
 
             let rhs = self.parse_accessor()?;
-            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs));
+            let span_end = self.current_token.span.clone();
+
+            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs), span_start.clone() + span_end);
         }
 
         Ok(expression)
