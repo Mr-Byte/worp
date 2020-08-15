@@ -6,6 +6,7 @@ mod int;
 mod list;
 mod none;
 mod object;
+mod range;
 mod string;
 
 pub(crate) use self::bool::*;
@@ -16,4 +17,5 @@ pub(crate) use int::*;
 pub(crate) use list::*;
 pub(crate) use none::*;
 pub(crate) use object::*;
+pub(crate) use range::*;
 pub(crate) use string::*;

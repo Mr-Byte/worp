@@ -7,6 +7,16 @@ use std::{fmt::Display, ops::Deref, rc::Rc};
 decl_type! {
     type TypeString = "String";
 
+    constructor(&self, args: &[Value]) {
+        if let [value] = args {
+            let as_string: DiceString = value.to_string().into();
+
+            Ok(Value::new(as_string))
+        } else {
+            Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
+        }
+    }
+
     fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         let lhs = lhs.try_value::<DiceString>(&TypeString::NAME)?;
         let result: DiceString = format!("{}{}", lhs, &*rhs).into();

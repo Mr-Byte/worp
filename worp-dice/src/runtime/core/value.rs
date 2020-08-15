@@ -31,15 +31,16 @@ impl Value {
     }
 
     fn new_object(value: impl TypeInstance + 'static) -> Self {
-        let variant = match_type! { &value as &dyn TypeInstance,
-            as_none: lib::None => Variant::None(*as_none),
-            as_bool: bool => Variant::Bool(*as_bool),
-            as_int: i64 => Variant::Int(*as_int),
-            as_float: f64 => Variant::Float(*as_float),
-            as_func: Func => Variant::Function(as_func.clone()),
-            as_list: List => Variant::List(as_list.clone()),
-            as_string: DiceString => Variant::String(as_string.clone()),
-            _ => Variant::Object(Rc::new(value))
+        let variant = match_type! {
+            &value as &dyn TypeInstance,
+                as_none: lib::None => Variant::None(*as_none),
+                as_bool: bool => Variant::Bool(*as_bool),
+                as_int: i64 => Variant::Int(*as_int),
+                as_float: f64 => Variant::Float(*as_float),
+                as_func: Func => Variant::Function(as_func.clone()),
+                as_list: List => Variant::List(as_list.clone()),
+                as_string: DiceString => Variant::String(as_string.clone()),
+                _ => Variant::Object(Rc::new(value))
         };
 
         Self(variant)

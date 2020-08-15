@@ -1,3 +1,4 @@
+use super::DiceString;
 use crate::runtime::{
     core::{Type, TypeInstanceBase, Value},
     error::RuntimeError,
@@ -6,6 +7,18 @@ use std::rc::Rc;
 
 decl_type! {
     type TypeBool = "Bool";
+
+    constructor(&self, args: &[Value]) {
+        if let [value] = args {
+            match_type! { value,
+                as_bool: bool => Ok(Value::new(*as_bool)),
+                as_string: DiceString => Ok(Value::new(as_string.parse::<bool>()?)),
+                _ => Err(RuntimeError::InvalidType(TypeBool::NAME, value.reflect_type().name().clone()))
+            }
+        } else {
+            Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
+        }
+    }
 
     fn op_not(value: Value) -> Result<Value, RuntimeError> {
         let value = value.try_value::<bool>(&TypeBool::NAME)?;

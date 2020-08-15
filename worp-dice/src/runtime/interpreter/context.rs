@@ -3,7 +3,7 @@ use crate::{
     runtime::{
         core::Value,
         error::RuntimeError,
-        lib::{TypeFloat, TypeInt},
+        lib::{TypeBool, TypeDie, TypeFloat, TypeInt, TypeString},
     },
     syntax::SyntaxTree,
 };
@@ -19,6 +19,9 @@ impl ExecutionContext {
         let inner: Rc<Environment> = Default::default();
         inner.add_known_type(TypeInt::instance())?;
         inner.add_known_type(TypeFloat::instance())?;
+        inner.add_known_type(TypeBool::instance())?;
+        inner.add_known_type(TypeDie::instance())?;
+        inner.add_known_type(TypeString::instance())?;
 
         Ok(Self { inner })
     }

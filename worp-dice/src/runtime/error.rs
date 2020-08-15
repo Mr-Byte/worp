@@ -3,6 +3,7 @@ use crate::syntax::ParserError;
 use std::{
     error::Error,
     num::{ParseFloatError, ParseIntError},
+    str::ParseBoolError,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -38,4 +39,6 @@ pub enum RuntimeError {
     ParseIntError(#[from] ParseIntError),
     #[error("Runtime Error: Unable to parse value to Float.")]
     ParseFloatError(#[from] ParseFloatError),
+    #[error("Runtime Error: Unable to parse value to Bool.")]
+    ParseBoolError(#[from] ParseBoolError),
 }
