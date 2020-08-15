@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::runtime::{
-    core::{Type, TypeInstanceBase, Value},
+    core::{TypeInstance, Value},
     error::RuntimeError,
 };
 use std::{
@@ -10,7 +10,7 @@ use std::{
 };
 
 decl_type! {
-    type TypeFunc = "Func";
+    impl TypeFunc for Func as "Func";
 }
 
 #[derive(Clone)]
@@ -37,17 +37,13 @@ impl Func {
     }
 }
 
-impl TypeInstanceBase for Func {
+impl TypeInstance for Func {
     fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
         match &self.0 {
             FuncVariant::Func0(func0) => func0.call(args),
             FuncVariant::Func1(func1) => func1.call(args),
             FuncVariant::Func2(func2) => func2.call(args),
         }
-    }
-
-    fn reflect_type(&self) -> Rc<dyn Type> {
-        TypeFunc::instance()
     }
 }
 

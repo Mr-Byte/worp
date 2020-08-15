@@ -48,10 +48,10 @@ impl Value {
 
     #[inline]
     pub fn assert_type(self, expected: &Symbol) -> Result<Self, RuntimeError> {
-        if self.reflect_type().name() == expected {
+        if self.instance_type().name() == expected {
             Ok(self)
         } else {
-            Err(RuntimeError::InvalidType(expected.clone(), self.reflect_type().name().clone()))
+            Err(RuntimeError::InvalidType(expected.clone(), self.instance_type().name().clone()))
         }
     }
 }

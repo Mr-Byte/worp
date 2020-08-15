@@ -1,4 +1,9 @@
-use crate::runtime::core::{Type, TypeInstanceBase, Value};
+#![allow(dead_code)]
+
+use crate::runtime::{
+    core::{TypeInstance, Value},
+    error::RuntimeError,
+};
 use std::{fmt::Display, rc::Rc};
 
 #[derive(Debug)]
@@ -12,24 +17,40 @@ pub struct Range {
     kind: RangeKind,
 }
 
-impl Range {}
+impl Range {
+    fn with_exclusive(lower: i64, upper: i64) -> Self {
+        Range {
+            kind: RangeKind::Exclusive(lower..upper),
+        }
+    }
+
+    fn with_inclusive(lower: i64, upper: i64) -> Self {
+        Range {
+            kind: RangeKind::Inclusive(lower..=upper),
+        }
+    }
+}
 
 impl Display for Range {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }
 
-impl TypeInstanceBase for Range {
-    fn reflect_type(&self) -> Rc<dyn Type> {
-        TypeRange::instance()
-    }
-}
+impl TypeInstance for Range {}
 
 decl_type! {
-    type TypeRange = "Range";
+    impl TypeRange for Range as "Range";
 
-    constructor(&self, _args: &[Value]) {
-        todo!();
+    constructor(&self, args: &[Value]) {
+        if let [is_inclusive, lower, upper] = args {
+            let _is_inclusive = is_inclusive.try_value::<bool>()?;
+            let _lower = lower.try_value::<i64>()?;
+            let _upper = upper.try_value::<i64>()?;
+
+            todo!();
+        } else {
+            Err(RuntimeError::InvalidFunctionArgs(3, args.len()))
+        }
     }
 }

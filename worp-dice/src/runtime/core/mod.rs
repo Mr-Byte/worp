@@ -28,12 +28,22 @@ fn to_string(object: Value) -> Result<Value, RuntimeError> {
     Ok(Value::new(string))
 }
 
+pub trait TypeInstanceBase: Any + Debug + Display {
+    fn as_any(&self) -> &dyn Any;
+
+    /// Reflection facilities.
+    fn instance_type(&self) -> Rc<dyn Type>;
+    fn reflect_type() -> Rc<dyn Type>
+    where
+        Self: Sized;
+}
+
 /// Trait implemented by types wishing to expose functionality to Dice.
 /// Provides several methods, with default implementations, for interacting with the Dice interpreter.
-pub trait TypeInstanceBase: Any + Debug + Display {
+pub trait TypeInstance: TypeInstanceBase {
     /// Get a property by key from the object.
     fn get(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
-        if let Some(member) = self.reflect_type().members().get(key) {
+        if let Some(member) = self.instance_type().members().get(key) {
             Ok(member.clone())
         } else if key == &ValueKey::Symbol(FN_TO_STRING) {
             Ok(TO_STRING.with(Clone::clone))
@@ -48,29 +58,12 @@ pub trait TypeInstanceBase: Any + Debug + Display {
 
     /// Set the property by key on the object.
     fn set(&self, _key: &ValueKey, _value: Value) -> Result<(), RuntimeError> {
-        Err(RuntimeError::NotAnObject(self.reflect_type().name().clone()))
+        Err(RuntimeError::NotAnObject(self.instance_type().name().clone()))
     }
-
-    /// Reflection facilities.
-    fn reflect_type(&self) -> Rc<dyn Type>;
 
     /// Attempt to xall the object as a function.
     fn call(&self, _args: &[Value]) -> Result<Value, RuntimeError> {
-        Err(RuntimeError::NotAFunction(self.reflect_type().name().clone()))
-    }
-}
-
-/// Trait that's automatically impelemented over all TypeInstanceBase lib that provides common functionality to the interpreter.
-pub trait TypeInstance: TypeInstanceBase {
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl<T> TypeInstance for T
-where
-    T: TypeInstanceBase,
-{
-    fn as_any(&self) -> &dyn Any {
-        self
+        Err(RuntimeError::NotAFunction(self.instance_type().name().clone()))
     }
 }
 
@@ -79,8 +72,10 @@ impl dyn TypeInstance {
         self.as_any().downcast_ref::<V>()
     }
 
-    pub fn try_value<V: TypeInstanceBase + 'static>(&self, expected: &Symbol) -> Result<&V, RuntimeError> {
+    pub fn try_value<V: TypeInstanceBase + 'static>(&self) -> Result<&V, RuntimeError> {
+        let expected = <V as TypeInstanceBase>::reflect_type().name().clone();
+
         self.value::<V>()
-            .ok_or_else(|| RuntimeError::InvalidType(expected.clone(), self.reflect_type().name().clone()))
+            .ok_or_else(move || RuntimeError::InvalidType(expected, self.instance_type().name().clone()))
     }
 }

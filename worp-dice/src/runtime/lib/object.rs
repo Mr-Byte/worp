@@ -1,11 +1,11 @@
 use crate::runtime::{
-    core::{Type, TypeInstanceBase, Value, ValueKey},
+    core::{TypeInstance, Value, ValueKey},
     error::RuntimeError,
 };
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 decl_type! {
-    type TypeObject = "Object";
+    impl TypeObject for Object as "Object";
 }
 
 #[derive(Debug)]
@@ -17,13 +17,9 @@ impl Object {
     }
 }
 
-impl TypeInstanceBase for Object {
+impl TypeInstance for Object {
     fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
         self.0.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone()))
-    }
-
-    fn reflect_type(&self) -> Rc<dyn Type> {
-        TypeObject::instance()
     }
 }
 

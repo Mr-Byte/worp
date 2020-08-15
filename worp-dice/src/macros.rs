@@ -142,7 +142,7 @@ macro_rules! type_member {
 #[doc(hidden)]
 macro_rules! decl_type {
     (
-        type $ty_ident:ident = $ty_name:expr;
+        impl $ty_ident:ident for $ty:ident as $ty_name:expr;
         $(constructor(&self, $constructor_args:ident: $constructor_args_ty:ty) $constructor_body:block)?
         $(fn $name:ident ($($arg:ident : $typ:ty),*) $(-> $ret:ty)? $rest:block)*
     ) => {
@@ -193,6 +193,20 @@ macro_rules! decl_type {
 
             fn members(&self) -> &std::collections::HashMap<$crate::runtime::core::ValueKey, $crate::runtime::core::Value> {
                 &self.members
+            }
+        }
+
+        impl $crate::runtime::core::TypeInstanceBase for $ty {
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
+
+            fn instance_type(&self) -> Rc<dyn $crate::runtime::core::Type> {
+                $ty_ident::instance()
+            }
+
+            fn reflect_type() -> Rc<dyn $crate::runtime::core::Type> {
+                $ty_ident::instance()
             }
         }
 

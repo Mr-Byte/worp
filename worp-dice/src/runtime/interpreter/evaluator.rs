@@ -139,20 +139,20 @@ fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environm
     let lhs = eval_expression(lhs, environment)?;
     match op {
         BinaryOperator::LogicalAnd(_) => {
-            if *lhs.try_value::<bool>(&TypeBool::NAME)? {
+            if *lhs.try_value::<bool>()? {
                 eval_expression(rhs, environment)?.assert_type(&TypeBool::NAME)
             } else {
                 Ok(Value::new(false))
             }
         }
         BinaryOperator::LogicalOr(_) => {
-            if !*lhs.try_value::<bool>(&TypeBool::NAME)? {
+            if !*lhs.try_value::<bool>()? {
                 eval_expression(rhs, environment)?.assert_type(&TypeBool::NAME)
             } else {
                 Ok(Value::new(true))
             }
         }
-        op @ _ => {
+        op => {
             let rhs = eval_expression(rhs, environment)?;
             match op {
                 BinaryOperator::DiceRoll(_) => todo!(),
@@ -169,7 +169,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environm
                 BinaryOperator::LessThanOrEquals(_) => lhs.get(&ValueKey::Symbol(OP_LTE))?.call(&[lhs, rhs]),
 
                 BinaryOperator::Coalesce(_) => {
-                    if *lhs.reflect_type().name() != TypeNone::NAME {
+                    if *lhs.instance_type().name() != TypeNone::NAME {
                         Ok(lhs)
                     } else {
                         Ok(rhs)
@@ -185,7 +185,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environm
 fn eval_safe_field_access(expr: &SyntaxTree, field: &Symbol, environment: &Environment) -> Result<Value, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
-    if *object_ref.reflect_type().name() != TypeNone::NAME {
+    if *object_ref.instance_type().name() != TypeNone::NAME {
         object_ref.get(&ValueKey::Symbol(field.clone()))
     } else {
         Ok(Value::NONE)
@@ -208,7 +208,7 @@ fn eval_object_key(expr: &SyntaxTree, environment: &Environment) -> Result<Value
         let index: String = index.to_string();
         Ok(ValueKey::Symbol(Symbol::new(index)))
     } else {
-        Err(RuntimeError::InvalidKeyType(index.reflect_type().name().clone()))
+        Err(RuntimeError::InvalidKeyType(index.instance_type().name().clone()))
     }
 }
 
@@ -221,7 +221,7 @@ fn eval_conditional(
     let condition_result = eval_expression(condition, environment)?;
     let condition = *condition_result
         .value::<bool>()
-        .ok_or_else(|| RuntimeError::InvalidType(TypeBool::NAME, condition_result.reflect_type().name().clone()))?;
+        .ok_or_else(|| RuntimeError::InvalidType(TypeBool::NAME, condition_result.instance_type().name().clone()))?;
 
     if condition {
         eval_expression(body, environment)

@@ -1,7 +1,7 @@
 use super::List;
 use super::TypeInt;
 use crate::runtime::{
-    core::{Type, TypeInstanceBase, Value},
+    core::{TypeInstance, Value},
     error::RuntimeError,
 };
 use rand::{distributions::Uniform, thread_rng, Rng as _};
@@ -45,21 +45,17 @@ impl Display for Die {
     }
 }
 
-impl TypeInstanceBase for Die {
-    fn reflect_type(&self) -> Rc<dyn Type> {
-        TypeDie::instance()
-    }
-}
+impl TypeInstance for Die {}
 
 decl_type! {
-    type TypeDie = "Die";
+    impl TypeDie for Die as "Die";
 
     constructor(&self, args: &[Value]) {
         if let [value] = args {
             match_type! { value,
                 as_int: i64 => Ok(Value::new(Die::with_sides(*as_int))),
                 as_list: List => Ok(Value::new(Die::with_list(as_list.clone()))),
-                _ => Err(RuntimeError::InvalidType(TypeInt::NAME, value.reflect_type().name().clone()))
+                _ => Err(RuntimeError::InvalidType(TypeInt::NAME, value.instance_type().name().clone()))
             }
         } else {
             Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
@@ -67,7 +63,7 @@ decl_type! {
     }
 
     fn roll(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<Die>(&TypeDie::NAME)?;
+        let this = this.try_value::<Die>()?;
 
         Ok(this.roll())
     }

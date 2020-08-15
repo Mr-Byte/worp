@@ -1,14 +1,14 @@
 use crate::runtime::{
-    core::{Type, TypeInstanceBase, Value, ValueKey},
+    core::{TypeInstance, Value, ValueKey},
     error::RuntimeError,
 };
 use std::{fmt::Display, iter, ops::Deref, rc::Rc};
 
 decl_type! {
-    type TypeList = "List";
+    impl TypeList for List as "List";
 
     fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<List>(&TypeList::NAME)?;
+        let lhs = lhs.try_value::<List>()?;
         let output: List = if let Some(list) = rhs.value::<List>() {
             lhs.iter().chain(list.iter()).cloned().collect::<Vec<_>>().into()
         } else {
@@ -19,13 +19,13 @@ decl_type! {
     }
 
     fn length(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<List>(&TypeList::NAME)?;
+        let this = this.try_value::<List>()?;
 
         Ok(Value::new(this.len() as i64))
     }
 
     fn is_empty(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<List>(&TypeList::NAME)?;
+        let this = this.try_value::<List>()?;
 
         Ok(Value::new(this.is_empty() as bool))
     }
@@ -34,11 +34,7 @@ decl_type! {
 #[derive(Debug, Clone)]
 pub struct List(Rc<[Value]>);
 
-impl TypeInstanceBase for List {
-    fn reflect_type(&self) -> Rc<dyn Type> {
-        TypeList::instance()
-    }
-
+impl TypeInstance for List {
     fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
         if let ValueKey::Index(index) = key {
             let index = if *index >= 0 { *index } else { (self.len() as i64) + *index };
