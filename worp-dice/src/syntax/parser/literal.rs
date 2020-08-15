@@ -38,6 +38,7 @@ impl<'a> Parser<'a> {
                     Some(token.span),
                 ))
             }
+            kind if kind.is_reserved() => return Err(ParserError::new(ErrorKind::ReservedKeyword { keyword: kind }, Some(token.span))),
             _ => unreachable!("Invalid token kind found: {:?}", token.kind),
         };
 

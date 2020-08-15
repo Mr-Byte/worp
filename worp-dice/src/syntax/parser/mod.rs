@@ -526,6 +526,20 @@ pub mod test {
     }
 
     #[test]
+    fn parse_reserved_keyword() {
+        let input = "return";
+        let parsed = Parser::parse_str(input);
+
+        assert!(matches!(
+            parsed,
+            Err(ParserError {
+                kind: ErrorKind::ReservedKeyword { keyword: TokenKind::Return },
+                ..
+            })
+        ));
+    }
+
+    #[test]
     fn parse_subexpression_literal_rule() -> TestResult {
         let input = "5 ?? (5 ?? 5)";
         let parsed = Parser::parse_str(input)?;

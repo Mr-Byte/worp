@@ -8,6 +8,7 @@ use std::{
 pub enum ErrorKind {
     InvalidIntegerLiteral,
     InvalidFloatLiteral,
+    ReservedKeyword { keyword: TokenKind },
     UnexpectedToken { expected: Vec<TokenKind>, found: TokenKind },
     UnknownToken { value: String },
 }

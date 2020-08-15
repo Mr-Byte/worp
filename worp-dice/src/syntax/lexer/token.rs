@@ -53,6 +53,45 @@ impl<'a> Token<'a> {
     }
 }
 
+impl TokenKind {
+    pub fn is_reserved(&self) -> bool {
+        use TokenKind::*;
+
+        matches!(
+            self,
+            While
+                | Do
+                | Loop
+                | For
+                | Break
+                | Continue
+                | Return
+                | Yield
+                | Function
+                | Let
+                | Const
+                | Match
+                | Trait
+                | In
+                | Operator
+                | Static
+                | Class
+                | Struct
+                | Type
+                | TypeOf
+                | InstanceOf
+                | Enum
+                | Virtual
+                | Override
+                | Abstract
+                | Final
+                | Impl
+                | Import
+                | From
+        )
+    }
+}
+
 #[derive(Logos, Clone, Copy, Debug, PartialEq)]
 pub enum TokenKind {
     // End of input.
