@@ -550,6 +550,16 @@ pub mod test {
     }
 
     #[test]
+    fn parse_subexpression_literal_with_chained_function_call() -> TestResult {
+        let input = "(d4).roll()";
+        let parsed = Parser::parse_str(input)?;
+
+        assert_statement!(parsed, SyntaxTree::FunctionCall(_, _, _));
+
+        Ok(())
+    }
+
+    #[test]
     fn parse_subexpression_literal_rule_not_properly_closed() {
         let input = "5 ?? (5 ?? 5";
         let parsed = Parser::parse_str(input);

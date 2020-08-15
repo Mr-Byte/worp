@@ -142,7 +142,7 @@ impl<'a> Parser<'a> {
 
     fn parse_multiplicative(&mut self) -> ParseResult {
         let span_start = self.current_token.span.clone();
-        let mut expression = self.parse_unary()?;
+        let mut expression = self.parse_dice_roll()?;
 
         while self.next_token.is_any_kind(&[TokenKind::Star, TokenKind::Slash, TokenKind::Remainder]) {
             self.next();
@@ -154,8 +154,29 @@ impl<'a> Parser<'a> {
                 _ => unreachable!(),
             };
 
+            let rhs = self.parse_dice_roll()?;
+            let span_end = self.current_token.span.clone();
+            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs), span_start.clone() + span_end);
+        }
+
+        Ok(expression)
+    }
+
+    fn parse_dice_roll(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
+        let mut expression = self.parse_unary()?;
+
+        while self.next_token.is_any_kind(&[TokenKind::DiceRoll]) {
+            self.next();
+            let operator = self.current_token.clone();
+            let operator = match operator.kind {
+                TokenKind::DiceRoll => BinaryOperator::DiceRoll(operator.span.clone()),
+                _ => unreachable!(),
+            };
+
             let rhs = self.parse_unary()?;
             let span_end = self.current_token.span.clone();
+
             expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs), span_start.clone() + span_end);
         }
 
@@ -178,28 +199,7 @@ impl<'a> Parser<'a> {
 
             Ok(SyntaxTree::Unary(operator, Box::new(expression), span_start + span_end))
         } else {
-            self.parse_dice_roll()
+            self.parse_accessor()
         }
-    }
-
-    fn parse_dice_roll(&mut self) -> ParseResult {
-        let span_start = self.current_token.span.clone();
-        let mut expression = self.parse_accessor()?;
-
-        while self.next_token.is_any_kind(&[TokenKind::DiceRoll]) {
-            self.next();
-            let operator = self.current_token.clone();
-            let operator = match operator.kind {
-                TokenKind::DiceRoll => BinaryOperator::DiceRoll(operator.span.clone()),
-                _ => unreachable!(),
-            };
-
-            let rhs = self.parse_accessor()?;
-            let span_end = self.current_token.span.clone();
-
-            expression = SyntaxTree::Binary(operator, Box::new(expression), Box::new(rhs), span_start.clone() + span_end);
-        }
-
-        Ok(expression)
     }
 }

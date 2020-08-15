@@ -20,6 +20,7 @@ impl<'a> Parser<'a> {
                 let expression = self.parse_statements()?;
 
                 if self.next_token.is_kind(TokenKind::RightParen) {
+                    self.next();
                     expression
                 } else {
                     return Err(ParserError::unexpected_token(token.kind, &[TokenKind::RightParen], Some(token.span)));

@@ -143,6 +143,26 @@ mod test {
     }
 
     #[test]
+    fn test_multiplication_parens_lhs() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("(5 * 5) * 5")?;
+
+        assert_eq!(125, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiplication_parens_rhs() -> Result<(), RuntimeError> {
+        let context = ExecutionContext::try_new()?;
+        let result = context.eval_expression("5 * (5 * 5)")?;
+
+        assert_eq!(125, *result.value::<i64>().unwrap());
+
+        Ok(())
+    }
+
+    #[test]
     fn test_addition() -> Result<(), RuntimeError> {
         let context = ExecutionContext::try_new()?;
         let result = context.eval_expression("5 + 5 + 5")?;
