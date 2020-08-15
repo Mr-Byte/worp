@@ -191,7 +191,7 @@ macro_rules! decl_type {
                 &[]
             }
 
-            fn members(&self) -> &HashMap<$crate::runtime::core::ValueKey, $crate::runtime::core::Value> {
+            fn members(&self) -> &std::collections::HashMap<$crate::runtime::core::ValueKey, $crate::runtime::core::Value> {
                 &self.members
             }
         }

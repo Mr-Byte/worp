@@ -3,10 +3,10 @@ use crate::{
     runtime::{
         core::{
             symbol::{common::operators::*, Symbol},
-            Value, ValueKey,
+            Type as _, Value, ValueKey,
         },
         error::RuntimeError,
-        lib::{DiceString, List, Object, TypeBool, TypeNone},
+        lib::{DiceString, List, Object, TypeBool, TypeDie, TypeNone},
     },
     syntax::{BinaryOperator, Literal, SyntaxTree, UnaryOperator},
 };
@@ -131,7 +131,7 @@ fn eval_unary(op: &UnaryOperator, expr: &SyntaxTree, environment: &Environment) 
     match op {
         UnaryOperator::Negate(_) => object_ref.get(&ValueKey::Symbol(OP_NEG))?.call(&[object_ref]),
         UnaryOperator::Not(_) => object_ref.get(&ValueKey::Symbol(OP_NOT))?.call(&[object_ref]),
-        _ => todo!(),
+        UnaryOperator::DiceRoll(_) => TypeDie::instance().construct(&[object_ref]),
     }
 }
 

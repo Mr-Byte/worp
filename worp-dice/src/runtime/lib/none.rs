@@ -2,7 +2,7 @@ use crate::runtime::{
     core::{Type, TypeInstanceBase, Value},
     error::RuntimeError,
 };
-use std::{collections::HashMap, fmt::Display, rc::Rc};
+use std::{fmt::Display, rc::Rc};
 
 decl_type! {
     type TypeNone = "None";

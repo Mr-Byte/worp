@@ -5,7 +5,6 @@ use crate::runtime::{
     error::RuntimeError,
 };
 use std::{
-    collections::HashMap,
     fmt::{Debug, Display},
     rc::Rc,
 };

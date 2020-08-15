@@ -2,7 +2,7 @@ use crate::runtime::{
     core::{Type, TypeInstanceBase, Value, ValueKey},
     error::RuntimeError,
 };
-use std::{collections::HashMap, fmt::Display, iter, ops::Deref, rc::Rc};
+use std::{fmt::Display, iter, ops::Deref, rc::Rc};
 
 decl_type! {
     type TypeList = "List";

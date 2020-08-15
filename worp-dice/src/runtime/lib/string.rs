@@ -2,7 +2,7 @@ use crate::runtime::{
     core::{Type, TypeInstanceBase, Value},
     error::RuntimeError,
 };
-use std::{collections::HashMap, fmt::Display, ops::Deref, rc::Rc};
+use std::{fmt::Display, ops::Deref, rc::Rc};
 
 decl_type! {
     type TypeString = "String";

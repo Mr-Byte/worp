@@ -2,7 +2,7 @@ use crate::runtime::{
     core::{Type, TypeInstanceBase, Value},
     error::RuntimeError,
 };
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 decl_type! {
     type TypeBool = "Bool";
