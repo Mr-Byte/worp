@@ -51,8 +51,10 @@ impl TypeInstance for List {
 }
 
 impl Display for List {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let items = self.0.iter().map(|value| value.to_string()).collect::<Vec<_>>().join(", ");
+
+        write!(fmt, "[{}]", items)
     }
 }
 
