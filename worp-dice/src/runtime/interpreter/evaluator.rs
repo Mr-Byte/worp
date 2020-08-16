@@ -155,7 +155,10 @@ fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environm
         op => {
             let rhs = eval_expression(rhs, environment)?;
             match op {
-                BinaryOperator::DiceRoll(_) => TypeDiceSet::instance().construct(&[lhs, rhs]),
+                BinaryOperator::DiceRoll(_) => {
+                    let die = TypeDie::instance().construct(&[rhs])?;
+                    TypeDiceSet::instance().construct(&[lhs, die])
+                }
                 BinaryOperator::Multiply(_) => lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs, rhs]),
                 BinaryOperator::Divide(_) => lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs, rhs]),
                 BinaryOperator::Remainder(_) => lhs.get(&ValueKey::Symbol(OP_REM))?.call(&[lhs, rhs]),
