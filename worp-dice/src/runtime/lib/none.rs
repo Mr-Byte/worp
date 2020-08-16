@@ -2,7 +2,7 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
-use std::{fmt::Display, rc::Rc};
+use std::fmt::Display;
 
 decl_type! {
     impl TypeNone for None as "None";

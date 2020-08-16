@@ -3,7 +3,6 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
-use std::rc::Rc;
 
 decl_type! {
     impl TypeInt for i64 as "Int";

@@ -206,11 +206,11 @@ macro_rules! decl_type {
                 self
             }
 
-            fn instance_type(&self) -> Rc<dyn $crate::runtime::core::Type> {
+            fn instance_type(&self) -> std::rc::Rc<dyn $crate::runtime::core::Type> {
                 $ty_ident::instance()
             }
 
-            fn reflect_type() -> Rc<dyn $crate::runtime::core::Type> {
+            fn reflect_type() -> std::rc::Rc<dyn $crate::runtime::core::Type> {
                 $ty_ident::instance()
             }
         }

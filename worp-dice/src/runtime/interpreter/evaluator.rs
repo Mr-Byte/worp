@@ -6,7 +6,7 @@ use crate::{
             Type as _, Value, ValueKey,
         },
         error::RuntimeError,
-        lib::{DiceString, List, Object, TypeBool, TypeDie, TypeNone, TypeRange, TypeRangeInclusive},
+        lib::{DiceString, List, Object, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange, TypeRangeInclusive},
     },
     syntax::{BinaryOperator, Literal, RangeOperator, SyntaxTree, UnaryOperator},
 };
@@ -155,7 +155,7 @@ fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environm
         op => {
             let rhs = eval_expression(rhs, environment)?;
             match op {
-                BinaryOperator::DiceRoll(_) => todo!(),
+                BinaryOperator::DiceRoll(_) => TypeDiceSet::instance().construct(&[lhs, rhs]),
                 BinaryOperator::Multiply(_) => lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs, rhs]),
                 BinaryOperator::Divide(_) => lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs, rhs]),
                 BinaryOperator::Remainder(_) => lhs.get(&ValueKey::Symbol(OP_REM))?.call(&[lhs, rhs]),

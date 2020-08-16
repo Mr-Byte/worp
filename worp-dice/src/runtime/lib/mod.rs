@@ -1,4 +1,5 @@
 mod bool;
+mod diceset;
 mod die;
 mod float;
 mod func;
@@ -10,6 +11,7 @@ mod range;
 mod string;
 
 pub(crate) use self::bool::*;
+pub(crate) use diceset::*;
 pub(crate) use die::*;
 pub(crate) use float::*;
 pub(crate) use func::*;

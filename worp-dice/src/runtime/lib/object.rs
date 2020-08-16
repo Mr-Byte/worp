@@ -2,7 +2,7 @@ use crate::runtime::{
     core::{TypeInstance, Value, ValueKey},
     error::RuntimeError,
 };
-use std::{collections::HashMap, fmt::Display, rc::Rc};
+use std::{collections::HashMap, fmt::Display};
 
 decl_type! {
     impl TypeObject for Object as "Object";

@@ -3,7 +3,6 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
-use std::rc::Rc;
 
 decl_type! {
     impl TypeFloat for f64 as "Float";

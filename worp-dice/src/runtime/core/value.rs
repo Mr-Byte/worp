@@ -3,7 +3,7 @@ use crate::runtime::{
     error::RuntimeError,
     lib::{self, DiceString, Func, List},
 };
-use std::{ops::Deref, rc::Rc};
+use std::{fmt::Display, ops::Deref, rc::Rc};
 
 #[derive(Clone, Debug)]
 enum Variant {
@@ -19,6 +19,21 @@ enum Variant {
 
 #[derive(Clone, Debug)]
 pub struct Value(Variant);
+
+impl Display for Value {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            Variant::None(none) => none.fmt(fmt),
+            Variant::Bool(bool) => bool.fmt(fmt),
+            Variant::Int(int) => int.fmt(fmt),
+            Variant::Float(float) => float.fmt(fmt),
+            Variant::Function(func) => func.fmt(fmt),
+            Variant::List(list) => list.fmt(fmt),
+            Variant::String(string) => string.fmt(fmt),
+            Variant::Object(object) => object.fmt(fmt),
+        }
+    }
+}
 
 impl Value {
     pub const NONE: Self = Value(Variant::None(lib::None));

@@ -3,7 +3,7 @@ use crate::{
     runtime::{
         core::Value,
         error::RuntimeError,
-        lib::{TypeBool, TypeDie, TypeFloat, TypeInt, TypeString},
+        lib::{TypeBool, TypeDiceSet, TypeDie, TypeFloat, TypeInt, TypeRange, TypeRangeInclusive, TypeString},
     },
     syntax::SyntaxTree,
 };
@@ -21,7 +21,10 @@ impl ExecutionContext {
         inner.add_known_type(TypeFloat::instance())?;
         inner.add_known_type(TypeBool::instance())?;
         inner.add_known_type(TypeDie::instance())?;
+        inner.add_known_type(TypeDiceSet::instance())?;
         inner.add_known_type(TypeString::instance())?;
+        inner.add_known_type(TypeRange::instance())?;
+        inner.add_known_type(TypeRangeInclusive::instance())?;
 
         Ok(Self { inner })
     }
