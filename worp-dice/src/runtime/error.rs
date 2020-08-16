@@ -41,4 +41,6 @@ pub enum RuntimeError {
     ParseFloatError(#[from] ParseFloatError),
     #[error("Runtime Error: Unable to parse value to Bool.")]
     ParseBoolError(#[from] ParseBoolError),
+    #[error("Runtime Error: Lower bound {0} cannot exceed upper bound {1}.")]
+    RangeError(i64, i64),
 }

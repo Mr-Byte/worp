@@ -17,5 +17,5 @@ pub(crate) use int::*;
 pub(crate) use list::*;
 pub(crate) use none::*;
 pub(crate) use object::*;
-
+pub(crate) use range::*;
 pub(crate) use string::*;

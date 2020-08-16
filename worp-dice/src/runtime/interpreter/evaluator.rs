@@ -6,9 +6,9 @@ use crate::{
             Type as _, Value, ValueKey,
         },
         error::RuntimeError,
-        lib::{DiceString, List, Object, TypeBool, TypeDie, TypeNone},
+        lib::{DiceString, List, Object, TypeBool, TypeDie, TypeNone, TypeRange, TypeRangeInclusive},
     },
-    syntax::{BinaryOperator, Literal, SyntaxTree, UnaryOperator},
+    syntax::{BinaryOperator, Literal, RangeOperator, SyntaxTree, UnaryOperator},
 };
 use std::{collections::HashMap, iter};
 
@@ -26,7 +26,7 @@ fn eval_expression(expr: &SyntaxTree, environment: &Environment) -> Result<Value
         SyntaxTree::Index(expr, index, _) => eval_index(expr, index, environment),
         SyntaxTree::Unary(op, expr, _) => eval_unary(op, expr, environment),
         SyntaxTree::Binary(op, lhs, rhs, _) => eval_binary(op, lhs, rhs, environment),
-        SyntaxTree::Range(_op, _lower, _upper, _) => todo!(),
+        SyntaxTree::Range(op, lower, upper, _) => eval_range(op, lower, upper, environment),
         SyntaxTree::Conditional(condition, body, alternate, _) => eval_conditional(condition, body, alternate.as_deref(), environment),
         SyntaxTree::Statements(statements, _) => {
             let mut iter = statements.iter().peekable();
@@ -178,6 +178,16 @@ fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environm
                 _ => unreachable!(),
             }
         }
+    }
+}
+
+fn eval_range(op: &RangeOperator, lower: &SyntaxTree, upper: &SyntaxTree, environment: &Environment) -> Result<Value, RuntimeError> {
+    let lower = eval_expression(lower, environment)?;
+    let upper = eval_expression(upper, environment)?;
+
+    match op {
+        RangeOperator::Exclusive(_) => TypeRange::instance().construct(&[lower, upper]),
+        RangeOperator::Inclusive(_) => TypeRangeInclusive::instance().construct(&[lower, upper]),
     }
 }
 

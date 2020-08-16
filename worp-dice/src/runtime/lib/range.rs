@@ -4,36 +4,29 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
-use std::{fmt::Display, rc::Rc};
-
-#[derive(Debug)]
-enum RangeKind {
-    Exclusive(std::ops::Range<i64>),
-    Inclusive(std::ops::RangeInclusive<i64>),
-}
+use std::{fmt::Display, ops::Deref, rc::Rc};
 
 #[derive(Debug)]
 pub struct Range {
-    kind: RangeKind,
+    range: std::ops::Range<i64>,
 }
 
 impl Range {
-    fn with_exclusive(lower: i64, upper: i64) -> Self {
-        Range {
-            kind: RangeKind::Exclusive(lower..upper),
-        }
-    }
-
-    fn with_inclusive(lower: i64, upper: i64) -> Self {
-        Range {
-            kind: RangeKind::Inclusive(lower..=upper),
-        }
+    fn new(lower: i64, upper: i64) -> Self {
+        Self { range: lower..upper }
     }
 }
 
 impl Display for Range {
-    fn fmt(&self, _fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(fmt, "{}..{}", self.range.start, self.range.end)
+    }
+}
+
+impl Deref for Range {
+    type Target = std::ops::Range<i64>;
+    fn deref(&self) -> &Self::Target {
+        &self.range
     }
 }
 
@@ -43,14 +36,62 @@ decl_type! {
     impl TypeRange for Range as "Range";
 
     constructor(&self, args: &[Value]) {
-        if let [is_inclusive, lower, upper] = args {
-            let _is_inclusive = is_inclusive.try_value::<bool>()?;
-            let _lower = lower.try_value::<i64>()?;
-            let _upper = upper.try_value::<i64>()?;
+        if let [ lower, upper] = args {
+            let lower = lower.try_value::<i64>()?;
+            let upper = upper.try_value::<i64>()?;
 
-            todo!();
+            if lower > upper {
+                return Err(RuntimeError::RangeError(*lower, *upper));
+            }
+
+            Ok(Value::new(Range::new(*lower, *upper)))
         } else {
-            Err(RuntimeError::InvalidFunctionArgs(3, args.len()))
+            Err(RuntimeError::InvalidFunctionArgs(2, args.len()))
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct RangeInclusive {
+    range: std::ops::RangeInclusive<i64>,
+}
+
+impl RangeInclusive {
+    fn new(lower: i64, upper: i64) -> Self {
+        Self { range: lower..=upper }
+    }
+}
+
+impl Deref for RangeInclusive {
+    type Target = std::ops::RangeInclusive<i64>;
+    fn deref(&self) -> &Self::Target {
+        &self.range
+    }
+}
+
+impl Display for RangeInclusive {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(fmt, "{}..={}", self.range.start(), self.range.end())
+    }
+}
+
+impl TypeInstance for RangeInclusive {}
+
+decl_type! {
+    impl TypeRangeInclusive for RangeInclusive as "RangeInclusive";
+
+    constructor(&self, args: &[Value]) {
+        if let [ lower, upper] = args {
+            let lower = lower.try_value::<i64>()?;
+            let upper = upper.try_value::<i64>()?;
+
+            if lower > upper {
+                return Err(RuntimeError::RangeError(*lower, *upper));
+            }
+
+            Ok(Value::new(RangeInclusive::new(*lower, *upper)))
+        } else {
+            Err(RuntimeError::InvalidFunctionArgs(2, args.len()))
         }
     }
 }

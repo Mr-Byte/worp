@@ -152,15 +152,20 @@ macro_rules! decl_type {
             members: std::collections::HashMap<$crate::runtime::core::ValueKey, $crate::runtime::core::Value>
         }
 
-        thread_local! {
-            static TYPE: std::rc::Rc<$ty_ident> = Default::default();
+        paste::paste! {
+            thread_local! {
+                #[allow(non_upper_case_globals)]
+                static [<$ty_ident _TYPE>]: std::rc::Rc<$ty_ident> = Default::default();
+            }
         }
 
         impl $ty_ident {
             pub const NAME: $crate::runtime::core::Symbol = $crate::runtime::core::Symbol::new_static($ty_name);
 
             pub fn instance() -> std::rc::Rc<Self> {
-                TYPE.with(Clone::clone)
+                paste::paste! {
+                    [<$ty_ident _TYPE>].with(Clone::clone)
+                }
             }
         }
 

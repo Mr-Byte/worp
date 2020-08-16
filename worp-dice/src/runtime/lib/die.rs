@@ -1,5 +1,5 @@
 use super::List;
-use super::TypeInt;
+use super::{Range, RangeInclusive, TypeInt};
 use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
@@ -22,6 +22,22 @@ impl Die {
     pub fn with_sides(sides: i64) -> Self {
         Self {
             distribution: DieDistribution::Range(From::from(1..=sides)),
+        }
+    }
+
+    pub fn with_range(range: &Range) -> Self {
+        let range: std::ops::Range<i64> = (*range).clone();
+
+        Self {
+            distribution: DieDistribution::Range(From::from(range)),
+        }
+    }
+
+    pub fn with_range_inclusive(range: &RangeInclusive) -> Self {
+        let range: std::ops::RangeInclusive<i64> = (*range).clone();
+
+        Self {
+            distribution: DieDistribution::Range(From::from(range)),
         }
     }
 
@@ -55,6 +71,8 @@ decl_type! {
             match_type! { value,
                 as_int: i64 => Ok(Value::new(Die::with_sides(*as_int))),
                 as_list: List => Ok(Value::new(Die::with_list(as_list.clone()))),
+                as_range: Range => Ok(Value::new(Die::with_range(as_range))),
+                as_range_inclusive: RangeInclusive => Ok(Value::new(Die::with_range_inclusive(as_range_inclusive))),
                 _ => Err(RuntimeError::InvalidType(TypeInt::NAME, value.instance_type().name().clone()))
             }
         } else {
