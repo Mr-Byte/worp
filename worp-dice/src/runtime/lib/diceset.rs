@@ -24,7 +24,20 @@ impl DiceSet {
 
 impl Display for DiceSet {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(&self.roll(), fmt)
+        let result = self.roll();
+
+        if let Some(list) = result.value::<List>() {
+            if list.iter().all(|item| item.value::<i64>().is_some()) {
+                let sum = list.iter().filter_map(|item| item.value::<i64>()).sum::<i64>();
+                let values = list.iter().map(ToString::to_string).collect::<Vec<_>>().join(" + ");
+
+                write!(fmt, "<<{}>> = {}", values, sum)
+            } else {
+                Display::fmt(&self.roll(), fmt)
+            }
+        } else {
+            Display::fmt(&self.roll(), fmt)
+        }
     }
 }
 
