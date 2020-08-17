@@ -2,11 +2,11 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
-use gc::{Finalize, Trace};
-use std::{fmt::Display, ops::Deref, rc::Rc};
+use gc::{Finalize, Gc, Trace};
+use std::{fmt::Display, ops::Deref};
 
 #[derive(Debug, Clone, Trace, Finalize)]
-pub struct DiceString(#[unsafe_ignore_trace] Rc<str>);
+pub struct DiceString(Gc<String>);
 
 impl TypeInstance for DiceString {}
 

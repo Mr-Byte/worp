@@ -6,7 +6,7 @@ use gc::{Finalize, Gc, Trace};
 use std::{fmt::Display, iter, ops::Deref};
 
 #[derive(Debug, Clone, Trace, Finalize)]
-pub struct List(Gc<Box<[Value]>>);
+pub struct List(Gc<Vec<Value>>);
 
 impl TypeInstance for List {
     fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
@@ -42,7 +42,7 @@ impl Deref for List {
 
 impl From<Vec<Value>> for List {
     fn from(value: Vec<Value>) -> Self {
-        Self(Gc::new(value.into_boxed_slice()))
+        Self(Gc::new(value))
     }
 }
 
