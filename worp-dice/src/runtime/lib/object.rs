@@ -2,13 +2,15 @@ use crate::runtime::{
     core::{TypeInstance, Value, ValueKey},
     error::RuntimeError,
 };
+use gc::{Finalize, Trace};
 use std::{collections::HashMap, fmt::Display};
 
 decl_type! {
     impl TypeObject for Object as "Object";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Trace, Finalize)]
+// TODO: Implement Trace on this.
 pub struct Object(HashMap<ValueKey, Value>);
 
 impl Object {

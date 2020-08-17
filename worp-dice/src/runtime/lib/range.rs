@@ -4,10 +4,12 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
+use gc::{Finalize, Trace};
 use std::{fmt::Display, ops::Deref};
 
-#[derive(Debug)]
+#[derive(Debug, Trace, Finalize)]
 pub struct Range {
+    #[unsafe_ignore_trace]
     range: std::ops::Range<i64>,
 }
 
@@ -51,8 +53,9 @@ decl_type! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Trace, Finalize)]
 pub struct RangeInclusive {
+    #[unsafe_ignore_trace]
     range: std::ops::RangeInclusive<i64>,
 }
 

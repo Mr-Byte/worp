@@ -2,6 +2,7 @@ use super::{
     error::RuntimeError,
     lib::{DiceString, Func},
 };
+use gc::{Finalize, Trace};
 use std::{
     any::Any,
     fmt::{Debug, Display},
@@ -28,7 +29,7 @@ fn to_string(object: Value) -> Result<Value, RuntimeError> {
     Ok(Value::new(string))
 }
 
-pub trait TypeInstanceBase: Any + Debug + Display {
+pub trait TypeInstanceBase: Any + Debug + Display + Trace + Finalize {
     fn as_any(&self) -> &dyn Any;
 
     /// Reflection facilities.

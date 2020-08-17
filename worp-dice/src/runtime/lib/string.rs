@@ -2,7 +2,33 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
+use gc::{Finalize, Trace};
 use std::{fmt::Display, ops::Deref, rc::Rc};
+
+#[derive(Debug, Clone, Trace, Finalize)]
+pub struct DiceString(#[unsafe_ignore_trace] Rc<str>);
+
+impl TypeInstance for DiceString {}
+
+impl Display for DiceString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl Deref for DiceString {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.0
+    }
+}
+
+impl From<String> for DiceString {
+    fn from(value: String) -> Self {
+        DiceString(value.into())
+    }
+}
 
 decl_type! {
     impl TypeString for DiceString as "String";
@@ -34,30 +60,5 @@ decl_type! {
         let this = this.try_value::<DiceString>()?;
 
         Ok(Value::new(this.is_empty() as bool))
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct DiceString(Rc<str>);
-
-impl TypeInstance for DiceString {}
-
-impl Display for DiceString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-impl Deref for DiceString {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        &*self.0
-    }
-}
-
-impl From<String> for DiceString {
-    fn from(value: String) -> Self {
-        DiceString(value.into())
     }
 }

@@ -2,7 +2,19 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
+use gc::{Finalize, Trace};
 use std::fmt::Display;
+
+#[derive(Clone, Debug, Eq, PartialEq, Trace, Finalize)]
+pub struct None;
+
+impl TypeInstance for None {}
+
+impl Display for None {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "none")
+    }
+}
 
 decl_type! {
     impl TypeNone for None as "None";
@@ -19,16 +31,5 @@ decl_type! {
         let rhs = rhs.value::<None>();
 
         Ok(Value::new(rhs.is_none()))
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct None;
-
-impl TypeInstance for None {}
-
-impl Display for None {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "none")
     }
 }

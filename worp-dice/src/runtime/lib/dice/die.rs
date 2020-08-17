@@ -3,6 +3,7 @@ use crate::runtime::{
     error::RuntimeError,
     lib::{List, Range, RangeInclusive, TypeDiceSet, TypeInt},
 };
+use gc::{Finalize, Trace};
 use rand::{distributions::Uniform, thread_rng, Rng as _};
 use std::fmt::Display;
 
@@ -12,8 +13,9 @@ enum DieDistribution {
     List(Uniform<i64>, List),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Trace, Finalize)]
 pub struct Die {
+    #[unsafe_ignore_trace]
     distribution: DieDistribution,
 }
 

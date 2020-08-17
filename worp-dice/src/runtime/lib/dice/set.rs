@@ -4,9 +4,10 @@ use crate::runtime::{
     error::RuntimeError,
     lib::List,
 };
+use gc::{Finalize, Trace};
 use std::{fmt::Display, iter};
 
-#[derive(Debug)]
+#[derive(Debug, Trace, Finalize)]
 pub struct DiceSet {
     count: i64,
     die: Die,

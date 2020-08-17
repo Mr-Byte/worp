@@ -3,9 +3,10 @@ use crate::runtime::{
     error::RuntimeError,
     lib::{self, DiceString, Func, List},
 };
-use std::{fmt::Display, ops::Deref, rc::Rc};
+use gc::{Finalize, Gc, Trace};
+use std::{fmt::Display, ops::Deref};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Trace, Finalize)]
 enum Variant {
     None(lib::None),
     Bool(bool),
@@ -14,10 +15,10 @@ enum Variant {
     Function(Func),
     List(List),
     String(DiceString),
-    Object(Rc<dyn TypeInstance>),
+    Object(Gc<Box<dyn TypeInstance>>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Trace, Finalize)]
 pub struct Value(Variant);
 
 impl Display for Value {
@@ -48,14 +49,14 @@ impl Value {
     fn new_object(value: impl TypeInstance + 'static) -> Self {
         let variant = match_type! {
             &value as &dyn TypeInstance,
-                as_none: lib::None => Variant::None(*as_none),
+                as_none: lib::None => Variant::None(as_none.clone()),
                 as_bool: bool => Variant::Bool(*as_bool),
                 as_int: i64 => Variant::Int(*as_int),
                 as_float: f64 => Variant::Float(*as_float),
                 as_func: Func => Variant::Function(as_func.clone()),
                 as_list: List => Variant::List(as_list.clone()),
                 as_string: DiceString => Variant::String(as_string.clone()),
-                _ => Variant::Object(Rc::new(value))
+                _ => Variant::Object(Gc::new(Box::new(value)))
         };
 
         Self(variant)
@@ -83,7 +84,7 @@ impl Deref for Value {
             Variant::List(ref obj) => obj,
             Variant::String(ref obj) => obj,
             Variant::Function(ref obj) => obj,
-            Variant::Object(ref obj) => &**obj,
+            Variant::Object(ref obj) => &***obj,
         }
     }
 }

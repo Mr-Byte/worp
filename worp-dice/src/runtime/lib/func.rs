@@ -4,6 +4,7 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
+use gc::{Finalize, Trace};
 use std::{
     fmt::{Debug, Display},
     rc::Rc,
@@ -20,8 +21,8 @@ enum FuncVariant {
     Func2(Func2),
 }
 
-#[derive(Clone)]
-pub struct Func(FuncVariant);
+#[derive(Clone, Trace, Finalize)]
+pub struct Func(#[unsafe_ignore_trace] FuncVariant);
 
 impl Func {
     pub fn new_func0(func: impl Fn() -> Result<Value, RuntimeError> + 'static) -> Self {
