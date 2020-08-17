@@ -1,8 +1,7 @@
-use super::List;
-use super::{Range, RangeInclusive, TypeInt};
 use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
+    lib::{List, Range, RangeInclusive, TypeDiceSet, TypeInt},
 };
 use rand::{distributions::Uniform, thread_rng, Rng as _};
 use std::fmt::Display;
@@ -64,6 +63,16 @@ decl_type! {
         } else {
             Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
         }
+    }
+
+    fn op_add(this: Value, rhs: Value) -> Result<Value, RuntimeError> {
+        let _this = this.try_value::<Die>()?;
+
+        if rhs.is_instance_of_any(&[&*TypeInt::instance(), &*TypeDie::instance(), &*TypeDiceSet::instance()]) {
+
+        }
+
+        todo!()
     }
 
     fn roll(this: Value) -> Result<Value, RuntimeError> {

@@ -78,4 +78,12 @@ impl dyn TypeInstance {
         self.value::<V>()
             .ok_or_else(move || RuntimeError::InvalidType(expected, self.instance_type().name().clone()))
     }
+
+    pub fn is_instance_of(&self, expected_type: &dyn Type) -> bool {
+        self.instance_type().name() == expected_type.name()
+    }
+
+    pub fn is_instance_of_any(&self, expected_types: &[&dyn Type]) -> bool {
+        expected_types.iter().any(|typ| self.is_instance_of(*typ))
+    }
 }

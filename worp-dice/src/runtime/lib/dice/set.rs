@@ -1,7 +1,8 @@
-use super::{Die, List};
+use super::die::Die;
 use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
+    lib::List,
 };
 use std::{fmt::Display, iter};
 

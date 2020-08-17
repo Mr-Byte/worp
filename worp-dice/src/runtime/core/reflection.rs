@@ -2,6 +2,7 @@ use super::{Value, ValueKey};
 use crate::runtime::{core::Symbol, error::RuntimeError};
 use std::{collections::HashMap, fmt::Debug};
 
+// TODO: Scope Types by module and not just by the Symbol name.
 pub trait Type: Debug {
     fn construct(&self, _args: &[Value]) -> Result<Value, RuntimeError> {
         Err(RuntimeError::NoConstructor(self.name().clone()))

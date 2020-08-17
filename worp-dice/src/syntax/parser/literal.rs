@@ -46,7 +46,6 @@ impl<'a> Parser<'a> {
         Ok(result)
     }
 
-    // TODO: Improve this to detect a missing, closing curly.
     fn parse_object_literal(&mut self) -> ParseResult {
         let mut properties = HashMap::new();
         let span_start = self.current_token.span.clone();
@@ -56,7 +55,7 @@ impl<'a> Parser<'a> {
             properties.insert(key, value);
         }
 
-        self.next();
+        self.consume(&[TokenKind::RightCurly])?;
         let span_end = self.current_token.span.clone();
 
         Ok(SyntaxTree::Literal(Literal::Object(properties), span_start + span_end))
@@ -110,7 +109,6 @@ impl<'a> Parser<'a> {
         Ok(result)
     }
 
-    // TODO: Improve this to detect a missing, closing square brace.
     fn parse_list_literal(&mut self) -> ParseResult {
         let mut items = Vec::new();
         let span_start = self.current_token.span.clone();
@@ -129,7 +127,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        self.next();
+        self.consume(&[TokenKind::RightSquare])?;
         let span_end = self.current_token.span.clone();
 
         Ok(SyntaxTree::Literal(Literal::List(items), span_start + span_end))
