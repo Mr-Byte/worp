@@ -19,18 +19,18 @@ pub struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     fn new(mut token_stream: TokenIterator<'a>) -> Self {
-        let next_token = token_stream.next().unwrap_or_else(Token::empty);
+        let next_token = token_stream.next().unwrap_or_else(Token::end_of_input);
 
         Self {
             token_stream,
-            current_token: Token::empty(),
+            current_token: Token::start_of_input(),
             next_token,
         }
     }
 
     fn next(&mut self) {
         self.current_token = self.next_token.clone();
-        self.next_token = self.token_stream.next().unwrap_or_else(Token::empty);
+        self.next_token = self.token_stream.next().unwrap_or_else(Token::end_of_input);
     }
 
     fn consume(&mut self, kinds: &[TokenKind]) -> ParseResult<()> {
@@ -78,6 +78,16 @@ pub mod test {
                 panic!("Syntax tree is not rooted with statements node.");
             }
         };
+    }
+
+    #[test]
+    fn parse_variable_decl_rule() -> TestResult {
+        let input = "let x = 5;";
+        let parsed = Parser::parse_str(input)?;
+
+        assert_statement!(parsed, SyntaxTree::VariableDeclaration(_, _, _));
+
+        Ok(())
     }
 
     #[test]
@@ -574,16 +584,10 @@ pub mod test {
     }
 
     #[test]
-    fn parse_unexpected_end_of_input() {
+    fn parse_empty_expression() -> Result<(), ParserError> {
         let input = "";
-        let parsed = Parser::parse_str(input);
+        Parser::parse_str(input)?;
 
-        assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind: ErrorKind::UnexpectedToken { .. },
-                ..
-            })
-        ));
+        Ok(())
     }
 }

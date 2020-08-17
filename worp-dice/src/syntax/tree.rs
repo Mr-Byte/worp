@@ -99,6 +99,7 @@ pub enum SyntaxTree {
     Conditional(Box<SyntaxTree>, Box<SyntaxTree>, Option<Box<SyntaxTree>>, Span),
 
     // Statements
+    VariableDeclaration(Symbol, Box<SyntaxTree>, Span),
     Statements(Vec<SyntaxTree>, Span),
 }
 
@@ -115,6 +116,7 @@ impl SyntaxTree {
             SyntaxTree::Range(_, _, _, span) => span.clone(),
             SyntaxTree::Conditional(_, _, _, span) => span.clone(),
             SyntaxTree::Statements(_, span) => span.clone(),
+            SyntaxTree::VariableDeclaration(_, _, span) => span.clone(),
         }
     }
 }

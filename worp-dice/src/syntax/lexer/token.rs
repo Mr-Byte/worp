@@ -36,7 +36,15 @@ impl<'a> Token<'a> {
         self.slice
     }
 
-    pub const fn empty() -> Token<'a> {
+    pub const fn start_of_input() -> Token<'a> {
+        Self {
+            kind: TokenKind::StartOfInput,
+            span: Span::new(0..0),
+            slice: "",
+        }
+    }
+
+    pub const fn end_of_input() -> Token<'a> {
         Self {
             kind: TokenKind::EndOfInput,
             span: Span::new(0..0),
@@ -68,7 +76,6 @@ impl TokenKind {
                 | Return
                 | Yield
                 | Function
-                | Let
                 | Const
                 | Match
                 | Trait
@@ -94,6 +101,7 @@ impl TokenKind {
 
 #[derive(Logos, Clone, Copy, Debug, PartialEq)]
 pub enum TokenKind {
+    StartOfInput,
     // End of input.
     EndOfInput,
     // Delimeters

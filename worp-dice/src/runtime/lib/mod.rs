@@ -11,7 +11,6 @@ mod string;
 
 pub(crate) use self::bool::*;
 pub(crate) use dice::die::*;
-pub(crate) use dice::expression::*;
 pub(crate) use dice::set::*;
 pub(crate) use float::*;
 pub(crate) use func::*;

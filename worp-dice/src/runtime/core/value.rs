@@ -39,9 +39,9 @@ impl Display for Value {
 impl Value {
     pub const NONE: Self = Value(Variant::None(lib::None));
 
-    pub fn new<O>(value: O) -> Self
+    pub fn new<T>(value: T) -> Self
     where
-        O: TypeInstance + 'static,
+        T: TypeInstance + 'static,
     {
         Self::new_object(value)
     }

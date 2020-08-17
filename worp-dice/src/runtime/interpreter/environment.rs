@@ -1,6 +1,11 @@
-use crate::runtime::{
-    core::{symbol::Symbol, Type, Value},
-    error::RuntimeError,
+use super::evaluator::eval;
+use crate::{
+    runtime::{
+        core::{symbol::Symbol, Type, Value},
+        error::RuntimeError,
+        lib::{TypeBool, TypeDiceSet, TypeDie, TypeFloat, TypeInt, TypeRange, TypeRangeInclusive, TypeString},
+    },
+    syntax::SyntaxTree,
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
 
@@ -16,12 +21,35 @@ fn boxed<T: Error + 'static>(error: T) -> Box<dyn Error> {
 }
 
 impl Environment {
-    pub fn new(parent: Option<Rc<Environment>>) -> Self {
-        Self {
+    pub fn new() -> Rc<Self> {
+        Self::with_parent(None)
+    }
+
+    pub fn with_parent(parent: Option<Rc<Environment>>) -> Rc<Self> {
+        let known_types = [
+            TypeInt::instance() as Rc<dyn Type>,
+            TypeFloat::instance(),
+            TypeBool::instance(),
+            TypeDie::instance(),
+            TypeDiceSet::instance(),
+            TypeString::instance(),
+            TypeRange::instance(),
+            TypeRangeInclusive::instance(),
+        ]
+        .iter()
+        .map(|instance| (instance.name().clone(), instance.clone()))
+        .collect();
+
+        Rc::new(Self {
             parent,
             variables: Default::default(),
-            known_types: Default::default(),
-        }
+            known_types: RefCell::new(known_types),
+        })
+    }
+
+    pub fn eval_expression(self: &Rc<Environment>, input: &str) -> Result<Value, RuntimeError> {
+        let expr: SyntaxTree = input.parse()?;
+        eval(&expr, self)
     }
 
     pub fn variable(&self, name: &Symbol) -> Result<Value, RuntimeError> {
@@ -55,5 +83,9 @@ impl Environment {
             .map_err(boxed)?
             .insert(known_type.name().clone(), known_type);
         Ok(())
+    }
+
+    pub fn scoped(self: &Rc<Self>) -> Rc<Environment> {
+        Environment::with_parent(Some(self.clone()))
     }
 }
