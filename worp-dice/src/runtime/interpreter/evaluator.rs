@@ -7,7 +7,8 @@ use crate::{
         },
         error::RuntimeError,
         lib::{
-            self, DiceString, List, Object, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange, TypeRangeInclusive,
+            self, DiceString, List, Object, Range, RangeInclusive, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange,
+            TypeRangeInclusive,
         },
     },
     syntax::{BinaryOperator, Literal, RangeOperator, SyntaxTree, UnaryOperator},
@@ -33,6 +34,7 @@ fn eval_expression(expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<V
             eval_conditional(condition, body, alternate.as_deref(), environment)
         }
         SyntaxTree::WhileLoop(condition, body, _) => eval_while_loop(condition, body, environment),
+        SyntaxTree::ForLoop(variable, source, body, _) => eval_for_loop(variable, source, body, environment),
         SyntaxTree::VariableDeclaration(identifier, expr, _) => {
             eval_variable_declaration(identifier, expr, environment)
         }
@@ -293,6 +295,36 @@ fn eval_while_loop(
 ) -> Result<Value, RuntimeError> {
     while *eval_expression(condition, environment)?.try_value::<bool>()? {
         eval_expression(body, environment)?;
+    }
+
+    Ok(Value::new(lib::None))
+}
+
+fn eval_for_loop(
+    variable: &Symbol,
+    source: &SyntaxTree,
+    body: &SyntaxTree,
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
+    let source = eval_expression(source, environment)?;
+    let environment = environment.scoped();
+    environment.add_variable(variable.clone(), Value::new(lib::None))?;
+
+    if let Some(as_list) = source.value::<List>() {
+        for value in as_list.iter() {
+            environment.set_variable(variable, value.clone())?;
+            eval_expression(body, &environment)?;
+        }
+    } else if let Some(as_range) = source.value::<Range>() {
+        for value in (*as_range).clone().into_iter() {
+            environment.set_variable(variable, Value::new(value))?;
+            eval_expression(body, &environment)?;
+        }
+    } else if let Some(as_range) = source.value::<RangeInclusive>() {
+        for value in (*as_range).clone().into_iter() {
+            environment.set_variable(variable, Value::new(value))?;
+            eval_expression(body, &environment)?;
+        }
     }
 
     Ok(Value::new(lib::None))

@@ -33,6 +33,17 @@ impl<'a> Parser<'a> {
                         break;
                     }
                 }
+                TokenKind::For => {
+                    statements.push(self.parse_for_expression()?);
+
+                    if self.next_token.is_any_kind(&[
+                        TokenKind::RightParen,
+                        TokenKind::RightCurly,
+                        TokenKind::EndOfInput,
+                    ]) {
+                        break;
+                    }
+                }
                 TokenKind::LeftCurly => {
                     statements.push(self.parse_block()?);
                 }
@@ -120,6 +131,25 @@ impl<'a> Parser<'a> {
 
         Ok(SyntaxTree::WhileLoop(
             Box::new(condition),
+            Box::new(body),
+            span_start + span_end,
+        ))
+    }
+
+    fn parse_for_expression(&mut self) -> ParseResult {
+        self.consume(&[TokenKind::For])?;
+
+        let span_start = self.current_token.span();
+        self.consume(&[TokenKind::Identifier])?;
+        let identifier = Symbol::new(self.current_token.slice());
+        self.consume(&[TokenKind::In])?;
+        let source = self.parse_expression()?;
+        let body = self.parse_block()?;
+        let span_end = self.current_token.span();
+
+        Ok(SyntaxTree::ForLoop(
+            identifier,
+            Box::new(source),
             Box::new(body),
             span_start + span_end,
         ))

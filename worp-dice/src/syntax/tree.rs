@@ -102,6 +102,7 @@ pub enum SyntaxTree {
     VariableAssignment(Symbol, Box<SyntaxTree>, Span),
     Conditional(Box<SyntaxTree>, Box<SyntaxTree>, Option<Box<SyntaxTree>>, Span),
     WhileLoop(Box<SyntaxTree>, Box<SyntaxTree>, Span),
+    ForLoop(Symbol, Box<SyntaxTree>, Box<SyntaxTree>, Span),
     Block(Vec<SyntaxTree>, Span),
 }
 
@@ -119,6 +120,7 @@ impl SyntaxTree {
             SyntaxTree::Conditional(_, _, _, span) => span.clone(),
             SyntaxTree::Block(_, span) => span.clone(),
             SyntaxTree::WhileLoop(_, _, span) => span.clone(),
+            SyntaxTree::ForLoop(_, _, _, span) => span.clone(),
             SyntaxTree::VariableAssignment(_, _, span) => span.clone(),
             SyntaxTree::VariableDeclaration(_, _, span) => span.clone(),
         }

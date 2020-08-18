@@ -650,4 +650,15 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn test_for_loop() -> Result<(), RuntimeError> {
+        let context = Environment::new();
+        let result = context.eval_expression(r#"let x = 0; for y in 0..10 { x = x + y } x"#)?;
+        let actual = *result.value::<i64>().unwrap();
+
+        assert_eq!(45, actual);
+
+        Ok(())
+    }
 }
