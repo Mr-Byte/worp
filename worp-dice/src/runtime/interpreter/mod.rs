@@ -269,7 +269,7 @@ mod test {
     #[test]
     fn test_object() -> Result<(), RuntimeError> {
         let context = Environment::new();
-        let result = context.eval_expression(r#"{ test: 5 + 5 }"#)?;
+        let result = context.eval_expression(r#"object { test: 5 + 5 }"#)?;
         let inner = result.get(&ValueKey::Symbol(Symbol::new_static("test")))?;
 
         assert_eq!(10, *inner.value::<i64>().unwrap());
@@ -280,7 +280,7 @@ mod test {
     #[test]
     fn test_field_access() -> Result<(), RuntimeError> {
         let context = Environment::new();
-        let result = context.eval_expression(r#"{ test: 5 + 5 }.test"#)?;
+        let result = context.eval_expression(r#"object { test: 5 + 5 }.test"#)?;
         assert_eq!(10, *result.value::<i64>().unwrap());
 
         Ok(())
@@ -298,7 +298,7 @@ mod test {
     #[test]
     fn test_nested_safe_field_access() -> Result<(), RuntimeError> {
         let context = Environment::new();
-        let result = context.eval_expression(r#"{ test: none }.test?.xy"#)?;
+        let result = context.eval_expression(r#"object { test: none }.test?.xy"#)?;
         assert_eq!(lib::None, *result.value::<lib::None>().unwrap());
 
         Ok(())
@@ -316,7 +316,7 @@ mod test {
     #[test]
     fn test_complex_coalesce() -> Result<(), RuntimeError> {
         let context = Environment::new();
-        let result = context.eval_expression(r#"{ test: none }.test?.xy ?? 10"#)?;
+        let result = context.eval_expression(r#"object { test: none }.test?.xy ?? 10"#)?;
         assert_eq!(10, *result.value::<i64>().unwrap());
 
         Ok(())
@@ -325,7 +325,7 @@ mod test {
     #[test]
     fn test_index_access() -> Result<(), RuntimeError> {
         let context = Environment::new();
-        let result = context.eval_expression(r#"{ test: 5 + 5 }["test"]"#)?;
+        let result = context.eval_expression(r#"object { test: 5 + 5 }["test"]"#)?;
         assert_eq!(10, *result.value::<i64>().unwrap());
 
         Ok(())

@@ -28,7 +28,7 @@ impl<'a> Parser<'a> {
             }
             TokenKind::None => SyntaxTree::Literal(Literal::None, token.span),
             TokenKind::Identifier => SyntaxTree::Literal(Literal::Identifier(Symbol::new(token.slice().to_owned())), token.span),
-            TokenKind::LeftCurly => self.parse_object_literal()?,
+            TokenKind::Object => self.parse_object_literal()?,
             TokenKind::LeftSquare => self.parse_list_literal()?,
             TokenKind::EndOfInput => return Err(ParserError::unexpected_token(token.kind, &[TokenKind::String], Some(token.span))),
             TokenKind::Error => {
@@ -49,6 +49,8 @@ impl<'a> Parser<'a> {
     fn parse_object_literal(&mut self) -> ParseResult {
         let mut properties = HashMap::new();
         let span_start = self.current_token.span.clone();
+
+        self.consume(&[TokenKind::LeftCurly])?;
 
         while !self.next_token.is_kind(TokenKind::RightCurly) {
             let (key, value) = self.parse_object_literal_property()?;

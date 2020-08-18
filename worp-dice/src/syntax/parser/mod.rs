@@ -424,7 +424,7 @@ pub mod test {
 
     #[test]
     fn parse_object_literal_rule() -> TestResult {
-        let input = r#"{ x: 5, "y": "test", 5: "y", z: { "test": 5 } }"#;
+        let input = r#"object { x: 5, "y": "test", 5: "y", z: object { "test": 5 } }"#;
         let parsed = Parser::parse_str(input)?;
 
         assert_statement!(parsed, SyntaxTree::Literal(Literal::Object(_), _));
@@ -433,7 +433,7 @@ pub mod test {
 
     #[test]
     fn parse_object_literal_rule_with_trailing_comma() -> TestResult {
-        let input = r#"{ x: 5, "y": "test", 5: "y", }"#;
+        let input = r#"object { x: 5, "y": "test", 5: "y", }"#;
         let parsed = Parser::parse_str(input)?;
 
         assert_statement!(parsed, SyntaxTree::Literal(Literal::Object(_), _));
@@ -442,7 +442,7 @@ pub mod test {
 
     #[test]
     fn parse_object_literal_rule_with_no_commas() {
-        let input = r#"{ x: 5 "y": "test" 5: "y" }"#;
+        let input = r#"object { x: 5 "y": "test" 5: "y" }"#;
         let parsed = Parser::parse_str(input);
 
         assert!(matches!(
@@ -458,7 +458,7 @@ pub mod test {
 
     #[test]
     fn parse_object_literal_rule_with_no_closing_brace() {
-        let input = r#"{ x: 5, "y": "test", 5: "y", "#;
+        let input = r#"object { x: 5, "y": "test", 5: "y", "#;
         let parsed = Parser::parse_str(input);
 
         assert!(matches!(

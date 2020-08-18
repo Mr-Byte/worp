@@ -180,6 +180,8 @@ pub enum TokenKind {
     #[regex(r"[0-9]+\.[0-9]+")]
     Float,
     // Keywords
+    #[token("object")]
+    Object,
     #[token("false")]
     False,
     #[token("true")]
