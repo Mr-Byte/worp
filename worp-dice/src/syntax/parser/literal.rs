@@ -36,7 +36,7 @@ impl<'a> Parser<'a> {
             TokenKind::Object => self.parse_object_literal()?,
             TokenKind::LeftSquare => self.parse_list_literal()?,
             TokenKind::LeftParen => {
-                let expression = self.parse_statements()?;
+                let expression = self.parse_expression()?;
                 self.consume(&[TokenKind::RightParen])?;
                 expression
             }
