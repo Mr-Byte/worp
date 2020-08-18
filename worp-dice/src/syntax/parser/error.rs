@@ -24,7 +24,11 @@ pub struct ParserError {
 
 impl ParserError {
     pub fn new(kind: ErrorKind, span: Option<Span>) -> Self {
-        Self { kind, span, source: None }
+        Self {
+            kind,
+            span,
+            source: None,
+        }
     }
 
     pub fn unexpected_token(found: TokenKind, expected: &[TokenKind], span: Option<Span>) -> Self {

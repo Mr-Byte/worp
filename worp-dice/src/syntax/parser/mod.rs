@@ -41,7 +41,7 @@ impl<'a> Parser<'a> {
             Err(ParserError::unexpected_token(
                 self.next_token.kind,
                 kinds,
-                Some(self.next_token.span.clone()),
+                Some(self.next_token.span()),
             ))
         }
     }
@@ -68,7 +68,7 @@ pub mod test {
 
     macro_rules! assert_statement {
         ($tree:expr, $pattern:pat) => {
-            if let SyntaxTree::Statements(statements, _) = $tree {
+            if let SyntaxTree::Block(statements, _) = $tree {
                 assert!(
                     matches!(statements.as_slice(), [$pattern, ..]),
                     "Unexpected syntax tree. Found: {:?}",
@@ -186,7 +186,10 @@ pub mod test {
         let input = "5 >= 5";
         let parsed = Parser::parse_str(input)?;
 
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::GreaterThanOrEquals(_), _, _, _));
+        assert_statement!(
+            parsed,
+            SyntaxTree::Binary(BinaryOperator::GreaterThanOrEquals(_), _, _, _)
+        );
 
         Ok(())
     }
@@ -512,10 +515,11 @@ pub mod test {
         assert!(matches!(
             parsed,
             Err(ParserError {
-                kind: ErrorKind::UnexpectedToken {
-                    found: TokenKind::EndOfInput,
-                    ..
-                },
+                kind:
+                    ErrorKind::UnexpectedToken {
+                        found: TokenKind::EndOfInput,
+                        ..
+                    },
                 ..
             })
         ));
@@ -543,7 +547,9 @@ pub mod test {
         assert!(matches!(
             parsed,
             Err(ParserError {
-                kind: ErrorKind::ReservedKeyword { keyword: TokenKind::Return },
+                kind: ErrorKind::ReservedKeyword {
+                    keyword: TokenKind::Return,
+                },
                 ..
             })
         ));

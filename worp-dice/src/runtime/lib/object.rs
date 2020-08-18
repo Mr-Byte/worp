@@ -21,7 +21,10 @@ impl Object {
 
 impl TypeInstance for Object {
     fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
-        self.0.get(key).cloned().ok_or_else(|| RuntimeError::MissingField(key.clone()))
+        self.0
+            .get(key)
+            .cloned()
+            .ok_or_else(|| RuntimeError::MissingField(key.clone()))
     }
 }
 

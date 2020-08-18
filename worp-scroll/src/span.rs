@@ -26,7 +26,10 @@ impl TryFrom<Pairs<'_, Rule>> for Span {
     type Error = DocumentError;
 
     fn try_from(mut span_pairs: Pairs<'_, Rule>) -> Result<Self, Self::Error> {
-        let rule = span_pairs.peek().map(|pair| pair.as_rule()).unwrap_or_else(|| unreachable!());
+        let rule = span_pairs
+            .peek()
+            .map(|pair| pair.as_rule())
+            .unwrap_or_else(|| unreachable!());
 
         let result = match rule {
             Rule::raw_text => {
@@ -34,7 +37,9 @@ impl TryFrom<Pairs<'_, Rule>> for Span {
                 Span::RawText(raw_text)
             }
             Rule::macro_name | Rule::variable_name => {
-                let reference = next_pair!(span_pairs => Rule::macro_name | Rule::variable_name).into_inner().try_into()?;
+                let reference = next_pair!(span_pairs => Rule::macro_name | Rule::variable_name)
+                    .into_inner()
+                    .try_into()?;
                 Span::Reference(reference)
             }
             Rule::expression => {
@@ -54,7 +59,9 @@ impl TryFrom<Pairs<'_, Rule>> for Span {
                 Span::UnderlineText(bold_text)
             }
             Rule::strike_through_text => {
-                let bold_text = next_pair!(span_pairs => Rule::strike_through_text).into_inner().try_into()?;
+                let bold_text = next_pair!(span_pairs => Rule::strike_through_text)
+                    .into_inner()
+                    .try_into()?;
                 Span::StrikeThroughText(bold_text)
             }
             Rule::macro_link => {

@@ -16,7 +16,9 @@ impl TryFrom<Pairs<'_, Rule>> for Variable {
     type Error = DocumentError;
 
     fn try_from(mut variable_pairs: Pairs<'_, Rule>) -> Result<Self, Self::Error> {
-        let name = next_pair!(variable_pairs => Rule::variable_name).into_inner().try_into()?;
+        let name = next_pair!(variable_pairs => Rule::variable_name)
+            .into_inner()
+            .try_into()?;
         let expression = variable_pairs.try_into()?;
 
         Ok(Variable { name, expression })

@@ -6,7 +6,9 @@ use crate::{
             Type as _, Value, ValueKey,
         },
         error::RuntimeError,
-        lib::{self, DiceString, List, Object, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange, TypeRangeInclusive},
+        lib::{
+            self, DiceString, List, Object, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange, TypeRangeInclusive,
+        },
     },
     syntax::{BinaryOperator, Literal, RangeOperator, SyntaxTree, UnaryOperator},
 };
@@ -27,15 +29,20 @@ fn eval_expression(expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<V
         SyntaxTree::Unary(op, expr, _) => eval_unary(op, expr, environment),
         SyntaxTree::Binary(op, lhs, rhs, _) => eval_binary(op, lhs, rhs, environment),
         SyntaxTree::Range(op, lower, upper, _) => eval_range(op, lower, upper, environment),
-        SyntaxTree::Conditional(condition, body, alternate, _) => eval_conditional(condition, body, alternate.as_deref(), environment),
+        SyntaxTree::Conditional(condition, body, alternate, _) => {
+            eval_conditional(condition, body, alternate.as_deref(), environment)
+        }
         SyntaxTree::WhileLoop(condition, body, _) => eval_while_loop(condition, body, environment),
-        SyntaxTree::VariableDeclaration(identifier, expr, _) => eval_variable_declaration(identifier, expr, environment),
+        SyntaxTree::VariableDeclaration(identifier, expr, _) => {
+            eval_variable_declaration(identifier, expr, environment)
+        }
         SyntaxTree::VariableAssignment(identifier, expr, _) => eval_variable_assignment(identifier, expr, environment),
-        SyntaxTree::Statements(statements, _) => {
+        SyntaxTree::Block(statements, _) => {
+            let environment = environment.scoped();
             let mut iter = statements.iter().peekable();
             loop {
                 if let Some(statement) = iter.next() {
-                    let result = eval_expression(statement, environment)?;
+                    let result = eval_expression(statement, &environment)?;
 
                     if iter.peek().is_none() {
                         break Ok(result);
@@ -73,7 +80,10 @@ fn eval_list_literal(list: &[SyntaxTree], environment: &Rc<Environment>) -> Resu
 }
 
 #[inline]
-fn eval_object_literal(object: &HashMap<ValueKey, SyntaxTree>, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_object_literal(
+    object: &HashMap<ValueKey, SyntaxTree>,
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     let result = object
         .iter()
         .map(|(key, value)| Ok::<_, RuntimeError>((key.clone(), eval_expression(value, environment)?)))
@@ -82,10 +92,17 @@ fn eval_object_literal(object: &HashMap<ValueKey, SyntaxTree>, environment: &Rc<
     Ok(Value::new(Object::new(result)))
 }
 
-fn eval_function_call(expr: &SyntaxTree, args: &[SyntaxTree], environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_function_call(
+    expr: &SyntaxTree,
+    args: &[SyntaxTree],
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     match expr {
         SyntaxTree::Literal(Literal::Identifier(target), _) => {
-            let args = args.iter().map(|arg| eval_expression(arg, environment)).collect::<Result<Vec<_>, _>>()?;
+            let args = args
+                .iter()
+                .map(|arg| eval_expression(arg, environment))
+                .collect::<Result<Vec<_>, _>>()?;
 
             if let Some(known_type) = environment.known_type(target)? {
                 known_type.construct(&args)
@@ -106,7 +123,12 @@ fn eval_function_call(expr: &SyntaxTree, args: &[SyntaxTree], environment: &Rc<E
 }
 
 #[inline]
-fn eval_method_call(method: &ValueKey, this: &SyntaxTree, args: &[SyntaxTree], environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_method_call(
+    method: &ValueKey,
+    this: &SyntaxTree,
+    args: &[SyntaxTree],
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     let args = iter::once_with(|| eval_expression(this, environment))
         .chain(args.iter().map(|arg| eval_expression(arg, environment)))
         .collect::<Result<Vec<Value>, RuntimeError>>()?;
@@ -138,7 +160,12 @@ fn eval_unary(op: &UnaryOperator, expr: &SyntaxTree, environment: &Rc<Environmen
     }
 }
 
-fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_binary(
+    op: &BinaryOperator,
+    lhs: &SyntaxTree,
+    rhs: &SyntaxTree,
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     let lhs = eval_expression(lhs, environment)?;
     match op {
         BinaryOperator::LogicalAnd(_) => {
@@ -187,7 +214,12 @@ fn eval_binary(op: &BinaryOperator, lhs: &SyntaxTree, rhs: &SyntaxTree, environm
     }
 }
 
-fn eval_range(op: &RangeOperator, lower: &SyntaxTree, upper: &SyntaxTree, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_range(
+    op: &RangeOperator,
+    lower: &SyntaxTree,
+    upper: &SyntaxTree,
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     let lower = eval_expression(lower, environment)?;
     let upper = eval_expression(upper, environment)?;
 
@@ -198,7 +230,11 @@ fn eval_range(op: &RangeOperator, lower: &SyntaxTree, upper: &SyntaxTree, enviro
 }
 
 #[inline]
-fn eval_safe_field_access(expr: &SyntaxTree, field: &Symbol, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_safe_field_access(
+    expr: &SyntaxTree,
+    field: &Symbol,
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     let object_ref = eval_expression(expr, environment)?;
 
     if *object_ref.instance_type().name() != TypeNone::NAME {
@@ -250,7 +286,11 @@ fn eval_conditional(
     }
 }
 
-fn eval_while_loop(condition: &SyntaxTree, body: &SyntaxTree, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_while_loop(
+    condition: &SyntaxTree,
+    body: &SyntaxTree,
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     while *eval_expression(condition, environment)?.try_value::<bool>()? {
         eval_expression(body, environment)?;
     }
@@ -258,13 +298,21 @@ fn eval_while_loop(condition: &SyntaxTree, body: &SyntaxTree, environment: &Rc<E
     Ok(Value::new(lib::None))
 }
 
-fn eval_variable_declaration(identifier: &Symbol, expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_variable_declaration(
+    identifier: &Symbol,
+    expr: &SyntaxTree,
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     let value = eval_expression(expr, environment)?;
     environment.add_variable(identifier.clone(), value.clone())?;
     Ok(value)
 }
 
-fn eval_variable_assignment(identifier: &Symbol, expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+fn eval_variable_assignment(
+    identifier: &Symbol,
+    expr: &SyntaxTree,
+    environment: &Rc<Environment>,
+) -> Result<Value, RuntimeError> {
     let value = eval_expression(expr, environment)?;
     environment.set_variable(identifier, value.clone())?;
     Ok(value)

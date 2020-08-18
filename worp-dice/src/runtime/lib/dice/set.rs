@@ -19,7 +19,10 @@ impl DiceSet {
     }
 
     fn roll(&self) -> Value {
-        let result: List = iter::repeat_with(|| self.die.roll()).take(self.count as usize).collect::<Vec<_>>().into();
+        let result: List = iter::repeat_with(|| self.die.roll())
+            .take(self.count as usize)
+            .collect::<Vec<_>>()
+            .into();
         result.into()
     }
 }

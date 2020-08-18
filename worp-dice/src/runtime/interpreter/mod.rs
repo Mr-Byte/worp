@@ -619,6 +619,28 @@ mod test {
     }
 
     #[test]
+    fn test_variable_decl_with_block_expression() -> Result<(), RuntimeError> {
+        let context = Environment::new();
+        let result = context.eval_expression(r#"let x = { let x = 20; x * 2 };"#)?;
+        let actual = *result.value::<i64>().unwrap();
+
+        assert_eq!(40, actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_variable_decl_with_block_expression_nested_in_expression() -> Result<(), RuntimeError> {
+        let context = Environment::new();
+        let result = context.eval_expression(r#"let x = { let x = 20; x * 2 } + 2;"#)?;
+        let actual = *result.value::<i64>().unwrap();
+
+        assert_eq!(42, actual);
+
+        Ok(())
+    }
+
+    #[test]
     fn test_while_loop() -> Result<(), RuntimeError> {
         let context = Environment::new();
         let result = context.eval_expression(r#"let x = 0; while x < 10 { x = x + 1 } x"#)?;

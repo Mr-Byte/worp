@@ -11,7 +11,11 @@ pub struct List(Gc<Vec<Value>>);
 impl TypeInstance for List {
     fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
         if let ValueKey::Index(index) = key {
-            let index = if *index >= 0 { *index } else { (self.len() as i64) + *index };
+            let index = if *index >= 0 {
+                *index
+            } else {
+                (self.len() as i64) + *index
+            };
 
             if (index as usize) >= self.len() || index < 0 {
                 Err(RuntimeError::IndexOutOfBounds(self.len(), index))
@@ -26,7 +30,12 @@ impl TypeInstance for List {
 
 impl Display for List {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let items = self.0.iter().map(|value| value.to_string()).collect::<Vec<_>>().join(", ");
+        let items = self
+            .0
+            .iter()
+            .map(|value| value.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
 
         write!(fmt, "[{}]", items)
     }

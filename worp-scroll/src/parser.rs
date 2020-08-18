@@ -19,7 +19,12 @@ mod test {
                     Err(err) => panic!(format!("{}", err)),
                 };
 
-                assert_eq!(len, input.len(), "Failed to assert that rules match for: {}", input);
+                assert_eq!(
+                    len,
+                    input.len(),
+                    "Failed to assert that rules match for: {}",
+                    input
+                );
             }
         };
     }
@@ -28,7 +33,13 @@ mod test {
         ($rule:expr, $in:expr) => {
             assert!($in.iter().all(|input| {
                 DocumentParser::parse($rule, input).is_err()
-                    || DocumentParser::parse($rule, input).unwrap().last().unwrap().as_span().end() != input.len()
+                    || DocumentParser::parse($rule, input)
+                        .unwrap()
+                        .last()
+                        .unwrap()
+                        .as_span()
+                        .end()
+                        != input.len()
             }));
         };
     }

@@ -8,7 +8,10 @@ pub mod test {
 
     macro_rules! assert_next_token {
         ($tokens:expr, $token:pat) => {
-            matches!($tokens.next(), Some($crate::syntax::lexer::Token { kind: $token, .. }))
+            matches!(
+                $tokens.next(),
+                Some($crate::syntax::lexer::Token { kind: $token, .. })
+            )
         };
     }
 

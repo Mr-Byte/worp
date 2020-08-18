@@ -67,7 +67,10 @@ impl Value {
         if self.instance_type().name() == expected {
             Ok(self)
         } else {
-            Err(RuntimeError::InvalidType(expected.clone(), self.instance_type().name().clone()))
+            Err(RuntimeError::InvalidType(
+                expected.clone(),
+                self.instance_type().name().clone(),
+            ))
         }
     }
 }

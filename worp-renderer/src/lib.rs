@@ -1,7 +1,7 @@
 use anyhow::{Context as _, Result};
 use wgpu::{
-    Adapter, BackendBit, Color, Device, DeviceDescriptor, Features, Instance, LoadOp, Operations, Queue, RenderPassColorAttachmentDescriptor,
-    Surface, SwapChain, SwapChainDescriptor,
+    Adapter, BackendBit, Color, Device, DeviceDescriptor, Features, Instance, LoadOp, Operations, Queue,
+    RenderPassColorAttachmentDescriptor, Surface, SwapChain, SwapChainDescriptor,
 };
 use winit::window::Window;
 
@@ -66,12 +66,16 @@ impl Renderer {
     pub fn resize(&mut self, width: u32, height: u32) {
         self.swap_chain_descriptor.width = width;
         self.swap_chain_descriptor.height = height;
-        self.swap_chain = self.device.create_swap_chain(&self.window_surface, &self.swap_chain_descriptor);
+        self.swap_chain = self
+            .device
+            .create_swap_chain(&self.window_surface, &self.swap_chain_descriptor);
     }
 
     pub fn draw_frame(&mut self) -> Result<()> {
         let frame = self.swap_chain.get_current_frame().map_err(|_| SwapChainError)?;
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
         let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[RenderPassColorAttachmentDescriptor {

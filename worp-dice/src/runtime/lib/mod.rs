@@ -10,8 +10,7 @@ mod range;
 mod string;
 
 pub(crate) use self::bool::*;
-pub(crate) use dice::die::*;
-pub(crate) use dice::set::*;
+pub(crate) use dice::{die::*, set::*};
 pub(crate) use float::*;
 pub(crate) use func::*;
 pub(crate) use int::*;

@@ -17,7 +17,7 @@ impl<'a> Iterator for TokenIterator<'a> {
 #[derive(Clone, Debug)]
 pub struct Token<'a> {
     pub kind: TokenKind,
-    pub span: Span,
+    span: Span,
     slice: &'a str,
 }
 
@@ -30,6 +30,10 @@ impl<'a> Token<'a> {
         })) as Box<dyn Iterator<Item = Token<'a>>>;
 
         TokenIterator { inner }
+    }
+
+    pub fn span(&self) -> Span {
+        self.span.clone()
     }
 
     pub fn slice(&self) -> &str {
