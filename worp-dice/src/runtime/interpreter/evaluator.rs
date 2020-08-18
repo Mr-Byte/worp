@@ -294,7 +294,8 @@ fn eval_while_loop(
     environment: &Rc<Environment>,
 ) -> Result<Value, RuntimeError> {
     while *eval_expression(condition, environment)?.try_value::<bool>()? {
-        eval_expression(body, environment)?;
+        let environment = environment.scoped();
+        eval_expression(body, &environment)?;
     }
 
     Ok(Value::new(lib::None))
@@ -307,22 +308,23 @@ fn eval_for_loop(
     environment: &Rc<Environment>,
 ) -> Result<Value, RuntimeError> {
     let source = eval_expression(source, environment)?;
-    let environment = environment.scoped();
-    environment.add_variable(variable.clone(), Value::new(lib::None))?;
 
     if let Some(as_list) = source.value::<List>() {
         for value in as_list.iter() {
-            environment.set_variable(variable, value.clone())?;
+            let environment = environment.scoped();
+            environment.add_variable(variable.clone(), value.clone())?;
             eval_expression(body, &environment)?;
         }
     } else if let Some(as_range) = source.value::<Range>() {
         for value in (*as_range).clone().into_iter() {
-            environment.set_variable(variable, Value::new(value))?;
+            let environment = environment.scoped();
+            environment.add_variable(variable.clone(), Value::new(value))?;
             eval_expression(body, &environment)?;
         }
     } else if let Some(as_range) = source.value::<RangeInclusive>() {
         for value in (*as_range).clone().into_iter() {
-            environment.set_variable(variable, Value::new(value))?;
+            let environment = environment.scoped();
+            environment.add_variable(variable.clone(), Value::new(value))?;
             eval_expression(body, &environment)?;
         }
     }
