@@ -6,7 +6,7 @@ use crate::{
             Type as _, Value, ValueKey,
         },
         error::RuntimeError,
-        lib::{DiceString, List, Object, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange, TypeRangeInclusive},
+        lib::{self, DiceString, List, Object, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange, TypeRangeInclusive},
     },
     syntax::{BinaryOperator, Literal, RangeOperator, SyntaxTree, UnaryOperator},
 };
@@ -28,7 +28,9 @@ fn eval_expression(expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<V
         SyntaxTree::Binary(op, lhs, rhs, _) => eval_binary(op, lhs, rhs, environment),
         SyntaxTree::Range(op, lower, upper, _) => eval_range(op, lower, upper, environment),
         SyntaxTree::Conditional(condition, body, alternate, _) => eval_conditional(condition, body, alternate.as_deref(), environment),
+        SyntaxTree::WhileLoop(condition, body, _) => eval_while_loop(condition, body, environment),
         SyntaxTree::VariableDeclaration(identifier, expr, _) => eval_variable_declaration(identifier, expr, environment),
+        SyntaxTree::VariableAssignment(identifier, expr, _) => eval_variable_assignment(identifier, expr, environment),
         SyntaxTree::Statements(statements, _) => {
             let mut iter = statements.iter().peekable();
             loop {
@@ -248,8 +250,22 @@ fn eval_conditional(
     }
 }
 
+fn eval_while_loop(condition: &SyntaxTree, body: &SyntaxTree, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+    while *eval_expression(condition, environment)?.try_value::<bool>()? {
+        eval_expression(body, environment)?;
+    }
+
+    Ok(Value::new(lib::None))
+}
+
 fn eval_variable_declaration(identifier: &Symbol, expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
     let value = eval_expression(expr, environment)?;
     environment.add_variable(identifier.clone(), value.clone())?;
+    Ok(value)
+}
+
+fn eval_variable_assignment(identifier: &Symbol, expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<Value, RuntimeError> {
+    let value = eval_expression(expr, environment)?;
+    environment.set_variable(identifier, value.clone())?;
     Ok(value)
 }

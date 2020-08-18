@@ -19,6 +19,15 @@ impl<'a> Parser<'a> {
                 {
                     break;
                 }
+            } else if self.next_token.kind == TokenKind::While {
+                statements.push(self.parse_while_expression()?);
+
+                if self
+                    .next_token
+                    .is_any_kind(&[TokenKind::RightParen, TokenKind::RightCurly, TokenKind::EndOfInput])
+                {
+                    break;
+                }
             } else if self.next_token.kind == TokenKind::Let {
                 statements.push(self.parse_variable_decl()?);
                 self.consume(&[TokenKind::Semicolon])?;
@@ -83,6 +92,17 @@ impl<'a> Parser<'a> {
             else_condition.map(Box::new),
             span_start + span_end,
         ))
+    }
+
+    fn parse_while_expression(&mut self) -> ParseResult {
+        self.consume(&[TokenKind::While])?;
+
+        let span_start = self.current_token.span.clone();
+        let condition = self.parse_expression()?;
+        let body = self.parse_block()?;
+        let span_end = self.current_token.span.clone();
+
+        Ok(SyntaxTree::WhileLoop(Box::new(condition), Box::new(body), span_start + span_end))
     }
 
     fn parse_block(&mut self) -> ParseResult {

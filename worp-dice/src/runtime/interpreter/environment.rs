@@ -62,6 +62,17 @@ impl Environment {
         }
     }
 
+    pub fn set_variable(&self, name: &Symbol, value: Value) -> Result<(), RuntimeError> {
+        if let Some(variable) = self.variables.try_borrow_mut().map_err(boxed)?.get_mut(name) {
+            *variable = value.clone();
+            Ok(())
+        } else if let Some(ref parent) = self.parent {
+            parent.set_variable(name, value)
+        } else {
+            Err(RuntimeError::VariableNotFound(name.clone()))
+        }
+    }
+
     pub fn add_variable(&self, name: Symbol, value: Value) -> Result<(), RuntimeError> {
         self.variables.try_borrow_mut().map_err(boxed)?.insert(name, value);
         Ok(())

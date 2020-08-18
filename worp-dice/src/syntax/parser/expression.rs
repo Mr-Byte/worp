@@ -1,9 +1,27 @@
-use super::{ParseResult, Parser};
-use crate::syntax::{lexer::TokenKind, BinaryOperator, RangeOperator, SyntaxTree, UnaryOperator};
+use super::{error::ErrorKind, ParseResult, Parser};
+use crate::syntax::{lexer::TokenKind, BinaryOperator, ParserError, RangeOperator, SyntaxTree, UnaryOperator};
 
 impl<'a> Parser<'a> {
     pub(super) fn parse_expression(&mut self) -> ParseResult {
-        self.parse_coalesce()
+        self.parse_assignment()
+    }
+
+    fn parse_assignment(&mut self) -> ParseResult {
+        let span_start = self.current_token.span.clone();
+        let mut expression = self.parse_coalesce()?;
+
+        if self.next_token.is_kind(TokenKind::Assign) {
+            if let SyntaxTree::Literal(crate::syntax::Literal::Identifier(variable), _) = expression {
+                self.next();
+                let rhs = self.parse_coalesce()?;
+                let span_end = self.current_token.span.clone();
+                expression = SyntaxTree::VariableAssignment(variable.clone(), Box::new(rhs), span_start.clone() + span_end);
+            } else {
+                return Err(ParserError::new(ErrorKind::InvlaidAssignmentTarget, Some(expression.span().clone())));
+            }
+        }
+
+        Ok(expression)
     }
 
     fn parse_coalesce(&mut self) -> ParseResult {

@@ -606,4 +606,26 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn test_variable_decl_followed_by_assignment() -> Result<(), RuntimeError> {
+        let context = Environment::new();
+        let result = context.eval_expression(r#"let x = 5; x = x + 10; x"#)?;
+        let actual = *result.value::<i64>().unwrap();
+
+        assert_eq!(15, actual);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_while_loop() -> Result<(), RuntimeError> {
+        let context = Environment::new();
+        let result = context.eval_expression(r#"let x = 0; while x < 10 { x = x + 1 } x"#)?;
+        let actual = *result.value::<i64>().unwrap();
+
+        assert_eq!(10, actual);
+
+        Ok(())
+    }
 }

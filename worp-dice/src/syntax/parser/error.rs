@@ -6,6 +6,7 @@ use std::{
 
 #[derive(Debug)]
 pub enum ErrorKind {
+    InvlaidAssignmentTarget,
     InvalidIntegerLiteral,
     InvalidFloatLiteral,
     ReservedKeyword { keyword: TokenKind },
