@@ -1,5 +1,5 @@
-use super::{parser::error::ParserError, span::Span};
-use crate::runtime::core::{symbol::Symbol, ValueKey};
+use super::parser::error::ParserError;
+use crate::runtime::core::{symbol::Symbol, Span, ValueKey};
 use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug, Clone)]

@@ -1,4 +1,4 @@
-use crate::syntax::{lexer::TokenKind, span::Span};
+use crate::{runtime::core::Span, syntax::lexer::TokenKind};
 use std::{
     error::Error,
     num::{ParseFloatError, ParseIntError},

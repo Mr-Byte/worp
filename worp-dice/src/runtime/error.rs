@@ -43,4 +43,8 @@ pub enum RuntimeError {
     ParseBoolError(#[from] ParseBoolError),
     #[error("Runtime Error: Lower bound {0} cannot exceed upper bound {1}.")]
     RangeError(i64, i64),
+    #[error("Runtime Error: Encountered unknown instruction 0x{0:X}")]
+    UnknownInstruction(u8),
+    #[error("Runtime Error: Stack underflowed.")]
+    StackUnderflowed,
 }
