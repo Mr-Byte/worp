@@ -104,6 +104,7 @@ pub enum SyntaxTree {
     WhileLoop(Box<SyntaxTree>, Box<SyntaxTree>, Span),
     ForLoop(Symbol, Box<SyntaxTree>, Box<SyntaxTree>, Span),
     Block(Vec<SyntaxTree>, Span),
+    Discard(Span),
 }
 
 impl SyntaxTree {
@@ -123,6 +124,7 @@ impl SyntaxTree {
             SyntaxTree::ForLoop(_, _, _, span) => span.clone(),
             SyntaxTree::VariableAssignment(_, _, span) => span.clone(),
             SyntaxTree::VariableDeclaration(_, _, span) => span.clone(),
+            SyntaxTree::Discard(span) => span.clone(),
         }
     }
 }

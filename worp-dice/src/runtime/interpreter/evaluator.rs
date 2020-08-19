@@ -54,6 +54,7 @@ fn eval_expression(expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<V
                 }
             }
         }
+        SyntaxTree::Discard(_) => Ok(Value::NONE),
     }
 }
 

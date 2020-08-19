@@ -42,14 +42,14 @@ impl ByteCode {
 #[derive(Default)]
 pub struct ByteCodeBuilder {
     source_map: HashMap<u64, Span>,
-    data: bytes::BytesMut,
+    data: Vec<u8>,
 }
 
 impl ByteCodeBuilder {
     pub fn build(self) -> ByteCode {
         ByteCode {
             _source_map: self.source_map,
-            data: Cursor::new(self.data.to_vec().into_boxed_slice()),
+            data: Cursor::new(self.data.into_boxed_slice()),
         }
     }
 

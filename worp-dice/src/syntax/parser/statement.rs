@@ -50,12 +50,14 @@ impl<'a> Parser<'a> {
                 TokenKind::Let => {
                     statements.push(self.parse_variable_decl()?);
                     self.consume(&[TokenKind::Semicolon])?;
+                    statements.push(SyntaxTree::Discard(self.current_token.span()));
                 }
                 _ => {
                     statements.push(self.parse_expression()?);
 
                     if self.next_token.is_kind(TokenKind::Semicolon) {
                         self.next();
+                        statements.push(SyntaxTree::Discard(self.current_token.span()));
                     }
 
                     if self.next_token.is_any_kind(&[

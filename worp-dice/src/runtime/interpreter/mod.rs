@@ -589,9 +589,9 @@ mod test {
     fn test_variable_decl() -> Result<(), RuntimeError> {
         let context = Environment::new();
         let result = context.eval_expression(r#"let x = 5;"#)?;
-        let actual = *result.value::<i64>().unwrap();
+        let actual = result.value::<lib::None>().unwrap().clone();
 
-        assert_eq!(5, actual);
+        assert_eq!(lib::None, actual);
 
         Ok(())
     }
@@ -622,9 +622,9 @@ mod test {
     fn test_variable_decl_with_block_expression() -> Result<(), RuntimeError> {
         let context = Environment::new();
         let result = context.eval_expression(r#"let x = { let x = 20; x * 2 };"#)?;
-        let actual = *result.value::<i64>().unwrap();
+        let actual = result.value::<lib::None>().unwrap().clone();
 
-        assert_eq!(40, actual);
+        assert_eq!(lib::None, actual);
 
         Ok(())
     }
@@ -633,9 +633,9 @@ mod test {
     fn test_variable_decl_with_block_expression_nested_in_expression() -> Result<(), RuntimeError> {
         let context = Environment::new();
         let result = context.eval_expression(r#"let x = { let x = 20; x * 2 } + 2;"#)?;
-        let actual = *result.value::<i64>().unwrap();
+        let actual = result.value::<lib::None>().unwrap().clone();
 
-        assert_eq!(42, actual);
+        assert_eq!(lib::None, actual);
 
         Ok(())
     }
