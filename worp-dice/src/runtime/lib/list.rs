@@ -5,7 +5,7 @@ use crate::runtime::{
 use gc::{Finalize, Gc, Trace};
 use std::{fmt::Display, iter, ops::Deref};
 
-#[derive(Debug, Clone, Trace, Finalize)]
+#[derive(Debug, Clone, Trace, Finalize, PartialEq)]
 pub struct List(Gc<Vec<Value>>);
 
 impl TypeInstance for List {

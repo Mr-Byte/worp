@@ -90,3 +90,9 @@ impl dyn TypeInstance {
         expected_types.iter().any(|typ| self.is_instance_of(*typ))
     }
 }
+
+impl PartialEq for dyn TypeInstance {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self, other)
+    }
+}

@@ -36,7 +36,7 @@ decl_type! {
         Ok(Value::new(result))
     }
 
-    fn op_ne(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+    fn op_neq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         let lhs = lhs.try_value::<bool>()?;
         let rhs = rhs.value::<bool>();
         let result = match rhs {

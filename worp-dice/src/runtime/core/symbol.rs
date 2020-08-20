@@ -43,7 +43,7 @@ pub mod common {
         pub const OP_GTE: Symbol = Symbol::new_static("#op_gte");
         pub const OP_LTE: Symbol = Symbol::new_static("#op_lte");
         pub const OP_EQ: Symbol = Symbol::new_static("#op_eq");
-        pub const OP_NE: Symbol = Symbol::new_static("#op_ne");
+        pub const OP_NEQ: Symbol = Symbol::new_static("#op_ne");
 
         pub const OP_NOT: Symbol = Symbol::new_static("#op_not");
     }

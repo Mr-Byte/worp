@@ -6,7 +6,7 @@ use crate::runtime::{
 use gc::{Finalize, Gc, Trace};
 use std::{fmt::Display, ops::Deref};
 
-#[derive(Clone, Debug, Trace, Finalize)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
 enum Variant {
     None(lib::None),
     Bool(bool),
@@ -18,7 +18,7 @@ enum Variant {
     Object(Gc<Box<dyn TypeInstance>>),
 }
 
-#[derive(Clone, Debug, Trace, Finalize)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
 pub struct Value(Variant);
 
 impl Display for Value {

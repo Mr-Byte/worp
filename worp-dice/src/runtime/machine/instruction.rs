@@ -1,30 +1,62 @@
+macro_rules! define_instructions {
+    (prev=$prev:ident @) => {};
+    (prev=$prev:ident @ $next:ident $($name:ident)*) => {
+        pub const $next: Self = Self(Self::$prev.0 + 1);
+        define_instructions! {
+            prev=$next @
+            $($name)*
+        }
+    };
+
+    (pub const $first:ident; $(pub const $name:ident;)*) => {
+        pub const $first: Self = Self(0);
+        define_instructions! {
+            prev=$first @
+            $($name)*
+        }
+    };
+}
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Instruction(u8);
 
 impl Instruction {
-    pub const HALT: Self = Self(0);
+    define_instructions! {
+        pub const HALT;
 
-    pub const JUMP: Self = Self::HALT.next();
-    pub const JUMP_IF: Self = Self::JUMP.next();
+        pub const PUSH_NONE;
+        pub const PUSH_FALSE;
+        pub const PUSH_TRUE;
+        pub const PUSH_INT;
+        pub const PUSH_FLOAT;
+        pub const PUSH_CONST;
 
-    pub const PUSH_NONE: Self = Self::JUMP_IF.next();
-    pub const PUSH_INT: Self = Self::PUSH_NONE.next();
-    pub const PUSH_FLOAT: Self = Self::PUSH_INT.next();
-    pub const PUSH_BOOL: Self = Self::PUSH_FLOAT.next();
-    pub const POP: Self = Self::PUSH_BOOL.next();
-    pub const DUP: Self = Self::POP.next();
+        pub const POP;
+        pub const DUP;
 
-    pub const LOAD: Self = Self::DUP.next();
-    pub const STORE: Self = Self::LOAD.next();
+        pub const LOAD_LOCAL;
+        pub const STORE_LOCAL;
 
-    pub const MUL: Self = Self::STORE.next();
-    pub const DIV: Self = Self::MUL.next();
-    pub const REM: Self = Self::DIV.next();
-    pub const ADD: Self = Self::REM.next();
-    pub const SUB: Self = Self::ADD.next();
+        pub const LOAD_GLOBAL;
+        pub const STORE_GLOBAL;
 
-    const fn next(self) -> Instruction {
-        Instruction(self.0 + 1)
+        pub const NEG;
+        pub const NOT;
+
+        pub const MUL;
+        pub const DIV;
+        pub const REM;
+        pub const ADD;
+        pub const SUB;
+
+        pub const GT;
+        pub const GTE;
+        pub const LT;
+        pub const LTE;
+        pub const EQ;
+        pub const NEQ;
+        pub const LOGICAL_AND;
+        pub const LOGICAL_OR;
     }
 }
 

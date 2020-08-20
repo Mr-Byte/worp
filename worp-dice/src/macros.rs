@@ -82,10 +82,10 @@ macro_rules! type_member {
         )
     };
 
-    (op_ne => $arg1:ident, $arg2:ident) => {
+    (op_neq => $arg1:ident, $arg2:ident) => {
         (
-            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_NE),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_ne)),
+            $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_NEQ),
+            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_neq)),
         )
     };
 

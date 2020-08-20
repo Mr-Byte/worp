@@ -1,6 +1,7 @@
 use super::ModuleBuilder;
 use crate::runtime::machine::bytecode::ByteCode;
 
+// TODO: Move modue parts to an inner struct, stored in an Rc.
 #[derive(Clone)]
 pub struct Module {
     bytecode: ByteCode,

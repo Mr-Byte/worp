@@ -5,7 +5,7 @@ use crate::runtime::{
 use gc::{Finalize, Gc, Trace};
 use std::{fmt::Display, ops::Deref};
 
-#[derive(Debug, Clone, Trace, Finalize)]
+#[derive(Debug, Clone, Trace, Finalize, PartialEq)]
 pub struct DiceString(Gc<String>);
 
 impl TypeInstance for DiceString {}
@@ -27,6 +27,12 @@ impl Deref for DiceString {
 impl From<String> for DiceString {
     fn from(value: String) -> Self {
         DiceString(value.into())
+    }
+}
+
+impl From<&str> for DiceString {
+    fn from(value: &str) -> Self {
+        DiceString(value.to_owned().into())
     }
 }
 

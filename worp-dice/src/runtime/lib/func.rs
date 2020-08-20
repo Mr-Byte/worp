@@ -14,14 +14,14 @@ decl_type! {
     impl TypeFunc for Func as "Func";
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 enum FuncVariant {
     Func0(Func0),
     Func1(Func1),
     Func2(Func2),
 }
 
-#[derive(Clone, Trace, Finalize)]
+#[derive(Clone, Trace, Finalize, PartialEq)]
 pub struct Func(#[unsafe_ignore_trace] FuncVariant);
 
 impl Func {
@@ -81,6 +81,12 @@ impl Func0 {
     }
 }
 
+impl PartialEq for Func0 {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(&*self.0, &*other.0)
+    }
+}
+
 #[derive(Clone)]
 struct Func1(Rc<dyn Fn(Value) -> Result<Value, RuntimeError>>);
 
@@ -94,6 +100,12 @@ impl Func1 {
     }
 }
 
+impl PartialEq for Func1 {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(&*self.0, &*other.0)
+    }
+}
+
 #[derive(Clone)]
 pub struct Func2(Rc<dyn Fn(Value, Value) -> Result<Value, RuntimeError>>);
 
@@ -104,5 +116,11 @@ impl Func2 {
         } else {
             Err(RuntimeError::InvalidFunctionArgs(2, args.len()))
         }
+    }
+}
+
+impl PartialEq for Func2 {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(&*self.0, &*other.0)
     }
 }

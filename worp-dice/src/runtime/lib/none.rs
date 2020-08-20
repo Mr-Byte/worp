@@ -26,7 +26,7 @@ decl_type! {
         Ok(Value::new(rhs.is_some()))
     }
 
-    fn op_ne(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+    fn op_neq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         lhs.try_value::<None>()?;
         let rhs = rhs.value::<None>();
 

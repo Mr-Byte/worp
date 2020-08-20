@@ -198,7 +198,7 @@ fn eval_binary(
                 BinaryOperator::Add(_) => lhs.get(&ValueKey::Symbol(OP_ADD))?.call(&[lhs, rhs]),
                 BinaryOperator::Subtract(_) => lhs.get(&ValueKey::Symbol(OP_SUB))?.call(&[lhs, rhs]),
                 BinaryOperator::Equals(_) => lhs.get(&ValueKey::Symbol(OP_EQ))?.call(&[lhs, rhs]),
-                BinaryOperator::NotEquals(_) => lhs.get(&ValueKey::Symbol(OP_NE))?.call(&[lhs, rhs]),
+                BinaryOperator::NotEquals(_) => lhs.get(&ValueKey::Symbol(OP_NEQ))?.call(&[lhs, rhs]),
                 BinaryOperator::GreaterThan(_) => lhs.get(&ValueKey::Symbol(OP_GT))?.call(&[lhs, rhs]),
                 BinaryOperator::GreaterThanOrEquals(_) => lhs.get(&ValueKey::Symbol(OP_GTE))?.call(&[lhs, rhs]),
                 BinaryOperator::LessThan(_) => lhs.get(&ValueKey::Symbol(OP_LT))?.call(&[lhs, rhs]),
