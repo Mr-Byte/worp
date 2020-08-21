@@ -1,4 +1,3 @@
-use super::DiceString;
 use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
@@ -11,7 +10,7 @@ decl_type! {
         if let [value] = args {
             match_type! { value,
                 as_bool: bool => Ok(Value::new(*as_bool)),
-                as_string: DiceString => Ok(Value::new(as_string.parse::<bool>()?)),
+                as_string: String => Ok(Value::new(as_string.parse::<bool>()?)),
                 _ => Err(RuntimeError::InvalidType(TypeBool::NAME, value.instance_type().name().clone()))
             }
         } else {

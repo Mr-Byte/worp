@@ -1,7 +1,4 @@
-use super::{
-    error::RuntimeError,
-    lib::{DiceString, Func},
-};
+use super::{error::RuntimeError, lib::Func};
 use gc::{Finalize, Trace};
 use std::{
     any::Any,
@@ -27,7 +24,7 @@ thread_local! {
 }
 
 fn to_string(object: Value) -> Result<Value, RuntimeError> {
-    let string: DiceString = object.to_string().into();
+    let string = object.to_string();
     Ok(Value::new(string))
 }
 

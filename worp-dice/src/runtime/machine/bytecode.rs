@@ -146,12 +146,11 @@ impl ByteCodeBuilder {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::runtime::lib::DiceString;
 
     #[test]
     fn same_string_is_inserted_into_constants_only_once() {
-        let first_string = Value::new(DiceString::from("test"));
-        let second_string = Value::new(DiceString::from("test"));
+        let first_string = Value::new(String::from("test"));
+        let second_string = Value::new(String::from("test"));
         let mut builder = ByteCode::builder();
         builder.push_const(first_string);
         builder.push_const(second_string);

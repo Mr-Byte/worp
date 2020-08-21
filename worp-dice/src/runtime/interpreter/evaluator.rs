@@ -7,7 +7,7 @@ use crate::{
         },
         error::RuntimeError,
         lib::{
-            self, DiceString, List, Object, Range, RangeInclusive, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange,
+            self, List, Object, Range, RangeInclusive, TypeBool, TypeDiceSet, TypeDie, TypeNone, TypeRange,
             TypeRangeInclusive,
         },
     },
@@ -64,7 +64,7 @@ fn eval_literal(literal: &Literal, environment: &Rc<Environment>) -> Result<Valu
         Literal::None => Ok(Value::NONE),
         Literal::Integer(int) => Ok(Value::new(*int)),
         Literal::Float(float) => Ok(Value::new(*float)),
-        Literal::String(string) => Ok(Value::new(Into::<DiceString>::into(string.clone()))),
+        Literal::String(string) => Ok(Value::new(string.clone())),
         Literal::Boolean(bool) => Ok(Value::new(*bool)),
         Literal::List(list) => eval_list_literal(list, environment),
         Literal::Object(object) => eval_object_literal(object, environment),
@@ -259,7 +259,7 @@ fn eval_object_key(expr: &SyntaxTree, environment: &Rc<Environment>) -> Result<V
 
     if let Some(index) = index.value::<i64>() {
         Ok(ValueKey::Index(*index))
-    } else if let Some(index) = index.value::<DiceString>() {
+    } else if let Some(index) = index.value::<String>() {
         let index: String = index.to_string();
         Ok(ValueKey::Symbol(Symbol::new(index)))
     } else {

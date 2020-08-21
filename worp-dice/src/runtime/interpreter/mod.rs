@@ -7,7 +7,7 @@ mod test {
     use crate::runtime::{
         core::{symbol::Symbol, Value, ValueKey},
         error::RuntimeError,
-        lib::{self, DiceString, List},
+        lib::{self, List},
     };
     use environment::Environment;
 
@@ -437,7 +437,7 @@ mod test {
     fn test_method_call() -> Result<(), RuntimeError> {
         let context = Environment::new();
         let result = context.eval_expression("5.to_string()")?;
-        let actual = result.value::<DiceString>().unwrap();
+        let actual = result.value::<String>().unwrap();
 
         assert_eq!("5", &**actual);
 
@@ -469,7 +469,7 @@ mod test {
     fn test_chained_method_call() -> Result<(), RuntimeError> {
         let context = Environment::new();
         let result = context.eval_expression(r##"5["#op_add"](5).to_string()"##)?;
-        let actual = result.value::<DiceString>().unwrap();
+        let actual = result.value::<String>().unwrap();
 
         assert_eq!("10", &**actual);
 
@@ -513,7 +513,7 @@ mod test {
     fn test_string_concat() -> Result<(), RuntimeError> {
         let context = Environment::new();
         let result = context.eval_expression(r##""test" + "value""##)?;
-        let actual = result.value::<DiceString>().unwrap();
+        let actual = result.value::<String>().unwrap();
 
         assert_eq!("testvalue", &**actual);
 
@@ -524,7 +524,7 @@ mod test {
     fn test_string_concat_with_number() -> Result<(), RuntimeError> {
         let context = Environment::new();
         let result = context.eval_expression(r#""test" + 5"#)?;
-        let actual = result.value::<DiceString>().unwrap();
+        let actual = result.value::<String>().unwrap();
 
         assert_eq!("test5", &**actual);
 

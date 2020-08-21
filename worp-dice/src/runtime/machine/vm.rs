@@ -4,10 +4,11 @@ use crate::runtime::{
         symbol::common::operators::{
             OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
         },
-        Value, ValueKey,
+        Symbol, Value, ValueKey,
     },
     error::{RuntimeError, Spanned as _, SpannedRuntimeError},
 };
+use std::collections::HashMap;
 
 macro_rules! binary_op {
     ($module:expr, $stack:expr, $op:expr) => {{
@@ -46,6 +47,7 @@ macro_rules! unary_op {
 #[derive(Default)]
 pub struct VirtualMachine {
     stack: Vec<Value>,
+    globals: HashMap<Symbol, String>,
 }
 
 impl VirtualMachine {
@@ -122,7 +124,6 @@ mod test {
     use crate::runtime::{
         core::Value,
         error::{Spanned as _, SpannedRuntimeError},
-        lib::DiceString,
         machine::Module,
     };
 
@@ -166,13 +167,13 @@ mod test {
     fn test_push_const_opcode() -> Result<(), SpannedRuntimeError> {
         let mut vm = VirtualMachine::default();
         let mut module = Module::builder();
-        let str: DiceString = "test".into();
+        let str: String = "test".into();
         let expected_value = Value::new(str);
 
         module.bytecode().push_const(expected_value.clone());
 
         let result = vm.execute(module.build())?;
-        let value = result.try_value::<DiceString>().with_span(|| None)?.to_string();
+        let value = result.try_value::<String>().with_span(|| None)?.to_string();
 
         assert_eq!(expected_value.to_string(), value);
 

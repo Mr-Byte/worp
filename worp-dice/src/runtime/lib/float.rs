@@ -1,4 +1,3 @@
-use super::DiceString;
 use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
@@ -12,7 +11,7 @@ decl_type! {
             match_type! { value,
                 as_float: f64 => Ok(Value::new(*as_float)),
                 as_int: i64 => Ok(Value::new(*as_int as i64)),
-                as_string: DiceString => Ok(Value::new(as_string.parse::<f64>()?)),
+                as_string: String => Ok(Value::new(as_string.parse::<f64>()?)),
                 _ => Err(RuntimeError::InvalidType(TypeFloat::NAME, value.instance_type().name().clone()))
             }
         } else {

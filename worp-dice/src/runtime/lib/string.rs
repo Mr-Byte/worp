@@ -2,46 +2,15 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
-use gc::{Finalize, Gc, Trace};
-use std::{fmt::Display, ops::Deref};
 
-#[derive(Debug, Clone, Trace, Finalize, PartialEq)]
-pub struct DiceString(Gc<String>);
-
-impl TypeInstance for DiceString {}
-
-impl Display for DiceString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-impl Deref for DiceString {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        &*self.0
-    }
-}
-
-impl From<String> for DiceString {
-    fn from(value: String) -> Self {
-        DiceString(value.into())
-    }
-}
-
-impl From<&str> for DiceString {
-    fn from(value: &str) -> Self {
-        DiceString(value.to_owned().into())
-    }
-}
+impl TypeInstance for String {}
 
 decl_type! {
-    impl TypeString for DiceString as "String";
+    impl TypeString for String as "String";
 
     constructor(&self, args: &[Value]) {
         if let [value] = args {
-            let as_string: DiceString = value.to_string().into();
+            let as_string: String = value.to_string();
 
             Ok(Value::new(as_string))
         } else {
@@ -50,20 +19,20 @@ decl_type! {
     }
 
     fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<DiceString>()?;
-        let result: DiceString = format!("{}{}", lhs, &*rhs).into();
+        let lhs = lhs.try_value::<String>()?;
+        let result = format!("{}{}", lhs, &*rhs);
 
         Ok(Value::new(result))
     }
 
     fn length(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<DiceString>()?;
+        let this = this.try_value::<String>()?;
 
         Ok(Value::new(this.len() as i64))
     }
 
     fn is_empty(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<DiceString>()?;
+        let this = this.try_value::<String>()?;
 
         Ok(Value::new(this.is_empty() as bool))
     }

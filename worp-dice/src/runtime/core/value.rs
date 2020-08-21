@@ -1,7 +1,7 @@
 use super::{Symbol, TypeInstance};
 use crate::runtime::{
     error::RuntimeError,
-    lib::{self, DiceString, Func, List},
+    lib::{self, Func, List},
 };
 use gc::{Finalize, Gc, Trace};
 use std::{fmt::Display, ops::Deref};
@@ -14,7 +14,7 @@ enum Variant {
     Float(f64),
     Function(Func),
     List(List),
-    String(DiceString),
+    String(String),
     Object(Gc<Box<dyn TypeInstance>>),
 }
 
@@ -55,7 +55,7 @@ impl Value {
                 as_float: f64 => Variant::Float(*as_float),
                 as_func: Func => Variant::Function(as_func.clone()),
                 as_list: List => Variant::List(as_list.clone()),
-                as_string: DiceString => Variant::String(as_string.clone()),
+                as_string: String => Variant::String(as_string.clone()),
                 _ => Variant::Object(Gc::new(Box::new(value)))
         };
 
