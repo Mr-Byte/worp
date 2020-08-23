@@ -198,15 +198,20 @@ impl Parser {
 
     fn literal(&mut self) -> Result<SyntaxNodeId, SyntaxError> {
         let token = self.lexer.next();
-        let node_id = match token.kind {
-            TokenKind::Integer(value) => {
-                let node = SyntaxNode::Literal(Literal::Integer(value, token.span()));
-                self.arena.alloc(node)
-            }
+        let span = token.span();
+        let literal = match token.kind {
+            TokenKind::Integer(value) => Literal::Integer(value, span),
+            TokenKind::Float(value) => Literal::Float(value, span),
+            TokenKind::String(value) => Literal::String(value, span),
+            TokenKind::Identifier(value) => Literal::Identifier(value, span),
+            TokenKind::True => Literal::Boolean(true, span),
+            TokenKind::False => Literal::Boolean(false, span),
+            TokenKind::None => Literal::None(span),
             _ => return Err(SyntaxError::UnexpectedToken(token.clone())),
         };
+        let node = SyntaxNode::Literal(literal);
 
-        Ok(node_id)
+        Ok(self.arena.alloc(node))
     }
 }
 
