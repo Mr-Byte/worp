@@ -23,11 +23,12 @@ impl Lexer {
         self.tokens.last().cloned().unwrap_or_else(Token::end_of_input)
     }
 
-    pub fn consume(&mut self, kind: TokenKind) -> Result<(), SyntaxError> {
-        if self.next().kind == kind {
-            Ok(())
+    pub fn consume(&mut self, kind: TokenKind) -> Result<Token, SyntaxError> {
+        let next = self.next();
+        if next.kind == kind {
+            Ok(next)
         } else {
-            todo!()
+            Err(SyntaxError::UnexpectedToken(next))
         }
     }
 }

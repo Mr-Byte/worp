@@ -112,13 +112,7 @@ pub enum Literal {
     String(String, Span),
     Boolean(bool, Span),
     List(Vec<SyntaxNodeId>, Span),
-    Object(HashMap<ObjectKey, SyntaxNodeId>, Span),
-}
-
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum ObjectKey {
-    String(String),
-    Number(i64),
+    Object(Vec<(SyntaxNodeId, SyntaxNodeId)>, Span),
 }
 
 #[derive(Debug, Clone)]
