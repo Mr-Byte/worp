@@ -1,19 +1,20 @@
 use super::{
-    lexer::{Lexer, TokenKind},
+    error::SyntaxError,
+    lexer::{Lexer, Token, TokenKind},
     Binary, BinaryOperator, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
 };
 use id_arena::Arena;
 
 struct ParserRule {
-    prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, ()>>,
-    infix: Option<fn(&mut Parser, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, ()>>,
+    prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, SyntaxError>>,
+    infix: Option<fn(&mut Parser, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, SyntaxError>>,
     precedence: RulePrecedence,
 }
 
 impl ParserRule {
     fn new(
-        prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, ()>>,
-        infix: Option<fn(&mut Parser, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, ()>>,
+        prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, SyntaxError>>,
+        infix: Option<fn(&mut Parser, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, SyntaxError>>,
         precedence: RulePrecedence,
     ) -> Self {
         Self {
@@ -25,13 +26,14 @@ impl ParserRule {
 }
 
 impl ParserRule {
-    fn for_token(kind: &TokenKind) -> Result<ParserRule, ()> {
-        let rule = match kind {
+    fn for_token(token: &Token) -> Result<ParserRule, SyntaxError> {
+        let rule = match token.kind {
             // Literals
             TokenKind::Integer(_) => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
 
             // Grouping
-            TokenKind::LeftParen => ParserRule::new(None, None, RulePrecedence::Primary),
+            TokenKind::LeftParen => ParserRule::new(Some(Parser::grouping), None, RulePrecedence::None),
+            TokenKind::RightParen => ParserRule::new(None, None, RulePrecedence::None),
 
             // Operators
             TokenKind::Coalesce => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Coalesce),
@@ -55,7 +57,7 @@ impl ParserRule {
 
             // End of input
             TokenKind::EndOfInput => ParserRule::new(None, None, RulePrecedence::None),
-            _ => return Err(()),
+            _ => return Err(SyntaxError::UnexpectedToken(token.clone())),
         };
 
         Ok(rule)
@@ -113,24 +115,24 @@ impl Parser {
     }
 
     // TODO: Have this return a collection of parse errors.
-    pub fn parse(mut self) -> Result<SyntaxTree, ()> {
+    pub fn parse(mut self) -> Result<SyntaxTree, SyntaxError> {
         let root = self.expression()?;
 
         Ok(SyntaxTree::new(root, self.arena))
     }
 
-    fn expression(&mut self) -> Result<SyntaxNodeId, ()> {
+    fn expression(&mut self) -> Result<SyntaxNodeId, SyntaxError> {
         self.parse_precedence(RulePrecedence::Assignment)
     }
 
-    fn parse_precedence(&mut self, precedence: RulePrecedence) -> Result<SyntaxNodeId, ()> {
+    fn parse_precedence(&mut self, precedence: RulePrecedence) -> Result<SyntaxNodeId, SyntaxError> {
         let next_token = self.lexer.peek();
-        let rule = ParserRule::for_token(&next_token.kind)?;
+        let rule = ParserRule::for_token(&next_token)?;
         let mut node = rule.prefix.map(|prefix| prefix(self)).unwrap_or_else(|| todo!())?;
 
         loop {
             let next_token = self.lexer.peek();
-            let rule = ParserRule::for_token(&next_token.kind)?;
+            let rule = ParserRule::for_token(&next_token)?;
 
             if precedence > rule.precedence {
                 break;
@@ -142,9 +144,9 @@ impl Parser {
         Ok(node)
     }
 
-    fn binary(&mut self, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, ()> {
+    fn binary(&mut self, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, SyntaxError> {
         let token = self.lexer.next();
-        let rule = ParserRule::for_token(&token.kind)?;
+        let rule = ParserRule::for_token(&token)?;
         let rhs = self.parse_precedence(rule.precedence.increment())?;
 
         let operator = match token.kind {
@@ -172,7 +174,7 @@ impl Parser {
         Ok(self.arena.alloc(node))
     }
 
-    fn unary(&mut self) -> Result<SyntaxNodeId, ()> {
+    fn unary(&mut self) -> Result<SyntaxNodeId, SyntaxError> {
         let token = self.lexer.next();
         let child_node_id = self.parse_precedence(RulePrecedence::Unary)?;
         let operator = match token.kind {
@@ -186,14 +188,22 @@ impl Parser {
         Ok(self.arena.alloc(node))
     }
 
-    fn literal(&mut self) -> Result<SyntaxNodeId, ()> {
+    fn grouping(&mut self) -> Result<SyntaxNodeId, SyntaxError> {
+        self.lexer.consume(TokenKind::LeftParen)?;
+        let expression = self.expression()?;
+        self.lexer.consume(TokenKind::RightParen)?;
+
+        Ok(expression)
+    }
+
+    fn literal(&mut self) -> Result<SyntaxNodeId, SyntaxError> {
         let token = self.lexer.next();
         let node_id = match token.kind {
             TokenKind::Integer(value) => {
                 let node = SyntaxNode::Literal(Literal::Integer(value, token.span()));
                 self.arena.alloc(node)
             }
-            _ => return Err(()),
+            _ => return Err(SyntaxError::UnexpectedToken(token.clone())),
         };
 
         Ok(node_id)
@@ -203,10 +213,10 @@ impl Parser {
 #[cfg(test)]
 mod test {
     use super::Parser;
-    use crate::syntax::{Binary, BinaryOperator, Literal, SyntaxNode, Unary, UnaryOperator};
+    use crate::syntax::{error::SyntaxError, Binary, BinaryOperator, Literal, SyntaxNode, Unary, UnaryOperator};
 
     #[test]
-    fn test_parse_integer() -> Result<(), ()> {
+    fn test_parse_integer() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5").parse()?;
         let root = syntax_tree.root();
 
@@ -216,7 +226,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_unary_minus() -> Result<(), ()> {
+    fn test_parse_unary_minus() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("-5").parse()?;
         let root = syntax_tree.root();
 
@@ -229,7 +239,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_binary_minus() -> Result<(), ()> {
+    fn test_parse_binary_minus() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 - 5").parse()?;
         let root = syntax_tree.root();
 
@@ -242,7 +252,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_binary_minus_with_unary_minus() -> Result<(), ()> {
+    fn test_parse_binary_minus_with_unary_minus() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("-5 - 5").parse()?;
         let root = syntax_tree.root();
 
@@ -255,7 +265,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_binary_precedence_multiply_right() -> Result<(), ()> {
+    fn test_parse_binary_precedence_multiply_right() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 - 5 * 5").parse()?;
         let root = syntax_tree.root();
 
@@ -268,7 +278,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_binary_precedence_multiply_left() -> Result<(), ()> {
+    fn test_parse_binary_precedence_multiply_left() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 * 5 - 5").parse()?;
         let root = syntax_tree.root();
 
@@ -281,7 +291,20 @@ mod test {
     }
 
     #[test]
-    fn test_parse_unary_die() -> Result<(), ()> {
+    fn test_parse_grouping() -> Result<(), SyntaxError> {
+        let syntax_tree = Parser::new("5 * (5 - 5)").parse()?;
+        let root = syntax_tree.root();
+
+        assert!(matches!(
+            root,
+            Some(SyntaxNode::Binary(Binary(BinaryOperator::Multiply, _, _, _)))
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_unary_die() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("d8").parse()?;
         let root = syntax_tree.root();
 
@@ -296,7 +319,7 @@ mod test {
     }
 
     #[test]
-    fn test_parse_binary_dice() -> Result<(), ()> {
+    fn test_parse_binary_dice() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("6d8").parse()?;
         let root = syntax_tree.root();
 

@@ -1,3 +1,5 @@
+use super::error::SyntaxError;
+
 mod token;
 
 pub use token::{Token, TokenKind};
@@ -19,6 +21,14 @@ impl Lexer {
 
     pub fn peek(&self) -> Token {
         self.tokens.last().cloned().unwrap_or_else(Token::end_of_input)
+    }
+
+    pub fn consume(&mut self, kind: TokenKind) -> Result<(), SyntaxError> {
+        if self.next().kind == kind {
+            Ok(())
+        } else {
+            todo!()
+        }
     }
 }
 
