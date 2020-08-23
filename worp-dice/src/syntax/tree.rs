@@ -1,138 +1,186 @@
-use super::parser::error::ParserError;
-use crate::runtime::core::{symbol::Symbol, Span, ValueKey};
-use std::{collections::HashMap, str::FromStr};
+use crate::runtime::core::Span;
+use id_arena::{Arena, Id};
+use std::{collections::HashMap, fmt::Display};
 
-#[derive(Debug, Clone)]
-pub enum Literal {
-    /// Identifiers (e.g. _test)
-    Identifier(Symbol),
-    /// None values
-    None,
-    /// Integer values such as `-1`, `0`, `1`, etc
-    Integer(i64),
-    /// Floating point decimals such as `-1.0, `0.0`, `1.1`, etc
-    Float(f64),
-    /// String literals such as `"hello"`
-    String(String),
-    /// Boolean literals (true or false)
-    Boolean(bool),
-    /// Lists, such as `[ 1, x, 3 ]`
-    List(Vec<SyntaxTree>),
-    /// Objects, such as { x: 55, y: 6d6, z: { inner: 42 } }
-    Object(HashMap<ValueKey, SyntaxTree>),
-}
+pub type SyntaxNodeId = Id<SyntaxNode>;
 
-#[derive(Debug, Clone)]
-pub enum UnaryOperator {
-    Negate(Span),
-    Not(Span),
-    DiceRoll(Span),
-}
-
-#[derive(Debug, Clone)]
-pub enum BinaryOperator {
-    // Operators are ordered and grouped by precedence.
-    /// The `d` operator (dice rolls)
-    DiceRoll(Span),
-
-    /// The `*` operator
-    Multiply(Span),
-    /// The `/` operator
-    Divide(Span),
-    /// The `%` operator
-    Remainder(Span),
-
-    /// The `+` operator
-    Add(Span),
-    /// The `-` operator
-    Subtract(Span),
-
-    /// The `=` operator
-    Equals(Span),
-    /// The `/=` operator
-    NotEquals(Span),
-    /// The `>` operator
-    GreaterThan(Span),
-    /// The `>=` operator
-    GreaterThanOrEquals(Span),
-    /// The `<` operator
-    LessThan(Span),
-    /// The `<=` operator
-    LessThanOrEquals(Span),
-
-    /// The `and` operator
-    LogicalAnd(Span),
-
-    /// The `or` operator
-    LogicalOr(Span),
-
-    /// The `:?` operator (null-coalesce)
-    Coalesce(Span),
-}
-
-#[derive(Debug, Clone)]
-pub enum RangeOperator {
-    Exclusive(Span),
-    Inclusive(Span),
-}
-
-#[derive(Debug, Clone)]
-pub enum SyntaxTree {
-    Literal(Literal, Span),
-
-    /// Use of the safe access operator `?` which will short-circuit further evaluation on `none`.
-    SafeAccess(Box<SyntaxTree>, Symbol, Span),
-
-    //Primary operators
-    /// Access to a field, (e.g. `x.y`)
-    FieldAccess(Box<SyntaxTree>, Symbol, Span),
-    /// Function call (e.g. `y(1, 2)`
-    /// First part evaluates to a function, second part is the parameters
-    FunctionCall(Box<SyntaxTree>, Vec<SyntaxTree>, Span),
-    /// Indexed access (e.g. `x.y[1]` or `y["x"]`)
-    Index(Box<SyntaxTree>, Box<SyntaxTree>, Span),
-
-    // Operators
-    Unary(UnaryOperator, Box<SyntaxTree>, Span),
-    Binary(BinaryOperator, Box<SyntaxTree>, Box<SyntaxTree>, Span),
-    Range(RangeOperator, Box<SyntaxTree>, Box<SyntaxTree>, Span),
-
-    // Statements
-    VariableDeclaration(Symbol, Box<SyntaxTree>, Span),
-    VariableAssignment(Symbol, Box<SyntaxTree>, Span),
-    Conditional(Box<SyntaxTree>, Box<SyntaxTree>, Option<Box<SyntaxTree>>, Span),
-    WhileLoop(Box<SyntaxTree>, Box<SyntaxTree>, Span),
-    ForLoop(Symbol, Box<SyntaxTree>, Box<SyntaxTree>, Span),
-    Block(Vec<SyntaxTree>, Span),
-    Discard(Span),
+pub struct SyntaxTree {
+    root: SyntaxNodeId,
+    nodes: Arena<SyntaxNode>,
 }
 
 impl SyntaxTree {
-    pub fn span(&self) -> Span {
-        match self {
-            SyntaxTree::Literal(_, span) => span.clone(),
-            SyntaxTree::SafeAccess(_, _, span) => span.clone(),
-            SyntaxTree::FieldAccess(_, _, span) => span.clone(),
-            SyntaxTree::FunctionCall(_, _, span) => span.clone(),
-            SyntaxTree::Index(_, _, span) => span.clone(),
-            SyntaxTree::Unary(_, _, span) => span.clone(),
-            SyntaxTree::Binary(_, _, _, span) => span.clone(),
-            SyntaxTree::Range(_, _, _, span) => span.clone(),
-            SyntaxTree::Conditional(_, _, _, span) => span.clone(),
-            SyntaxTree::Block(_, span) => span.clone(),
-            SyntaxTree::WhileLoop(_, _, span) => span.clone(),
-            SyntaxTree::ForLoop(_, _, _, span) => span.clone(),
-            SyntaxTree::VariableAssignment(_, _, span) => span.clone(),
-            SyntaxTree::VariableDeclaration(_, _, span) => span.clone(),
-            SyntaxTree::Discard(span) => span.clone(),
+    pub(crate) fn new(root: SyntaxNodeId, nodes: Arena<SyntaxNode>) -> Self {
+        Self { root, nodes }
+    }
+
+    pub fn root(&self) -> Option<&SyntaxNode> {
+        self.nodes.get(self.root)
+    }
+
+    pub fn get(&self, id: SyntaxNodeId) -> Option<&SyntaxNode> {
+        self.nodes.get(id)
+    }
+}
+
+impl Display for SyntaxTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(root) = self.root() {
+            fmt_node(root, &self.nodes, f)
+        } else {
+            write!(f, "")
         }
     }
 }
 
-impl FromStr for SyntaxTree {
-    type Err = ParserError;
+fn fmt_node(node: &SyntaxNode, nodes: &Arena<SyntaxNode>, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match node {
+        SyntaxNode::Literal(literal) => match literal {
+            Literal::Integer(integer, _) => write!(f, "{}", integer),
+            _ => todo!(),
+        },
+        SyntaxNode::Unary(Unary(operator, expr, _)) => {
+            match operator {
+                UnaryOperator::Negate => write!(f, "-")?,
+                UnaryOperator::Not => write!(f, "!")?,
+                UnaryOperator::DiceRoll => write!(f, "d")?,
+            }
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        super::parser::Parser::parse_str(input)
+            fmt_node(nodes.get(*expr).unwrap(), nodes, f)?;
+
+            Ok(())
+        }
+        SyntaxNode::Binary(Binary(operator, lhs, rhs, _)) => {
+            write!(f, "(")?;
+            match operator {
+                BinaryOperator::Multiply => write!(f, "*")?,
+                BinaryOperator::Divide => write!(f, "/")?,
+                BinaryOperator::Remainder => write!(f, "%")?,
+                BinaryOperator::Add => write!(f, "+")?,
+                BinaryOperator::Subtract => write!(f, "-")?,
+                BinaryOperator::DiceRoll => write!(f, "d")?,
+                BinaryOperator::GreaterThan => write!(f, ">")?,
+                BinaryOperator::LessThan => write!(f, "<")?,
+                BinaryOperator::GreaterThanEquals => write!(f, ">=")?,
+                BinaryOperator::LessThanEquals => write!(f, "<=")?,
+                BinaryOperator::Equals => write!(f, "==")?,
+                BinaryOperator::NotEquals => write!(f, "!=")?,
+                BinaryOperator::LogicalAnd => write!(f, "&&")?,
+                BinaryOperator::LogicalOr => write!(f, "||")?,
+                BinaryOperator::RangeInclusive => write!(f, "..=")?,
+                BinaryOperator::RangeExclusive => write!(f, "..")?,
+                BinaryOperator::Coalesce => write!(f, "??")?,
+            }
+            write!(f, " ")?;
+            fmt_node(nodes.get(*lhs).unwrap(), nodes, f)?;
+            write!(f, " ")?;
+            fmt_node(nodes.get(*rhs).unwrap(), nodes, f)?;
+            write!(f, ")")?;
+
+            Ok(())
+        }
+        _ => todo!(),
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum SyntaxNode {
+    Literal(Literal),
+    SafeAccess(SafeAccess),
+    FieldAccess(FieldAccess),
+    Index(Index),
+
+    // Operators
+    Unary(Unary),
+    Binary(Binary),
+
+    // Statements
+    VariableDeclaration(VariableDeclaration),
+    Assignment(Assignment),
+    Conditional(Conditional),
+    WhileLoop(WhileLoop),
+    ForLoop(ForLoop),
+    Block(Block),
+}
+
+#[derive(Debug, Clone)]
+pub enum Literal {
+    Identifier(String, Span),
+    None(Span),
+    Integer(i64, Span),
+    Float(f64, Span),
+    String(String, Span),
+    Boolean(bool, Span),
+    List(Vec<SyntaxNodeId>, Span),
+    Object(HashMap<ObjectKey, SyntaxNodeId>, Span),
+}
+
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum ObjectKey {
+    String(String),
+    Number(i64),
+}
+
+#[derive(Debug, Clone)]
+pub enum UnaryOperator {
+    Negate,
+    Not,
+    DiceRoll,
+}
+
+#[derive(Debug, Clone)]
+pub enum BinaryOperator {
+    DiceRoll,
+    Multiply,
+    Divide,
+    Remainder,
+    Add,
+    Subtract,
+    GreaterThan,
+    LessThan,
+    GreaterThanEquals,
+    LessThanEquals,
+    Equals,
+    NotEquals,
+    LogicalAnd,
+    LogicalOr,
+    RangeInclusive,
+    RangeExclusive,
+    Coalesce,
+}
+
+#[derive(Debug, Clone)]
+pub struct SafeAccess(pub SyntaxNodeId, pub String, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct FieldAccess(pub SyntaxNodeId, pub String, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct FunctionCall(pub SyntaxNodeId, pub Vec<SyntaxNodeId>, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Index(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Unary(pub UnaryOperator, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Binary(pub BinaryOperator, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct VariableDeclaration(pub String, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Assignment(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Conditional(pub SyntaxNodeId, pub SyntaxNodeId, pub Option<SyntaxNodeId>, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct WhileLoop(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct ForLoop(pub String, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Block(pub Vec<SyntaxNodeId>, pub Span);

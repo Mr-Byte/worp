@@ -1,4 +1,17 @@
 #[macro_export]
+macro_rules! map {
+    ($($key:expr => $value:expr),*) => {
+        {
+            let mut map = std::collections::HashMap::new();
+            $(
+                map.insert($key, $value);
+            )*
+            map
+        }
+    };
+}
+
+#[macro_export]
 #[doc(hidden)]
 macro_rules! match_type {
     (@value=$value:expr => _ => $body:expr ) => {{

@@ -1,5 +1,5 @@
 use super::core::{symbol::Symbol, Span, ValueKey};
-use crate::syntax::ParserError;
+// use crate::syntax::ParserError;
 use std::{
     error::Error,
     num::{ParseFloatError, ParseIntError},
@@ -27,8 +27,8 @@ pub enum RuntimeError {
     InvalidType(Symbol, Symbol),
     #[error("Runtime Error: Keys must be either Int or String. Found: {0}.")]
     InvalidKeyType(Symbol),
-    #[error("Runtime Error: {0}")]
-    ParseError(#[from] ParserError),
+    // #[error("Runtime Error: {0}")]
+    // ParseError(#[from] ParserError),
     #[error("Runtime Error: Variable {0} not found.")]
     VariableNotFound(Symbol),
     #[error("Runtime Error: Type {0} not found.")]

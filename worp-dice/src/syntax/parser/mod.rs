@@ -1,598 +1,309 @@
 use super::{
-    lexer::{Token, TokenIterator, TokenKind},
-    ParserError, SyntaxTree,
+    lexer::{Lexer, TokenKind},
+    Binary, BinaryOperator, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
 };
+use id_arena::Arena;
 
-mod access;
-pub mod error;
-mod expression;
-mod literal;
-mod statement;
-
-type ParseResult<T = SyntaxTree> = Result<T, ParserError>;
-
-pub struct Parser<'a> {
-    token_stream: TokenIterator<'a>,
-    current_token: Token<'a>,
-    next_token: Token<'a>,
+struct ParserRule {
+    prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, ()>>,
+    infix: Option<fn(&mut Parser, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, ()>>,
+    precedence: RulePrecedence,
 }
 
-impl<'a> Parser<'a> {
-    fn new(mut token_stream: TokenIterator<'a>) -> Self {
-        let next_token = token_stream.next().unwrap_or_else(Token::end_of_input);
-
+impl ParserRule {
+    fn new(
+        prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, ()>>,
+        infix: Option<fn(&mut Parser, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, ()>>,
+        precedence: RulePrecedence,
+    ) -> Self {
         Self {
-            token_stream,
-            current_token: Token::start_of_input(),
-            next_token,
+            prefix,
+            infix,
+            precedence,
         }
     }
+}
 
-    fn next(&mut self) {
-        self.current_token = self.next_token.clone();
-        self.next_token = self.token_stream.next().unwrap_or_else(Token::end_of_input);
+impl ParserRule {
+    fn for_token(kind: &TokenKind) -> Result<ParserRule, ()> {
+        let rule = match kind {
+            // Literals
+            TokenKind::Integer(_) => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
+
+            // Grouping
+            TokenKind::LeftParen => ParserRule::new(None, None, RulePrecedence::Primary),
+
+            // Operators
+            TokenKind::Coalesce => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Coalesce),
+            TokenKind::ExclusiveRange => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Range),
+            TokenKind::InclusiveRange => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Range),
+            TokenKind::LazyAnd => ParserRule::new(None, Some(Parser::binary), RulePrecedence::And),
+            TokenKind::LazyOr => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Or),
+            TokenKind::Equal => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
+            TokenKind::NotEqual => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
+            TokenKind::Greater => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
+            TokenKind::GreaterEqual => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
+            TokenKind::Less => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
+            TokenKind::LessEqual => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
+            TokenKind::Star => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Factor),
+            TokenKind::Slash => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Factor),
+            TokenKind::Remainder => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Factor),
+            TokenKind::Plus => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Term),
+            TokenKind::Minus => ParserRule::new(Some(Parser::unary), Some(Parser::binary), RulePrecedence::Term),
+            TokenKind::DiceRoll => ParserRule::new(Some(Parser::unary), Some(Parser::binary), RulePrecedence::DiceRoll),
+            TokenKind::Not => ParserRule::new(Some(Parser::unary), None, RulePrecedence::Unary),
+
+            // End of input
+            TokenKind::EndOfInput => ParserRule::new(None, None, RulePrecedence::None),
+            _ => return Err(()),
+        };
+
+        Ok(rule)
     }
+}
 
-    fn consume(&mut self, kinds: &[TokenKind]) -> ParseResult<()> {
-        if self.next_token.is_any_kind(kinds) {
-            self.next();
-            Ok(())
-        } else {
-            Err(ParserError::unexpected_token(
-                self.next_token.kind,
-                kinds,
-                Some(self.next_token.span()),
-            ))
+#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum RulePrecedence {
+    None,
+    Assignment,
+    Coalesce,
+    Range,
+    Or,
+    And,
+    Comparison,
+    Term,
+    Factor,
+    DiceRoll,
+    Unary,
+    Call,
+    Primary,
+}
+
+impl RulePrecedence {
+    fn increment(self) -> Self {
+        match self {
+            RulePrecedence::None => RulePrecedence::Assignment,
+            RulePrecedence::Assignment => RulePrecedence::Coalesce,
+            RulePrecedence::Coalesce => RulePrecedence::Range,
+            RulePrecedence::Range => RulePrecedence::Or,
+            RulePrecedence::Or => RulePrecedence::And,
+            RulePrecedence::And => RulePrecedence::Comparison,
+            RulePrecedence::Comparison => RulePrecedence::Term,
+            RulePrecedence::Term => RulePrecedence::Factor,
+            RulePrecedence::Factor => RulePrecedence::DiceRoll,
+            RulePrecedence::DiceRoll => RulePrecedence::Unary,
+            RulePrecedence::Unary => RulePrecedence::Call,
+            RulePrecedence::Call => RulePrecedence::Primary,
+            RulePrecedence::Primary => RulePrecedence::Primary,
         }
     }
+}
 
-    pub fn parse_str(input: &'a str) -> ParseResult {
-        let token_stream = Token::tokenize(input);
-        let mut parser = Self::new(token_stream);
+pub struct Parser {
+    lexer: Lexer,
+    arena: Arena<SyntaxNode>,
+}
 
-        parser.parse()
+impl Parser {
+    pub fn new(input: &str) -> Self {
+        let lexer = Lexer::from_str(input);
+        let arena = Arena::new();
+
+        Self { lexer, arena }
     }
 
-    fn parse(&mut self) -> ParseResult {
-        self.parse_statements()
+    // TODO: Have this return a collection of parse errors.
+    pub fn parse(mut self) -> Result<SyntaxTree, ()> {
+        let root = self.expression()?;
+
+        Ok(SyntaxTree::new(root, self.arena))
+    }
+
+    fn expression(&mut self) -> Result<SyntaxNodeId, ()> {
+        self.parse_precedence(RulePrecedence::Assignment)
+    }
+
+    fn parse_precedence(&mut self, precedence: RulePrecedence) -> Result<SyntaxNodeId, ()> {
+        let next_token = self.lexer.peek();
+        let rule = ParserRule::for_token(&next_token.kind)?;
+        let mut node = rule.prefix.map(|prefix| prefix(self)).unwrap_or_else(|| todo!())?;
+
+        loop {
+            let next_token = self.lexer.peek();
+            let rule = ParserRule::for_token(&next_token.kind)?;
+
+            if precedence > rule.precedence {
+                break;
+            }
+
+            node = rule.infix.map(|infix| infix(self, node)).unwrap_or_else(|| todo!())?;
+        }
+
+        Ok(node)
+    }
+
+    fn binary(&mut self, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, ()> {
+        let token = self.lexer.next();
+        let rule = ParserRule::for_token(&token.kind)?;
+        let rhs = self.parse_precedence(rule.precedence.increment())?;
+
+        let operator = match token.kind {
+            TokenKind::Coalesce => BinaryOperator::Coalesce,
+            TokenKind::ExclusiveRange => BinaryOperator::RangeExclusive,
+            TokenKind::InclusiveRange => BinaryOperator::RangeInclusive,
+            TokenKind::LazyAnd => BinaryOperator::LogicalAnd,
+            TokenKind::LazyOr => BinaryOperator::LogicalOr,
+            TokenKind::Equal => BinaryOperator::Equals,
+            TokenKind::NotEqual => BinaryOperator::NotEquals,
+            TokenKind::Greater => BinaryOperator::GreaterThan,
+            TokenKind::GreaterEqual => BinaryOperator::GreaterThanEquals,
+            TokenKind::Less => BinaryOperator::LessThan,
+            TokenKind::LessEqual => BinaryOperator::LessThanEquals,
+            TokenKind::Plus => BinaryOperator::Add,
+            TokenKind::Minus => BinaryOperator::Subtract,
+            TokenKind::Star => BinaryOperator::Multiply,
+            TokenKind::Slash => BinaryOperator::Divide,
+            TokenKind::Remainder => BinaryOperator::Remainder,
+            TokenKind::DiceRoll => BinaryOperator::DiceRoll,
+            _ => unreachable!(),
+        };
+
+        let node = SyntaxNode::Binary(Binary(operator, lhs, rhs, token.span()));
+        Ok(self.arena.alloc(node))
+    }
+
+    fn unary(&mut self) -> Result<SyntaxNodeId, ()> {
+        let token = self.lexer.next();
+        let child_node_id = self.parse_precedence(RulePrecedence::Unary)?;
+        let operator = match token.kind {
+            TokenKind::Minus => UnaryOperator::Negate,
+            TokenKind::Not => UnaryOperator::Not,
+            TokenKind::DiceRoll => UnaryOperator::DiceRoll,
+            _ => unreachable!(),
+        };
+        let node = SyntaxNode::Unary(Unary(operator, child_node_id, token.span()));
+
+        Ok(self.arena.alloc(node))
+    }
+
+    fn literal(&mut self) -> Result<SyntaxNodeId, ()> {
+        let token = self.lexer.next();
+        let node_id = match token.kind {
+            TokenKind::Integer(value) => {
+                let node = SyntaxNode::Literal(Literal::Integer(value, token.span()));
+                self.arena.alloc(node)
+            }
+            _ => return Err(()),
+        };
+
+        Ok(node_id)
     }
 }
 
 #[cfg(test)]
-pub mod test {
-    use super::*;
-    use crate::syntax::{lexer::TokenKind, BinaryOperator, Literal, RangeOperator, UnaryOperator};
-    use error::ErrorKind;
-
-    type TestResult = Result<(), ParserError>;
-
-    macro_rules! assert_statement {
-        ($tree:expr, $pattern:pat) => {
-            if let SyntaxTree::Block(statements, _) = $tree {
-                assert!(
-                    matches!(statements.as_slice(), [$pattern, ..]),
-                    "Unexpected syntax tree. Found: {:?}",
-                    statements
-                );
-            } else {
-                panic!("Syntax tree is not rooted with statements node.");
-            }
-        };
-    }
+mod test {
+    use super::Parser;
+    use crate::syntax::{Binary, BinaryOperator, Literal, SyntaxNode, Unary, UnaryOperator};
 
     #[test]
-    fn parse_variable_decl_rule() -> TestResult {
-        let input = "let x = 5;";
-        let parsed = Parser::parse_str(input)?;
+    fn test_parse_integer() -> Result<(), ()> {
+        let syntax_tree = Parser::new("5").parse()?;
+        let root = syntax_tree.root();
 
-        assert_statement!(parsed, SyntaxTree::VariableDeclaration(_, _, _));
+        assert!(matches!(root, Some(SyntaxNode::Literal(Literal::Integer(5, _)))));
 
         Ok(())
     }
 
     #[test]
-    fn parse_coalesce_rule() -> TestResult {
-        let input = "5 ?? 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, _, _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_range_rule_exclusive() -> TestResult {
-        let input = "5 .. 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Range(RangeOperator::Exclusive(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_range_rule_inclusive() -> TestResult {
-        let input = "5 ..= 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Range(RangeOperator::Inclusive(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_lazy_and_rule() -> TestResult {
-        let input = "5 && 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::LogicalAnd(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_lazy_or_rule() -> TestResult {
-        let input = "5 || 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::LogicalOr(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_comparison_rule_equals() -> TestResult {
-        let input = "5 == 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Equals(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_comparison_rule_not_equals() -> TestResult {
-        let input = "5 != 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::NotEquals(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_comparison_rule_less() -> TestResult {
-        let input = "5 < 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::LessThan(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_comparison_rule_less_equals() -> TestResult {
-        let input = "5 <= 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::LessThanOrEquals(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_comparison_rule_greater() -> TestResult {
-        let input = "5 > 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::GreaterThan(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_comparison_rule_greater_equals() -> TestResult {
-        let input = "5 >= 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(
-            parsed,
-            SyntaxTree::Binary(BinaryOperator::GreaterThanOrEquals(_), _, _, _)
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_multiplicative_rule_multiply() -> TestResult {
-        let input = "5 * 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Multiply(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_multiplicative_rule_divide() -> TestResult {
-        let input = "5 / 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Divide(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_multiplicative_rule_remainder() -> TestResult {
-        let input = "5 % 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Remainder(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_multiplicative_rule_compound() -> TestResult {
-        let input = "5 * 5 / 5 % 5";
-        let _ = Parser::parse_str(input)?;
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_additive_rule_add() -> TestResult {
-        let input = "5 + 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Add(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_additive_rule_subtract() -> TestResult {
-        let input = "5 - 5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Subtract(_), _, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_unary_rule_not() -> TestResult {
-        let input = "!5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Unary(UnaryOperator::Not(_), _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_unary_rule_negate() -> TestResult {
-        let input = "-x";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Unary(UnaryOperator::Negate(_), _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_unary_rule_dice_roll() -> TestResult {
-        let input = "d5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Unary(UnaryOperator::DiceRoll(_), _, _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_unary_rule_dice_roll_with_arithmetic() -> TestResult {
-        let input = "d4 + 4";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Add(_), _, _, _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_dice_roll_rule() -> TestResult {
-        let input = "6d8";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::DiceRoll(_), _, _, _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_access_rule_field_access() -> TestResult {
-        let input = "x.y";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::FieldAccess(_, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_access_rule_field_safe_access() -> TestResult {
-        let input = "x?.y";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::SafeAccess(_, _, _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_access_rule_index_access() -> TestResult {
-        let input = "x[y]";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Index(_, _, _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_access_rule_function_call() -> TestResult {
-        let input = "x(y)";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::FunctionCall(_, _, _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_access_rule_function_call_trailing_comma() -> TestResult {
-        let input = "x(y,)";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::FunctionCall(_, _, _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_access_rule_function_call_multiple_parameters() -> TestResult {
-        let input = "x(y,z)";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::FunctionCall(_, _, _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_access_rule_function_call_no_closing_paren() {
-        let input = "x(y,z";
-        let parsed = Parser::parse_str(input);
+    fn test_parse_unary_minus() -> Result<(), ()> {
+        let syntax_tree = Parser::new("-5").parse()?;
+        let root = syntax_tree.root();
 
         assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind: ErrorKind::UnexpectedToken { found, expected },
-                ..
-            }) if found == TokenKind::EndOfInput
-                && expected.contains(&TokenKind::Comma)
-                && expected.contains(&TokenKind::RightParen)
+            root,
+            Some(SyntaxNode::Unary(Unary(UnaryOperator::Negate, _, _)))
         ));
-    }
-
-    #[test]
-    fn parse_identifier_literal_rule() -> TestResult {
-        let input = "_abc";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::Identifier(_), _));
 
         Ok(())
     }
 
     #[test]
-    fn parse_integer_literal_rule() -> TestResult {
-        let input = "5";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::Integer(5), _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_float_literal_rule() -> TestResult {
-        let input = "5.0";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::Float(_), _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_boolean_true_literal_rule() -> TestResult {
-        let input = "true";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::Boolean(true), _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_boolean_false_literal_rule() -> TestResult {
-        let input = "false";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::Boolean(false), _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_string_literal_rule() -> TestResult {
-        let input = r#""test""#;
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::String(_), _));
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_object_literal_rule() -> TestResult {
-        let input = r#"object { x: 5, "y": "test", 5: "y", z: object { "test": 5 } }"#;
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::Object(_), _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_object_literal_rule_with_trailing_comma() -> TestResult {
-        let input = r#"object { x: 5, "y": "test", 5: "y", }"#;
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::Object(_), _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_object_literal_rule_with_no_commas() {
-        let input = r#"object { x: 5 "y": "test" 5: "y" }"#;
-        let parsed = Parser::parse_str(input);
+    fn test_parse_binary_minus() -> Result<(), ()> {
+        let syntax_tree = Parser::new("5 - 5").parse()?;
+        let root = syntax_tree.root();
 
         assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind: ErrorKind::UnexpectedToken { found, expected },
-                ..
-            }) if found == TokenKind::String
-                && expected.contains(&TokenKind::Comma)
-                && expected.contains(&TokenKind::RightCurly)
+            root,
+            Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
         ));
-    }
-
-    #[test]
-    fn parse_object_literal_rule_with_no_closing_brace() {
-        let input = r#"object { x: 5, "y": "test", 5: "y", "#;
-        let parsed = Parser::parse_str(input);
-
-        assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind: ErrorKind::UnexpectedToken { .. },
-                ..
-            })
-        ));
-    }
-
-    #[test]
-    fn parse_list_literal_rule() -> TestResult {
-        let input = r#"[1, 2, 3, 4, 5]"#;
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::List(_), _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_list_literal_rule_with_trailing_comma() -> TestResult {
-        let input = r#"[1, 2, 3, 4, 5, ]"#;
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Literal(Literal::List(_), _));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_list_literal_rule_with_no_commas() {
-        let input = r#"[1 2 3 4 5 ]"#;
-        let parsed = Parser::parse_str(input);
-
-        assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind: ErrorKind::UnexpectedToken { found, expected },
-                ..
-            }) if found == TokenKind::Integer
-                && expected.contains(&TokenKind::Comma)
-                && expected.contains(&TokenKind::RightSquare)
-        ));
-    }
-
-    #[test]
-    fn parse_list_literal_rule_with_no_closing_brace() {
-        let input = r#"[1, 2, 3, 4, 5"#;
-        let parsed = Parser::parse_str(input);
-
-        assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind:
-                    ErrorKind::UnexpectedToken {
-                        found: TokenKind::EndOfInput,
-                        ..
-                    },
-                ..
-            })
-        ));
-    }
-
-    #[test]
-    fn parse_string_literal_unclosed_rule() {
-        let input = r#""test"#;
-        let parsed = Parser::parse_str(input);
-
-        assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind: ErrorKind::UnknownToken { .. },
-                ..
-            })
-        ));
-    }
-
-    #[test]
-    fn parse_reserved_keyword() {
-        let input = "return";
-        let parsed = Parser::parse_str(input);
-
-        assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind: ErrorKind::ReservedKeyword {
-                    keyword: TokenKind::Return,
-                },
-                ..
-            })
-        ));
-    }
-
-    #[test]
-    fn parse_subexpression_literal_rule() -> TestResult {
-        let input = "5 ?? (5 ?? 5)";
-        let parsed = Parser::parse_str(input)?;
-
-        assert_statement!(parsed, SyntaxTree::Binary(BinaryOperator::Coalesce(_), _, _, _));
 
         Ok(())
     }
 
     #[test]
-    fn parse_subexpression_literal_with_chained_function_call() -> TestResult {
-        let input = "(d4).roll()";
-        let parsed = Parser::parse_str(input)?;
+    fn test_parse_binary_minus_with_unary_minus() -> Result<(), ()> {
+        let syntax_tree = Parser::new("-5 - 5").parse()?;
+        let root = syntax_tree.root();
 
-        assert_statement!(parsed, SyntaxTree::FunctionCall(_, _, _));
+        assert!(matches!(
+            root,
+            Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
+        ));
 
         Ok(())
     }
 
     #[test]
-    fn parse_subexpression_literal_rule_not_properly_closed() {
-        let input = "5 ?? (5 ?? 5";
-        let parsed = Parser::parse_str(input);
+    fn test_parse_binary_precedence_multiply_right() -> Result<(), ()> {
+        let syntax_tree = Parser::new("5 - 5 * 5").parse()?;
+        let root = syntax_tree.root();
 
         assert!(matches!(
-            parsed,
-            Err(ParserError {
-                kind: ErrorKind::UnexpectedToken { .. },
-                ..
-            })
+            root,
+            Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
         ));
+
+        Ok(())
     }
 
     #[test]
-    fn parse_empty_expression() -> Result<(), ParserError> {
-        let input = "";
-        Parser::parse_str(input)?;
+    fn test_parse_binary_precedence_multiply_left() -> Result<(), ()> {
+        let syntax_tree = Parser::new("5 * 5 - 5").parse()?;
+        let root = syntax_tree.root();
+
+        assert!(matches!(
+            root,
+            Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_unary_die() -> Result<(), ()> {
+        let syntax_tree = Parser::new("d8").parse()?;
+        let root = syntax_tree.root();
+
+        println!("{}", syntax_tree);
+
+        assert!(matches!(
+            root,
+            Some(SyntaxNode::Unary(Unary(UnaryOperator::DiceRoll, _, _)))
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_binary_dice() -> Result<(), ()> {
+        let syntax_tree = Parser::new("6d8").parse()?;
+        let root = syntax_tree.root();
+
+        assert!(matches!(
+            root,
+            Some(SyntaxNode::Binary(Binary(BinaryOperator::DiceRoll, _, _, _)))
+        ));
 
         Ok(())
     }

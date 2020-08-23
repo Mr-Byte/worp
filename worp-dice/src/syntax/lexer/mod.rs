@@ -1,6 +1,26 @@
 mod token;
 
-pub use token::*;
+pub use token::{Token, TokenKind};
+
+pub struct Lexer {
+    tokens: Vec<Token>,
+}
+
+impl Lexer {
+    pub fn from_str(input: &str) -> Lexer {
+        let mut tokens = Token::tokenize(input).collect::<Vec<_>>();
+        tokens.reverse();
+        Lexer { tokens }
+    }
+
+    pub fn next(&mut self) -> Token {
+        self.tokens.pop().unwrap_or_else(Token::end_of_input)
+    }
+
+    pub fn peek(&self) -> Token {
+        self.tokens.last().cloned().unwrap_or_else(Token::end_of_input)
+    }
+}
 
 #[cfg(test)]
 pub mod test {
@@ -66,17 +86,17 @@ pub mod test {
         let delimeters = r#"1 -1 +1 1.0 -1.0 +1.0 abc _abc _123 "abc" "abc\"abc""#;
         let mut tokens = Token::tokenize(delimeters);
 
-        assert_next_token!(tokens, TokenKind::Integer);
-        assert_next_token!(tokens, TokenKind::Integer);
-        assert_next_token!(tokens, TokenKind::Integer);
-        assert_next_token!(tokens, TokenKind::Float);
-        assert_next_token!(tokens, TokenKind::Float);
-        assert_next_token!(tokens, TokenKind::Float);
-        assert_next_token!(tokens, TokenKind::Identifier);
-        assert_next_token!(tokens, TokenKind::Identifier);
-        assert_next_token!(tokens, TokenKind::Identifier);
-        assert_next_token!(tokens, TokenKind::String);
-        assert_next_token!(tokens, TokenKind::String);
+        assert_next_token!(tokens, TokenKind::Integer(_));
+        assert_next_token!(tokens, TokenKind::Integer(_));
+        assert_next_token!(tokens, TokenKind::Integer(_));
+        assert_next_token!(tokens, TokenKind::Float(_));
+        assert_next_token!(tokens, TokenKind::Float(_));
+        assert_next_token!(tokens, TokenKind::Float(_));
+        assert_next_token!(tokens, TokenKind::Identifier(_));
+        assert_next_token!(tokens, TokenKind::Identifier(_));
+        assert_next_token!(tokens, TokenKind::Identifier(_));
+        assert_next_token!(tokens, TokenKind::String(_));
+        assert_next_token!(tokens, TokenKind::String(_));
     }
 
     #[test]
@@ -180,7 +200,7 @@ pub mod test {
         let delimeters = r#"12 // test"#;
         let mut tokens = Token::tokenize(delimeters);
 
-        assert_next_token!(tokens, TokenKind::Integer);
+        assert_next_token!(tokens, TokenKind::Integer(_));
         assert!(tokens.next().is_none());
     }
 
@@ -189,8 +209,8 @@ pub mod test {
         let delimeters = r#"12 // test\n14"#;
         let mut tokens = Token::tokenize(delimeters);
 
-        assert_next_token!(tokens, TokenKind::Integer);
-        assert_next_token!(tokens, TokenKind::Integer);
+        assert_next_token!(tokens, TokenKind::Integer(_));
+        assert_next_token!(tokens, TokenKind::Integer(_));
         assert!(tokens.next().is_none());
     }
 }
