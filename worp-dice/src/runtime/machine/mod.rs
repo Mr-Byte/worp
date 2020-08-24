@@ -1,5 +1,5 @@
-mod bytecode;
-mod instruction;
+pub(crate) mod bytecode;
+pub(crate) mod instruction;
 mod module;
 mod vm;
 

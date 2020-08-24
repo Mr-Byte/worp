@@ -16,6 +16,7 @@ toml = "0.5"
 # winit = "0.22"
 
 worp-core = { path = "../worp-core" }
+worp-dice = { path = "../worp-dice" }
 
 # renderer = { path = "../worp-renderer" }
 # gui = { path = "../worp-gui" }

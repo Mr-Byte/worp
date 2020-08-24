@@ -1,5 +1,4 @@
 use super::Module;
-use crate::runtime::machine::bytecode::ByteCodeBuilder;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Default)]

@@ -1,6 +1,6 @@
 use crate::runtime::core::Span;
 use id_arena::{Arena, Id};
-use std::{collections::HashMap, fmt::Display};
+use std::fmt::Display;
 
 pub type SyntaxNodeId = Id<SyntaxNode>;
 
@@ -14,8 +14,8 @@ impl SyntaxTree {
         Self { root, nodes }
     }
 
-    pub fn root(&self) -> Option<&SyntaxNode> {
-        self.nodes.get(self.root)
+    pub fn root(&self) -> SyntaxNodeId {
+        self.root
     }
 
     pub fn get(&self, id: SyntaxNodeId) -> Option<&SyntaxNode> {
@@ -25,7 +25,7 @@ impl SyntaxTree {
 
 impl Display for SyntaxTree {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(root) = self.root() {
+        if let Some(root) = self.get(self.root) {
             fmt_node(root, &self.nodes, f)
         } else {
             write!(f, "")
@@ -111,6 +111,7 @@ pub enum Literal {
     Float(f64, Span),
     String(String, Span),
     Boolean(bool, Span),
+    // TODO: Pull these out as their own expression types.
     List(Vec<SyntaxNodeId>, Span),
     Object(Vec<(SyntaxNodeId, SyntaxNodeId)>, Span),
 }

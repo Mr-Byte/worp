@@ -1,22 +1,17 @@
-use super::ModuleBuilder;
-use crate::runtime::machine::bytecode::ByteCode;
+use crate::runtime::machine::bytecode::Bytecode;
 
 // TODO: Move modue parts to an inner struct, stored in an Rc.
 #[derive(Clone)]
 pub struct Module {
-    bytecode: ByteCode,
+    bytecode: Bytecode,
 }
 
 impl Module {
-    pub fn new(bytecode: ByteCode) -> Self {
+    pub fn new(bytecode: Bytecode) -> Self {
         Self { bytecode }
     }
 
-    pub fn bytecode(&mut self) -> &mut ByteCode {
+    pub fn bytecode(&mut self) -> &mut Bytecode {
         &mut self.bytecode
-    }
-
-    pub fn builder() -> ModuleBuilder {
-        Default::default()
     }
 }

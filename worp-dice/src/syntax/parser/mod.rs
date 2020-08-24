@@ -308,7 +308,7 @@ mod test {
     #[test]
     fn test_parse_integer() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(root, Some(SyntaxNode::Literal(Literal::Integer(5, _)))));
 
@@ -318,7 +318,7 @@ mod test {
     #[test]
     fn test_parse_unary_minus() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("-5").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(
             root,
@@ -331,7 +331,7 @@ mod test {
     #[test]
     fn test_parse_binary_minus() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 - 5").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(
             root,
@@ -344,7 +344,7 @@ mod test {
     #[test]
     fn test_parse_binary_minus_with_unary_minus() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("-5 - 5").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(
             root,
@@ -357,7 +357,7 @@ mod test {
     #[test]
     fn test_parse_binary_precedence_multiply_right() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 - 5 * 5").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(
             root,
@@ -370,7 +370,7 @@ mod test {
     #[test]
     fn test_parse_binary_precedence_multiply_left() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 * 5 - 5").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(
             root,
@@ -383,7 +383,7 @@ mod test {
     #[test]
     fn test_parse_grouping() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 * (5 - 5)").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(
             root,
@@ -396,7 +396,7 @@ mod test {
     #[test]
     fn test_parse_unary_die() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("d8").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         println!("{}", syntax_tree);
 
@@ -411,7 +411,7 @@ mod test {
     #[test]
     fn test_parse_binary_dice() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("6d8").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(
             root,
@@ -424,7 +424,7 @@ mod test {
     #[test]
     fn test_parse_object_expression() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("object { x: 50, y: 30 }").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(root, Some(SyntaxNode::Literal(Literal::Object(_, _)))));
 
@@ -434,7 +434,7 @@ mod test {
     #[test]
     fn test_parse_list_expression() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("[x, y, 1, 1*2, object {}]").parse()?;
-        let root = syntax_tree.root();
+        let root = syntax_tree.get(syntax_tree.root());
 
         assert!(matches!(root, Some(SyntaxNode::Literal(Literal::List(_, _)))));
 
