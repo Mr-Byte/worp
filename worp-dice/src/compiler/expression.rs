@@ -1,7 +1,7 @@
 use super::{error::CompilerError, Compiler};
 use crate::{
     runtime::core::Value,
-    syntax::{Binary, Literal, SyntaxNodeId},
+    syntax::{Binary, Literal, SyntaxNodeId, Unary},
 };
 
 impl<'a> Compiler<'a> {
@@ -11,15 +11,18 @@ impl<'a> Compiler<'a> {
         match node {
             crate::syntax::SyntaxNode::Literal(literal) => {
                 let literal = literal.clone();
-                self.literal(literal)?
+                self.literal(literal)?;
             }
             crate::syntax::SyntaxNode::SafeAccess(_) => todo!(),
             crate::syntax::SyntaxNode::FieldAccess(_) => todo!(),
             crate::syntax::SyntaxNode::Index(_) => todo!(),
-            crate::syntax::SyntaxNode::Unary(_) => todo!(),
+            crate::syntax::SyntaxNode::Unary(unary) => {
+                let unary = unary.clone();
+                self.unary_op(unary)?;
+            }
             crate::syntax::SyntaxNode::Binary(binary) => {
                 let binary = binary.clone();
-                self.binary_op(binary)?
+                self.binary_op(binary)?;
             }
             crate::syntax::SyntaxNode::VariableDeclaration(_) => todo!(),
             crate::syntax::SyntaxNode::Assignment(_) => todo!(),
@@ -43,6 +46,18 @@ impl<'a> Compiler<'a> {
             Literal::List(_, _) => todo!(),
             Literal::Object(_, _) => todo!(),
         };
+
+        Ok(())
+    }
+
+    fn unary_op(&mut self, Unary(op, expr, span): Unary) -> Result<(), CompilerError> {
+        self.expression(expr)?;
+
+        match op {
+            crate::syntax::UnaryOperator::Negate => self.bytecode.neg(span),
+            crate::syntax::UnaryOperator::Not => self.bytecode.not(span),
+            crate::syntax::UnaryOperator::DiceRoll => todo!(),
+        }
 
         Ok(())
     }

@@ -51,9 +51,6 @@ impl BytecodeGenerator {
 
         self.source_map.insert(self.data.len() as u64, span.clone());
         self.data.put_u8(instruction.into());
-
-        self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(value as u8);
     }
 
     pub fn push_const(&mut self, value: Value, span: Span) {
@@ -134,5 +131,15 @@ impl BytecodeGenerator {
     pub fn lte(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::LTE.into());
+    }
+
+    pub fn neg(&mut self, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::NEG.into());
+    }
+
+    pub fn not(&mut self, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::NOT.into());
     }
 }
