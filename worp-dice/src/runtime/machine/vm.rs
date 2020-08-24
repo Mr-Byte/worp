@@ -1,4 +1,4 @@
-use super::{bytecode::Bytecode, instruction::Instruction, Module};
+use super::{instruction::Instruction, Module};
 use crate::runtime::{
     core::{
         symbol::common::operators::{

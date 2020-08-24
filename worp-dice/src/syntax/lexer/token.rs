@@ -12,7 +12,7 @@ impl Token {
     pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
         TokenKind::lexer(input).spanned().map(move |(kind, span)| Token {
             kind,
-            span: span.clone().into(),
+            span: span.into(),
         })
     }
 
