@@ -68,11 +68,13 @@ impl BytecodeGenerator {
         self.data.put_u64(position as u64);
     }
 
+    #[allow(dead_code)]
     pub fn pop(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::POP.into());
     }
 
+    #[allow(dead_code)]
     pub fn dup(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::DUP.into());

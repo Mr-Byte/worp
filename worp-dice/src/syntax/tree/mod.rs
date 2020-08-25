@@ -101,6 +101,7 @@ pub enum SyntaxNode {
     WhileLoop(WhileLoop),
     ForLoop(ForLoop),
     Block(Block),
+    Discard(Span),
 }
 
 #[derive(Debug, Clone)]

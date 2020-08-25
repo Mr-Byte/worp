@@ -1,22 +1,23 @@
 use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
-    Binary, BinaryOperator, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
+    Binary, BinaryOperator, Block, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
 };
+use crate::runtime::core::Span;
 use id_arena::Arena;
 
 type SyntaxNodeResult = Result<SyntaxNodeId, SyntaxError>;
 
 struct ParserRule {
     prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, SyntaxError>>,
-    infix: Option<fn(&mut Parser, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, SyntaxError>>,
+    infix: Option<fn(&mut Parser, lhs: SyntaxNodeId, span: Span) -> Result<SyntaxNodeId, SyntaxError>>,
     precedence: RulePrecedence,
 }
 
 impl ParserRule {
     fn new(
         prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, SyntaxError>>,
-        infix: Option<fn(&mut Parser, lhs: SyntaxNodeId) -> Result<SyntaxNodeId, SyntaxError>>,
+        infix: Option<fn(&mut Parser, lhs: SyntaxNodeId, span: Span) -> Result<SyntaxNodeId, SyntaxError>>,
         precedence: RulePrecedence,
     ) -> Self {
         Self {
@@ -142,9 +143,38 @@ impl Parser {
 
     // TODO: Have this return a collection of parse errors.
     pub fn parse(mut self) -> Result<SyntaxTree, SyntaxError> {
-        let root = self.expression()?;
+        let root = self.expression_sequence()?;
 
         Ok(SyntaxTree::new(root, self.arena))
+    }
+
+    fn expression_sequence(&mut self) -> SyntaxNodeResult {
+        let mut items = Vec::new();
+        let mut next_token = self.lexer.peek();
+        let span_start = next_token.span();
+
+        loop {
+            if next_token.kind == TokenKind::RightCurly || next_token.kind == TokenKind::EndOfInput {
+                break;
+            }
+
+            let expression = self.expression()?;
+            items.push(expression);
+            next_token = self.lexer.peek();
+
+            if next_token.kind == TokenKind::Semicolon {
+                let semi_token = self.lexer.consume(TokenKind::Semicolon)?;
+                let discard = SyntaxNode::Discard(semi_token.span());
+                items.push(self.arena.alloc(discard));
+
+                next_token = self.lexer.peek();
+            }
+        }
+
+        let span_end = next_token.span();
+        let node = SyntaxNode::Block(Block(items, span_start + span_end));
+
+        Ok(self.arena.alloc(node))
     }
 
     fn expression(&mut self) -> SyntaxNodeResult {
@@ -154,9 +184,13 @@ impl Parser {
     fn parse_precedence(&mut self, precedence: RulePrecedence) -> SyntaxNodeResult {
         let next_token = self.lexer.peek();
         let rule = ParserRule::for_token(&next_token)?;
-        let mut node = rule.prefix.map(|prefix| prefix(self)).unwrap_or_else(|| todo!())?;
+        let mut node = rule
+            .prefix
+            .map(|prefix| prefix(self))
+            .unwrap_or_else(|| Err(SyntaxError::UnexpectedToken(next_token.clone())))?;
 
         loop {
+            let span_start = next_token.span();
             let next_token = self.lexer.peek();
             let rule = ParserRule::for_token(&next_token)?;
 
@@ -164,7 +198,10 @@ impl Parser {
                 break;
             }
 
-            node = rule.infix.map(|infix| infix(self, node)).unwrap_or_else(|| todo!())?;
+            node = rule
+                .infix
+                .map(|infix| infix(self, node, span_start))
+                .unwrap_or_else(|| Err(SyntaxError::UnexpectedToken(next_token)))?;
         }
 
         Ok(node)
@@ -174,7 +211,7 @@ impl Parser {
         todo!()
     }
 
-    fn binary(&mut self, lhs: SyntaxNodeId) -> SyntaxNodeResult {
+    fn binary(&mut self, lhs: SyntaxNodeId, span_start: Span) -> SyntaxNodeResult {
         let token = self.lexer.next();
         let rule = ParserRule::for_token(&token)?;
         let rhs = self.parse_precedence(rule.precedence.increment())?;
@@ -200,7 +237,7 @@ impl Parser {
             _ => unreachable!(),
         };
 
-        let node = SyntaxNode::Binary(Binary(operator, lhs, rhs, token.span()));
+        let node = SyntaxNode::Binary(Binary(operator, lhs, rhs, span_start + token.span()));
         Ok(self.arena.alloc(node))
     }
 

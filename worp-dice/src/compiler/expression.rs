@@ -1,7 +1,7 @@
 use super::{error::CompilerError, Compiler};
 use crate::{
     runtime::core::Value,
-    syntax::{Binary, Literal, SyntaxNodeId, Unary},
+    syntax::{Binary, Block, Literal, SyntaxNodeId, Unary},
 };
 
 impl<'a> Compiler<'a> {
@@ -29,7 +29,13 @@ impl<'a> Compiler<'a> {
             crate::syntax::SyntaxNode::Conditional(_) => todo!(),
             crate::syntax::SyntaxNode::WhileLoop(_) => todo!(),
             crate::syntax::SyntaxNode::ForLoop(_) => todo!(),
-            crate::syntax::SyntaxNode::Block(_) => todo!(),
+            crate::syntax::SyntaxNode::Block(Block(items, _)) => {
+                let items = items.clone();
+                for expression in items.iter() {
+                    self.expression(*expression)?;
+                }
+            }
+            crate::syntax::SyntaxNode::Discard(span) => self.bytecode.pop(span.clone()),
         }
 
         Ok(())
