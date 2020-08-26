@@ -19,12 +19,16 @@ impl Bytecode {
         }
     }
 
+    pub fn source_map(&self) -> &HashMap<u64, Span> {
+        &self.source_map
+    }
+
     pub fn constants(&self) -> &[Value] {
         &self.constants
     }
 
     pub fn span(&self) -> Option<Span> {
-        self.source_map.get(&self.data.position()).cloned()
+        self.source_map.get(&(self.data.position() - 1)).cloned()
     }
 
     pub fn set_position(&mut self, position: u64) {
@@ -49,23 +53,5 @@ impl Bytecode {
 
     pub fn read_float(&mut self) -> f64 {
         self.data.get_f64()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    // use super::*;
-
-    #[test]
-    fn same_string_is_inserted_into_constants_only_once() {
-        // let first_string = Value::new(String::from("test"));
-        // let second_string = Value::new(String::from("test"));
-        // let mut builder = ByteCode::builder();
-        // builder.push_const(first_string);
-        // builder.push_const(second_string);
-        // let bytecode = builder.build();
-
-        // assert_eq!(1, bytecode.constants.len());
-        // assert_eq!(18, bytecode.data.remaining());
     }
 }

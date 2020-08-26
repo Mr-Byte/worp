@@ -58,6 +58,9 @@ impl ParserRule {
             // Control flow
             TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
 
+            // Block expressions
+            TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
+
             // Operators
             TokenKind::Coalesce => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Coalesce),
             TokenKind::ExclusiveRange => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Range),
@@ -209,6 +212,14 @@ impl Parser {
 
     fn if_expression(&mut self) -> SyntaxNodeResult {
         todo!()
+    }
+
+    fn block_expression(&mut self) -> SyntaxNodeResult {
+        self.lexer.consume(TokenKind::LeftCurly)?;
+        let expressions = self.expression_sequence()?;
+        self.lexer.consume(TokenKind::RightCurly)?;
+
+        Ok(expressions)
     }
 
     fn binary(&mut self, lhs: SyntaxNodeId, span_start: Span) -> SyntaxNodeResult {

@@ -171,6 +171,8 @@ pub enum TokenKind {
     Import,
     #[token("from")]
     From,
+    #[token("export")]
+    Export,
 
     // Literals,
     #[regex("[_a-ce-zA-Z][_a-zA-Z0-9]*", |lex| lex.slice().to_owned())]

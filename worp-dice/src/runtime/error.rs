@@ -57,6 +57,12 @@ pub struct SpannedRuntimeError {
     source: RuntimeError,
 }
 
+impl SpannedRuntimeError {
+    pub fn span(&self) -> Option<Span> {
+        self.span.clone()
+    }
+}
+
 pub trait Spanned<T> {
     fn with_span<'a>(self, span: impl FnMut() -> Option<Span> + 'a) -> Result<T, SpannedRuntimeError>;
 }

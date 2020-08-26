@@ -4,6 +4,7 @@ use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 use worp_dice::{compiler::Compiler, runtime::machine::VirtualMachine};
 
+
 fn main() -> Result<()> {
     FmtSubscriber::builder().with_max_level(Level::INFO).init();
 
@@ -23,7 +24,7 @@ fn main() -> Result<()> {
                 let elapsed = start.elapsed();
                 println!("Result ({}s): {}", elapsed.as_secs_f64(), result);
             }
-            Err(err) => eprintln!("{}", err),
+            Err(err) => eprintln!("{} : {:?}", err, err.span()),
         }
     }
 }

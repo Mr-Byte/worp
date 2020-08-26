@@ -56,6 +56,8 @@ impl VirtualMachine {
     // }
 
     pub fn execute(&mut self, mut module: Module) -> Result<Value, SpannedRuntimeError> {
+        println!("{:#?}", module.bytecode().source_map());
+
         while let Some(instruction) = module.bytecode().read_instruction() {
             match instruction {
                 Instruction::PUSH_NONE => {
