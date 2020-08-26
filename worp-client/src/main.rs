@@ -4,7 +4,6 @@ use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 use worp_dice::{compiler::Compiler, runtime::machine::VirtualMachine};
 
-
 fn main() -> Result<()> {
     FmtSubscriber::builder().with_max_level(Level::INFO).init();
 

@@ -57,6 +57,9 @@ impl Instruction {
         pub const NEQ;
         pub const LOGICAL_AND;
         pub const LOGICAL_OR;
+
+        pub const JUMP;
+        pub const JUMP_IF_FALSE;
     }
 }
 

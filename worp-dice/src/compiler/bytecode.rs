@@ -144,4 +144,32 @@ impl BytecodeGenerator {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::NOT.into());
     }
+
+    pub fn jump(&mut self, span: Span) -> u64 {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::JUMP.into());
+
+        self.data.put_u16(0);
+        let patch_pos = self.data.len() - 2;
+
+        patch_pos as u64
+    }
+
+    pub fn jump_if_false(&mut self, span: Span) -> u64 {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::JUMP_IF_FALSE.into());
+
+        self.data.put_u16(0);
+        let patch_pos = self.data.len() - 2;
+
+        patch_pos as u64
+    }
+
+    pub fn patch_jump(&mut self, pos: u64, offset: u16) {
+        (&mut self.data[pos as usize..]).put_u16(offset)
+    }
+
+    pub fn current_position(&self) -> u64 {
+        (self.data.len()) as u64
+    }
 }

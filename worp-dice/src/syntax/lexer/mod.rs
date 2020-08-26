@@ -5,6 +5,7 @@ mod token;
 pub use token::{Token, TokenKind};
 
 pub struct Lexer {
+    current: Token,
     tokens: Vec<Token>,
 }
 
@@ -12,11 +13,19 @@ impl Lexer {
     pub fn from_str(input: &str) -> Lexer {
         let mut tokens = Token::tokenize(input).collect::<Vec<_>>();
         tokens.reverse();
-        Lexer { tokens }
+        Lexer {
+            tokens,
+            current: Token::end_of_input(),
+        }
+    }
+
+    pub fn current(&self) -> &Token {
+        &self.current
     }
 
     pub fn next(&mut self) -> Token {
-        self.tokens.pop().unwrap_or_else(Token::end_of_input)
+        self.current = self.tokens.pop().unwrap_or_else(Token::end_of_input);
+        self.current.clone()
     }
 
     pub fn peek(&self) -> Token {

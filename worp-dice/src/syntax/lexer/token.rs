@@ -131,6 +131,8 @@ pub enum TokenKind {
     Function,
     #[token("let")]
     Let,
+    #[token("mut")]
+    Mut,
     #[token("const")]
     Const,
     #[token("match")]

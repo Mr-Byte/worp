@@ -1,7 +1,7 @@
 use super::{error::CompilerError, Compiler};
 use crate::{
     runtime::core::Value,
-    syntax::{Binary, Block, Literal, SyntaxNodeId, Unary},
+    syntax::{Binary, Block, Conditional, Literal, SyntaxNodeId, Unary},
 };
 
 impl<'a> Compiler<'a> {
@@ -26,7 +26,10 @@ impl<'a> Compiler<'a> {
             }
             crate::syntax::SyntaxNode::VariableDeclaration(_) => todo!(),
             crate::syntax::SyntaxNode::Assignment(_) => todo!(),
-            crate::syntax::SyntaxNode::Conditional(_) => todo!(),
+            crate::syntax::SyntaxNode::Conditional(conditional) => {
+                let conditional = conditional.clone();
+                self.conditional(conditional)?;
+            }
             crate::syntax::SyntaxNode::WhileLoop(_) => todo!(),
             crate::syntax::SyntaxNode::ForLoop(_) => todo!(),
             crate::syntax::SyntaxNode::Block(Block(items, _)) => {
@@ -37,6 +40,29 @@ impl<'a> Compiler<'a> {
             }
             crate::syntax::SyntaxNode::Discard(span) => self.bytecode.pop(span.clone()),
         }
+
+        Ok(())
+    }
+
+    fn conditional(
+        &mut self,
+        Conditional(condition, primary, secondary, span): Conditional,
+    ) -> Result<(), CompilerError> {
+        self.expression(condition)?;
+        let if_jump = self.bytecode.jump_if_false(span.clone());
+        self.expression(primary)?;
+
+        let else_jump = self.bytecode.jump(span);
+        // -2 accounts for the jump offset itself.
+        let offset = self.bytecode.current_position() - if_jump - 2;
+        self.bytecode.patch_jump(if_jump, offset as u16);
+
+        if let Some(secondary) = secondary {
+            self.expression(secondary)?;
+        }
+
+        let offset = self.bytecode.current_position() - else_jump - 2;
+        self.bytecode.patch_jump(else_jump, offset as u16);
 
         Ok(())
     }

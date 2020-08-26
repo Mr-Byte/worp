@@ -56,8 +56,6 @@ impl VirtualMachine {
     // }
 
     pub fn execute(&mut self, mut module: Module) -> Result<Value, SpannedRuntimeError> {
-        println!("{:#?}", module.bytecode().source_map());
-
         while let Some(instruction) = module.bytecode().read_instruction() {
             match instruction {
                 Instruction::PUSH_NONE => {
@@ -108,6 +106,25 @@ impl VirtualMachine {
                 Instruction::EQ => binary_op!(module.bytecode(), self.stack, OP_EQ),
                 Instruction::NEQ => binary_op!(module.bytecode(), self.stack, OP_NEQ),
                 Instruction::HALT => return Ok(self.stack.pop().unwrap_or(Value::NONE)),
+
+                Instruction::JUMP => {
+                    let offset = module.bytecode().read_offset();
+                    module.bytecode().offset_position(offset)
+                }
+                Instruction::JUMP_IF_FALSE => {
+                    let offset = module.bytecode().read_offset();
+
+                    let value = *self
+                        .stack
+                        .pop()
+                        .unwrap_or(Value::NONE)
+                        .try_value::<bool>()
+                        .with_span(|| module.bytecode().span())?;
+
+                    if !value {
+                        module.bytecode().offset_position(offset)
+                    }
+                }
                 unknown => {
                     return Err(RuntimeError::UnknownInstruction(unknown.into())).with_span(|| module.bytecode().span())
                 }

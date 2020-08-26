@@ -1,7 +1,7 @@
 use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
-    Binary, BinaryOperator, Block, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
+    Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -211,7 +211,26 @@ impl Parser {
     }
 
     fn if_expression(&mut self) -> SyntaxNodeResult {
-        todo!()
+        let span_start = self.lexer.consume(TokenKind::If)?.span();
+        let condition = self.expression()?;
+        let primary = self.block_expression()?;
+
+        let secondary = if self.lexer.peek().kind == TokenKind::Else {
+            self.lexer.consume(TokenKind::Else)?;
+
+            match self.lexer.peek().kind {
+                TokenKind::If => Some(self.if_expression()?),
+                TokenKind::LeftCurly => Some(self.block_expression()?),
+                _ => None,
+            }
+        } else {
+            None
+        };
+
+        let span_end = self.lexer.current().span();
+
+        let node = SyntaxNode::Conditional(Conditional(condition, primary, secondary, span_start + span_end));
+        Ok(self.arena.alloc(node))
     }
 
     fn block_expression(&mut self) -> SyntaxNodeResult {

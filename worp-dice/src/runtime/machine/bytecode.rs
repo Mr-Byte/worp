@@ -54,4 +54,12 @@ impl Bytecode {
     pub fn read_float(&mut self) -> f64 {
         self.data.get_f64()
     }
+
+    pub fn read_offset(&mut self) -> u16 {
+        self.data.get_u16()
+    }
+
+    pub fn offset_position(&mut self, offset: u16) {
+        self.set_position(self.data.position() + offset as u64);
+    }
 }
