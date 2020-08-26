@@ -68,13 +68,11 @@ impl BytecodeGenerator {
         self.data.put_u64(position as u64);
     }
 
-    #[allow(dead_code)]
     pub fn pop(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::POP.into());
     }
 
-    #[allow(dead_code)]
     pub fn dup(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::DUP.into());
@@ -165,8 +163,9 @@ impl BytecodeGenerator {
         patch_pos as u64
     }
 
-    pub fn patch_jump(&mut self, pos: u64, offset: u16) {
-        (&mut self.data[pos as usize..]).put_u16(offset)
+    pub fn patch_jump(&mut self, jump_position: u64, final_position: u64) {
+        let offset = (final_position - jump_position - 2) as u16;
+        (&mut self.data[jump_position as usize..]).put_u16(offset)
     }
 
     pub fn current_position(&self) -> u64 {

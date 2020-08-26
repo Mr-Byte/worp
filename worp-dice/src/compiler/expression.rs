@@ -54,15 +54,14 @@ impl<'a> Compiler<'a> {
 
         let else_jump = self.bytecode.jump(span);
         // -2 accounts for the jump offset itself.
-        let offset = self.bytecode.current_position() - if_jump - 2;
-        self.bytecode.patch_jump(if_jump, offset as u16);
+
+        self.bytecode.patch_jump(if_jump, self.bytecode.current_position());
 
         if let Some(secondary) = secondary {
             self.expression(secondary)?;
         }
 
-        let offset = self.bytecode.current_position() - else_jump - 2;
-        self.bytecode.patch_jump(else_jump, offset as u16);
+        self.bytecode.patch_jump(else_jump, self.bytecode.current_position());
 
         Ok(())
     }
@@ -95,29 +94,48 @@ impl<'a> Compiler<'a> {
     }
 
     fn binary_op(&mut self, Binary(op, lhs, rhs, span): Binary) -> Result<(), CompilerError> {
-        self.expression(rhs)?;
-        self.expression(lhs)?;
-
         match op {
-            crate::syntax::BinaryOperator::DiceRoll => todo!(),
-            crate::syntax::BinaryOperator::Multiply => self.bytecode.mul(span),
-            crate::syntax::BinaryOperator::Divide => self.bytecode.div(span),
-            crate::syntax::BinaryOperator::Remainder => self.bytecode.rem(span),
-            crate::syntax::BinaryOperator::Add => self.bytecode.add(span),
-            crate::syntax::BinaryOperator::Subtract => self.bytecode.sub(span),
-            crate::syntax::BinaryOperator::GreaterThan => self.bytecode.gt(span),
-            crate::syntax::BinaryOperator::LessThan => self.bytecode.lt(span),
-            crate::syntax::BinaryOperator::GreaterThanEquals => self.bytecode.gte(span),
-            crate::syntax::BinaryOperator::LessThanEquals => self.bytecode.lte(span),
-            crate::syntax::BinaryOperator::Equals => self.bytecode.eq(span),
-            crate::syntax::BinaryOperator::NotEquals => self.bytecode.neq(span),
-            crate::syntax::BinaryOperator::LogicalAnd => todo!(),
-            crate::syntax::BinaryOperator::LogicalOr => todo!(),
-            crate::syntax::BinaryOperator::RangeInclusive => todo!(),
-            crate::syntax::BinaryOperator::RangeExclusive => todo!(),
-            crate::syntax::BinaryOperator::Coalesce => todo!(),
-        }
+            crate::syntax::BinaryOperator::LogicalAnd => {
+                self.expression(lhs)?;
+                self.bytecode.dup(span.clone());
+                let jump = self.bytecode.jump_if_false(span.clone());
+                self.bytecode.pop(span);
+                self.expression(rhs)?;
+                self.bytecode.patch_jump(jump, self.bytecode.current_position());
+            }
+            crate::syntax::BinaryOperator::LogicalOr => {
+                self.expression(lhs)?;
+                self.bytecode.dup(span.clone());
+                self.bytecode.not(span.clone());
+                let jump = self.bytecode.jump_if_false(span.clone());
+                self.bytecode.pop(span);
+                self.expression(rhs)?;
+                self.bytecode.patch_jump(jump, self.bytecode.current_position());
+            }
+            _ => {
+                self.expression(rhs)?;
+                self.expression(lhs)?;
 
+                match op {
+                    crate::syntax::BinaryOperator::DiceRoll => todo!(),
+                    crate::syntax::BinaryOperator::Multiply => self.bytecode.mul(span),
+                    crate::syntax::BinaryOperator::Divide => self.bytecode.div(span),
+                    crate::syntax::BinaryOperator::Remainder => self.bytecode.rem(span),
+                    crate::syntax::BinaryOperator::Add => self.bytecode.add(span),
+                    crate::syntax::BinaryOperator::Subtract => self.bytecode.sub(span),
+                    crate::syntax::BinaryOperator::GreaterThan => self.bytecode.gt(span),
+                    crate::syntax::BinaryOperator::LessThan => self.bytecode.lt(span),
+                    crate::syntax::BinaryOperator::GreaterThanEquals => self.bytecode.gte(span),
+                    crate::syntax::BinaryOperator::LessThanEquals => self.bytecode.lte(span),
+                    crate::syntax::BinaryOperator::Equals => self.bytecode.eq(span),
+                    crate::syntax::BinaryOperator::NotEquals => self.bytecode.neq(span),
+                    crate::syntax::BinaryOperator::RangeInclusive => todo!(),
+                    crate::syntax::BinaryOperator::RangeExclusive => todo!(),
+                    crate::syntax::BinaryOperator::Coalesce => todo!(),
+                    _ => unreachable!(),
+                }
+            }
+        }
         Ok(())
     }
 }

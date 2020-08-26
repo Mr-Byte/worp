@@ -21,7 +21,7 @@ fn main() -> Result<()> {
         match vm.execute(module) {
             Ok(result) => {
                 let elapsed = start.elapsed();
-                println!("Result ({}s): {}", elapsed.as_secs_f64(), result);
+                println!("Result ({} ms): {}", (elapsed.as_micros() as f64 / 1000.0), result);
             }
             Err(err) => eprintln!("{} : {:?}", err, err.span()),
         }
