@@ -4,7 +4,7 @@ use crate::{
     syntax::{Binary, Block, Conditional, Literal, SyntaxNodeId, Unary},
 };
 
-impl<'a> Compiler<'a> {
+impl Compiler {
     pub(crate) fn expression(&mut self, node: SyntaxNodeId) -> Result<(), CompilerError> {
         let node = self.syntax_tree.get(node).unwrap();
 
@@ -55,13 +55,13 @@ impl<'a> Compiler<'a> {
         let else_jump = self.bytecode.jump(span);
         // -2 accounts for the jump offset itself.
 
-        self.bytecode.patch_jump(if_jump, self.bytecode.current_position());
+        self.bytecode.patch_jump_with_current_pos(if_jump);
 
         if let Some(secondary) = secondary {
             self.expression(secondary)?;
         }
 
-        self.bytecode.patch_jump(else_jump, self.bytecode.current_position());
+        self.bytecode.patch_jump_with_current_pos(else_jump);
 
         Ok(())
     }
@@ -98,19 +98,19 @@ impl<'a> Compiler<'a> {
             crate::syntax::BinaryOperator::LogicalAnd => {
                 self.expression(lhs)?;
                 self.bytecode.dup(span.clone());
-                let jump = self.bytecode.jump_if_false(span.clone());
+                let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
                 self.bytecode.pop(span);
                 self.expression(rhs)?;
-                self.bytecode.patch_jump(jump, self.bytecode.current_position());
+                self.bytecode.patch_jump_with_current_pos(short_circuit_jump);
             }
             crate::syntax::BinaryOperator::LogicalOr => {
                 self.expression(lhs)?;
                 self.bytecode.dup(span.clone());
                 self.bytecode.not(span.clone());
-                let jump = self.bytecode.jump_if_false(span.clone());
+                let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
                 self.bytecode.pop(span);
                 self.expression(rhs)?;
-                self.bytecode.patch_jump(jump, self.bytecode.current_position());
+                self.bytecode.patch_jump_with_current_pos(short_circuit_jump);
             }
             _ => {
                 self.expression(rhs)?;

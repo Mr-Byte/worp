@@ -1,7 +1,7 @@
 pub(crate) mod bytecode;
 pub(crate) mod instruction;
-mod module;
+mod script;
 mod vm;
 
-pub use module::*;
+pub use script::*;
 pub use vm::*;

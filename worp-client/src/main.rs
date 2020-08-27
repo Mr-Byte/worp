@@ -16,9 +16,9 @@ fn main() -> Result<()> {
         std::io::stdin().read_line(&mut input)?;
 
         let start = std::time::Instant::now();
-        let module = Compiler::compile(&input)?;
+        let script = Compiler::compile_script(&input)?;
 
-        match vm.execute(module) {
+        match vm.run_script(script) {
             Ok(result) => {
                 let elapsed = start.elapsed();
                 println!("Result ({} ms): {}", (elapsed.as_micros() as f64 / 1000.0), result);

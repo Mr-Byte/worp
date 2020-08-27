@@ -143,6 +143,7 @@ impl BytecodeGenerator {
         self.data.put_u8(Instruction::NOT.into());
     }
 
+    #[must_use = "Jumps must be patched."]
     pub fn jump(&mut self, span: Span) -> u64 {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::JUMP.into());
@@ -153,6 +154,7 @@ impl BytecodeGenerator {
         patch_pos as u64
     }
 
+    #[must_use = "Jumps must be patched."]
     pub fn jump_if_false(&mut self, span: Span) -> u64 {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::JUMP_IF_FALSE.into());
@@ -163,8 +165,8 @@ impl BytecodeGenerator {
         patch_pos as u64
     }
 
-    pub fn patch_jump(&mut self, jump_position: u64, final_position: u64) {
-        let offset = (final_position - jump_position - 2) as u16;
+    pub fn patch_jump_with_current_pos(&mut self, jump_position: u64) {
+        let offset = (self.current_position() - jump_position - 2) as u16;
         (&mut self.data[jump_position as usize..]).put_u16(offset)
     }
 
