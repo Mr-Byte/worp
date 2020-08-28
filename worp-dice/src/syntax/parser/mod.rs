@@ -2,6 +2,7 @@ use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
     Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
+    VariableDeclaration,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -60,6 +61,9 @@ impl ParserRule {
 
             // Block expressions
             TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
+
+            // Variable declaraitons
+            // TokenKind::Let => ParserRule::new(Some(Parser::variable_decl), None, RulePrecedence::None),
 
             // Operators
             TokenKind::Coalesce => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Coalesce),
@@ -161,17 +165,25 @@ impl Parser {
                 break;
             }
 
-            let expression = self.expression()?;
-            items.push(expression);
-            next_token = self.lexer.peek();
-
-            if next_token.kind == TokenKind::Semicolon {
-                let semi_token = self.lexer.consume(TokenKind::Semicolon)?;
-                let discard = SyntaxNode::Discard(semi_token.span());
-                items.push(self.arena.alloc(discard));
-
+            if next_token.kind == TokenKind::Let {
+                let expression = self.variable_decl()?;
+                self.lexer.consume(TokenKind::Semicolon)?;
+                items.push(expression);
                 next_token = self.lexer.peek();
-            }
+            } else {
+                let expression = self.expression()?;
+
+                items.push(expression);
+                next_token = self.lexer.peek();
+
+                if next_token.kind == TokenKind::Semicolon {
+                    let semi_token = self.lexer.consume(TokenKind::Semicolon)?;
+                    let discard = SyntaxNode::Discard(semi_token.span());
+                    items.push(self.arena.alloc(discard));
+
+                    next_token = self.lexer.peek();
+                }
+            };
         }
 
         let span_end = next_token.span();
@@ -239,6 +251,25 @@ impl Parser {
         self.lexer.consume(TokenKind::RightCurly)?;
 
         Ok(expressions)
+    }
+
+    fn variable_decl(&mut self) -> SyntaxNodeResult {
+        let span_start = self.lexer.consume(TokenKind::Let)?.span();
+
+        let token = self.lexer.next();
+        let name = if let TokenKind::Identifier(name) = token.kind {
+            name
+        } else {
+            return Err(SyntaxError::UnexpectedToken(token));
+        };
+
+        self.lexer.consume(TokenKind::Assign)?;
+        let expressions = self.expression()?;
+        let span_end = self.lexer.current().span();
+
+        let node = SyntaxNode::VariableDeclaration(VariableDeclaration(name, expressions, span_start + span_end));
+
+        Ok(self.arena.alloc(node))
     }
 
     fn binary(&mut self, lhs: SyntaxNodeId, span_start: Span) -> SyntaxNodeResult {

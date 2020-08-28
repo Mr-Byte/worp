@@ -35,7 +35,26 @@ impl Display for SyntaxTree {
 
 fn fmt_node(node: &SyntaxNode, nodes: &Arena<SyntaxNode>, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match node {
+        SyntaxNode::Discard(_) => {
+            write!(f, ";")?;
+            Ok(())
+        }
+        SyntaxNode::Block(Block(statements, _)) => {
+            for statement in statements {
+                let statement = nodes.get(*statement).unwrap();
+                fmt_node(&statement, nodes, f)?;
+            }
+
+            Ok(())
+        }
+        SyntaxNode::VariableDeclaration(VariableDeclaration(name, expr, _)) => {
+            write!(f, "{} := ", name)?;
+            fmt_node(nodes.get(*expr).unwrap(), nodes, f)?;
+
+            Ok(())
+        }
         SyntaxNode::Literal(literal) => match literal {
+            Literal::Identifier(name, _) => write!(f, "{}", name),
             Literal::Integer(integer, _) => write!(f, "{}", integer),
             _ => todo!(),
         },

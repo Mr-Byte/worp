@@ -3,7 +3,7 @@ use crate::runtime::core::{Span, Value};
 use bytes::Buf as _;
 use std::{collections::HashMap, io::Cursor};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Bytecode {
     constants: Box<[Value]>,
     source_map: HashMap<u64, Span>,

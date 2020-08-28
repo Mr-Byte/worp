@@ -1,11 +1,11 @@
 use super::{error::CompilerError, Compiler};
 use crate::{
-    runtime::core::Value,
-    syntax::{Binary, Block, Conditional, Literal, SyntaxNodeId, Unary},
+    runtime::core::{Span, Symbol, Value},
+    syntax::{Binary, Block, Conditional, Literal, SyntaxNodeId, Unary, VariableDeclaration},
 };
 
 impl Compiler {
-    pub(crate) fn expression(&mut self, node: SyntaxNodeId) -> Result<(), CompilerError> {
+    pub(crate) fn compile(&mut self, node: SyntaxNodeId) -> Result<(), CompilerError> {
         let node = self.syntax_tree.get(node).unwrap();
 
         match node {
@@ -24,7 +24,10 @@ impl Compiler {
                 let binary = binary.clone();
                 self.binary_op(binary)?;
             }
-            crate::syntax::SyntaxNode::VariableDeclaration(_) => todo!(),
+            crate::syntax::SyntaxNode::VariableDeclaration(variable) => {
+                let variable = variable.clone();
+                self.variable(variable)?;
+            }
             crate::syntax::SyntaxNode::Assignment(_) => todo!(),
             crate::syntax::SyntaxNode::Conditional(conditional) => {
                 let conditional = conditional.clone();
@@ -34,9 +37,14 @@ impl Compiler {
             crate::syntax::SyntaxNode::ForLoop(_) => todo!(),
             crate::syntax::SyntaxNode::Block(Block(items, _)) => {
                 let items = items.clone();
+
+                self.begin_scope();
+
                 for expression in items.iter() {
-                    self.expression(*expression)?;
+                    self.compile(*expression)?;
                 }
+
+                self.end_scope();
             }
             crate::syntax::SyntaxNode::Discard(span) => self.bytecode.pop(span.clone()),
         }
@@ -48,9 +56,9 @@ impl Compiler {
         &mut self,
         Conditional(condition, primary, secondary, span): Conditional,
     ) -> Result<(), CompilerError> {
-        self.expression(condition)?;
+        self.compile(condition)?;
         let if_jump = self.bytecode.jump_if_false(span.clone());
-        self.expression(primary)?;
+        self.compile(primary)?;
 
         let else_jump = self.bytecode.jump(span);
         // -2 accounts for the jump offset itself.
@@ -58,7 +66,7 @@ impl Compiler {
         self.bytecode.patch_jump_with_current_pos(if_jump);
 
         if let Some(secondary) = secondary {
-            self.expression(secondary)?;
+            self.compile(secondary)?;
         }
 
         self.bytecode.patch_jump_with_current_pos(else_jump);
@@ -68,7 +76,7 @@ impl Compiler {
 
     fn literal(&mut self, node: Literal) -> Result<(), CompilerError> {
         match node {
-            Literal::Identifier(_, _) => todo!(),
+            Literal::Identifier(name, span) => self.load_variable(name, span)?,
             Literal::None(span) => self.bytecode.push_none(span),
             Literal::Integer(value, span) => self.bytecode.push_int(value, span),
             Literal::Float(value, span) => self.bytecode.push_float(value, span),
@@ -81,8 +89,27 @@ impl Compiler {
         Ok(())
     }
 
+    fn variable(&mut self, VariableDeclaration(name, value, span): VariableDeclaration) -> Result<(), CompilerError> {
+        let name = Symbol::new(name);
+        let slot = self.add_local(name.clone(), false);
+
+        self.compile(value)?;
+        self.bytecode.store_local(slot, span);
+
+        Ok(())
+    }
+
+    fn load_variable(&mut self, name: String, span: Span) -> Result<(), CompilerError> {
+        let name = Symbol::new(name);
+        let slot = self.local(name)?.slot;
+
+        self.bytecode.load_local(slot, span);
+
+        Ok(())
+    }
+
     fn unary_op(&mut self, Unary(op, expr, span): Unary) -> Result<(), CompilerError> {
-        self.expression(expr)?;
+        self.compile(expr)?;
 
         match op {
             crate::syntax::UnaryOperator::Negate => self.bytecode.neg(span),
@@ -96,25 +123,25 @@ impl Compiler {
     fn binary_op(&mut self, Binary(op, lhs, rhs, span): Binary) -> Result<(), CompilerError> {
         match op {
             crate::syntax::BinaryOperator::LogicalAnd => {
-                self.expression(lhs)?;
+                self.compile(lhs)?;
                 self.bytecode.dup(span.clone());
                 let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
                 self.bytecode.pop(span);
-                self.expression(rhs)?;
+                self.compile(rhs)?;
                 self.bytecode.patch_jump_with_current_pos(short_circuit_jump);
             }
             crate::syntax::BinaryOperator::LogicalOr => {
-                self.expression(lhs)?;
+                self.compile(lhs)?;
                 self.bytecode.dup(span.clone());
                 self.bytecode.not(span.clone());
                 let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
                 self.bytecode.pop(span);
-                self.expression(rhs)?;
+                self.compile(rhs)?;
                 self.bytecode.patch_jump_with_current_pos(short_circuit_jump);
             }
             _ => {
-                self.expression(rhs)?;
-                self.expression(lhs)?;
+                self.compile(rhs)?;
+                self.compile(lhs)?;
 
                 match op {
                     crate::syntax::BinaryOperator::DiceRoll => todo!(),

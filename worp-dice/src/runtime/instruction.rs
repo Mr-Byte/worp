@@ -37,9 +37,6 @@ impl Instruction {
         pub const LOAD_LOCAL;
         pub const STORE_LOCAL;
 
-        pub const LOAD_GLOBAL;
-        pub const STORE_GLOBAL;
-
         pub const NEG;
         pub const NOT;
 

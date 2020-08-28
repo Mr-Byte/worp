@@ -2,12 +2,12 @@ use anyhow::Result;
 use std::io::Write;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use worp_dice::{compiler::Compiler, runtime::machine::VirtualMachine};
+use worp_dice::{compiler::Compiler, runtime::Runtime};
 
 fn main() -> Result<()> {
     FmtSubscriber::builder().with_max_level(Level::INFO).init();
 
-    let mut vm = VirtualMachine::default();
+    let mut vm = Runtime::default();
 
     loop {
         let mut input = String::new();

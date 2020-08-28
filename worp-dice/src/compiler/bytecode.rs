@@ -1,6 +1,7 @@
 use crate::runtime::{
+    bytecode::Bytecode,
     core::{Span, Value},
-    machine::{bytecode::Bytecode, instruction::Instruction},
+    instruction::Instruction,
 };
 use bytes::BufMut as _;
 use std::{collections::HashMap, io::Cursor};
@@ -172,5 +173,17 @@ impl BytecodeGenerator {
 
     pub fn current_position(&self) -> u64 {
         (self.data.len()) as u64
+    }
+
+    pub fn store_local(&mut self, slot: u16, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::STORE_LOCAL.into());
+        self.data.put_u16(slot);
+    }
+
+    pub fn load_local(&mut self, slot: u16, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::LOAD_LOCAL.into());
+        self.data.put_u16(slot);
     }
 }

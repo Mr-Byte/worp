@@ -1,14 +1,14 @@
-use super::{bytecode::Bytecode, instruction::Instruction, Script};
+use super::{bytecode::Bytecode, instruction::Instruction, script::Script};
 use crate::runtime::{
     core::{
         symbol::common::operators::{
             OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
         },
-        Symbol, Type, Value, ValueKey,
+        Value, ValueKey,
     },
     error::{RuntimeError, Spanned as _, SpannedRuntimeError},
 };
-use std::rc::Rc;
+use std::{iter, ops::Range};
 
 macro_rules! binary_op {
     ($bytecode:expr, $stack:expr, $op:ident) => {{
@@ -45,16 +45,27 @@ macro_rules! unary_op {
 }
 
 #[derive(Default)]
-pub struct VirtualMachine {
+pub struct Runtime {
     stack: Vec<Value>,
 }
 
-impl VirtualMachine {
+impl Runtime {
     pub fn run_script(&mut self, mut script: Script) -> Result<Value, SpannedRuntimeError> {
-        self.execute_bytecode(script.bytecode().clone())
+        let locals_frame = self.stack.len()..script.call_frame().slot_count;
+        let locals = iter::repeat(Value::NONE).take(script.call_frame().slot_count);
+        self.stack.extend(locals);
+
+        let result = self.execute_bytecode(script.bytecode().clone(), locals_frame)?;
+        self.stack.truncate(self.stack.len() - script.call_frame().slot_count);
+
+        Ok(result)
     }
 
-    fn execute_bytecode(&mut self, mut bytecode: Bytecode) -> Result<Value, SpannedRuntimeError> {
+    fn execute_bytecode(
+        &mut self,
+        mut bytecode: Bytecode,
+        locals_frame: Range<usize>,
+    ) -> Result<Value, SpannedRuntimeError> {
         while let Some(instruction) = bytecode.read_instruction() {
             match instruction {
                 Instruction::PUSH_NONE => {
@@ -124,6 +135,27 @@ impl VirtualMachine {
                         bytecode.offset_position(offset)
                     }
                 }
+
+                Instruction::LOAD_LOCAL => {
+                    // TODO Bounds check the slot?
+                    let slot = bytecode.read_offset() as usize;
+                    let frame = &self.stack[locals_frame.clone()];
+                    let value = frame[slot].clone();
+                    self.stack.push(value);
+                }
+                Instruction::STORE_LOCAL => {
+                    // TODO Bounds check the slot?
+                    let slot = bytecode.read_offset() as usize;
+                    let value = self
+                        .stack
+                        .pop()
+                        .ok_or_else(|| RuntimeError::StackUnderflowed)
+                        .with_span(|| bytecode.span())?;
+                    let frame = &mut self.stack[locals_frame.clone()];
+
+                    frame[slot] = value;
+                }
+
                 unknown => return Err(RuntimeError::UnknownInstruction(unknown.into())).with_span(|| bytecode.span()),
             }
         }
