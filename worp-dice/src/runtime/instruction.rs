@@ -25,6 +25,7 @@ impl Instruction {
         pub const HALT;
 
         pub const PUSH_NONE;
+        pub const PUSH_UNIT;
         pub const PUSH_FALSE;
         pub const PUSH_TRUE;
         pub const PUSH_INT;

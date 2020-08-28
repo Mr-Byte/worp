@@ -27,6 +27,11 @@ impl BytecodeGenerator {
         self.data.put_u8(Instruction::PUSH_NONE.into());
     }
 
+    pub fn push_unit(&mut self, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::PUSH_UNIT.into());
+    }
+
     pub fn push_int(&mut self, value: i64, span: Span) {
         self.source_map.insert(self.data.len() as u64, span.clone());
         self.data.put_u8(Instruction::PUSH_INT.into());

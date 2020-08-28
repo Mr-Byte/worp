@@ -9,6 +9,7 @@ use std::{fmt::Display, ops::Deref};
 #[derive(Clone, Debug, Trace, Finalize, PartialEq)]
 enum Variant {
     None(lib::None),
+    Unit(lib::Unit),
     Bool(bool),
     Int(i64),
     Float(f64),
@@ -25,6 +26,7 @@ impl Display for Value {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.0 {
             Variant::None(none) => none.fmt(fmt),
+            Variant::Unit(unit) => unit.fmt(fmt),
             Variant::Bool(bool) => bool.fmt(fmt),
             Variant::Int(int) => int.fmt(fmt),
             Variant::Float(float) => float.fmt(fmt),
@@ -38,6 +40,7 @@ impl Display for Value {
 
 impl Value {
     pub const NONE: Self = Value(Variant::None(lib::None));
+    pub const UNIT: Self = Value(Variant::Unit(lib::Unit));
 
     pub fn new<T>(value: T) -> Self
     where
@@ -50,6 +53,7 @@ impl Value {
         let variant = match_type! {
             &value as &dyn TypeInstance,
                 as_none: lib::None => Variant::None(as_none.clone()),
+                as_unit: lib::Unit => Variant::Unit(as_unit.clone()),
                 as_bool: bool => Variant::Bool(*as_bool),
                 as_int: i64 => Variant::Int(*as_int),
                 as_float: f64 => Variant::Float(*as_float),
@@ -81,6 +85,7 @@ impl Deref for Value {
     fn deref(&self) -> &Self::Target {
         match self.0 {
             Variant::None(ref obj) => &*obj,
+            Variant::Unit(ref obj) => &*obj,
             Variant::Bool(ref obj) => &*obj,
             Variant::Int(ref obj) => &*obj,
             Variant::Float(ref obj) => &*obj,

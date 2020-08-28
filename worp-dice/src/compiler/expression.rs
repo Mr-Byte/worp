@@ -1,7 +1,7 @@
 use super::{error::CompilerError, Compiler};
 use crate::{
     runtime::core::{Span, Symbol, Value},
-    syntax::{Binary, Block, Conditional, Literal, SyntaxNodeId, Unary, VariableDeclaration},
+    syntax::{Binary, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, Unary, VariableDeclaration},
 };
 
 impl Compiler {
@@ -9,33 +9,34 @@ impl Compiler {
         let node = self.syntax_tree.get(node).unwrap();
 
         match node {
-            crate::syntax::SyntaxNode::Literal(literal) => {
+            SyntaxNode::Literal(literal) => {
                 let literal = literal.clone();
                 self.literal(literal)?;
             }
-            crate::syntax::SyntaxNode::SafeAccess(_) => todo!(),
-            crate::syntax::SyntaxNode::FieldAccess(_) => todo!(),
-            crate::syntax::SyntaxNode::Index(_) => todo!(),
-            crate::syntax::SyntaxNode::Unary(unary) => {
+            SyntaxNode::SafeAccess(_) => todo!(),
+            SyntaxNode::FieldAccess(_) => todo!(),
+            SyntaxNode::Index(_) => todo!(),
+            SyntaxNode::Unary(unary) => {
                 let unary = unary.clone();
                 self.unary_op(unary)?;
             }
-            crate::syntax::SyntaxNode::Binary(binary) => {
+            SyntaxNode::Binary(binary) => {
                 let binary = binary.clone();
                 self.binary_op(binary)?;
             }
-            crate::syntax::SyntaxNode::VariableDeclaration(variable) => {
+            SyntaxNode::VariableDeclaration(variable) => {
                 let variable = variable.clone();
                 self.variable(variable)?;
             }
-            crate::syntax::SyntaxNode::Assignment(_) => todo!(),
-            crate::syntax::SyntaxNode::Conditional(conditional) => {
+            SyntaxNode::Assignment(_) => todo!(),
+            SyntaxNode::Conditional(conditional) => {
                 let conditional = conditional.clone();
                 self.conditional(conditional)?;
             }
-            crate::syntax::SyntaxNode::WhileLoop(_) => todo!(),
-            crate::syntax::SyntaxNode::ForLoop(_) => todo!(),
-            crate::syntax::SyntaxNode::Block(Block(items, _)) => {
+            SyntaxNode::WhileLoop(_) => todo!(),
+            SyntaxNode::ForLoop(_) => todo!(),
+            SyntaxNode::Block(Block(items, span)) => {
+                let span = span.clone();
                 let items = items.clone();
 
                 self.begin_scope();
@@ -44,9 +45,19 @@ impl Compiler {
                     self.compile(*expression)?;
                 }
 
+                // If the block is empty or the last element is a discard of variable, push unit onto the stack.
+                match items.last() {
+                    Some(node) => match self.syntax_tree.get(*node) {
+                        Some(SyntaxNode::Discard(_)) => self.bytecode.push_unit(span),
+                        Some(SyntaxNode::VariableDeclaration(_)) => self.bytecode.push_unit(span),
+                        _ => {}
+                    },
+                    None => self.bytecode.push_unit(span),
+                }
+
                 self.end_scope();
             }
-            crate::syntax::SyntaxNode::Discard(span) => self.bytecode.pop(span.clone()),
+            SyntaxNode::Discard(span) => self.bytecode.pop(span.clone()),
         }
 
         Ok(())
@@ -166,6 +177,7 @@ impl Compiler {
                 }
             }
         }
+
         Ok(())
     }
 }

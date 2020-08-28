@@ -57,8 +57,6 @@ impl Runtime {
 
         let result = self.execute_bytecode(script.bytecode().clone(), locals_frame)?;
 
-        println!("{:?}", self.stack);
-
         self.stack.truncate(self.stack.len() - script.call_frame().slot_count);
 
         Ok(result)
@@ -73,6 +71,9 @@ impl Runtime {
             match instruction {
                 Instruction::PUSH_NONE => {
                     self.stack.push(Value::NONE);
+                }
+                Instruction::PUSH_UNIT => {
+                    self.stack.push(Value::UNIT);
                 }
                 Instruction::PUSH_FALSE => self.stack.push(Value::new(false)),
                 Instruction::PUSH_TRUE => self.stack.push(Value::new(true)),
@@ -91,7 +92,10 @@ impl Runtime {
                 }
 
                 Instruction::POP => {
-                    self.stack.pop();
+                    self.stack
+                        .pop()
+                        .ok_or_else(|| RuntimeError::StackUnderflowed)
+                        .with_span(|| bytecode.span())?;
                 }
                 Instruction::DUP => {
                     let value = self
@@ -163,12 +167,6 @@ impl Runtime {
             }
         }
 
-        // Pop the result off the stack if the length of the stack is longer than the end of the frame.
-        // TODO: Should this be replaced by a return opcode, with the opcode being implicitly injected into scripts?
-        if self.stack.len() > locals_frame.end {
-            Ok(self.stack.pop().unwrap_or(Value::NONE))
-        } else {
-            Ok(Value::NONE)
-        }
+        Ok(self.stack.pop().unwrap_or(Value::NONE))
     }
 }

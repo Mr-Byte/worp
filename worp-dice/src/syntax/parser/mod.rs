@@ -393,7 +393,7 @@ impl Parser {
         let literal = match token.kind {
             TokenKind::Integer(value) => Literal::Integer(value, span),
             TokenKind::Float(value) => Literal::Float(value, span),
-            TokenKind::String(value) => Literal::String(value, span),
+            TokenKind::String(value) => Literal::String(value.trim_matches('"').to_owned(), span),
             TokenKind::Identifier(value) => Literal::Identifier(value, span),
             TokenKind::False => Literal::Boolean(false, span),
             TokenKind::True => Literal::Boolean(true, span),

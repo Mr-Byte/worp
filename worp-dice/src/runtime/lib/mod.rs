@@ -8,6 +8,7 @@ mod none;
 mod object;
 mod range;
 mod string;
+mod unit;
 
 pub(crate) use self::bool::*;
 pub(crate) use dice::{die::*, set::*};
@@ -19,3 +20,4 @@ pub(crate) use none::*;
 pub(crate) use object::*;
 pub(crate) use range::*;
 pub(crate) use string::*;
+pub(crate) use unit::*;
