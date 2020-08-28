@@ -89,9 +89,12 @@ impl Compiler {
         Ok(())
     }
 
-    fn variable(&mut self, VariableDeclaration(name, value, span): VariableDeclaration) -> Result<(), CompilerError> {
+    fn variable(
+        &mut self,
+        VariableDeclaration(name, is_mutable, value, span): VariableDeclaration,
+    ) -> Result<(), CompilerError> {
         let name = Symbol::new(name);
-        let slot = self.add_local(name.clone(), false);
+        let slot = self.add_local(name.clone(), is_mutable);
 
         self.compile(value)?;
         self.bytecode.store_local(slot, span);

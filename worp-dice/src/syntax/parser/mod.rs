@@ -256,6 +256,13 @@ impl Parser {
     fn variable_decl(&mut self) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::Let)?.span();
 
+        let is_mutable = if self.lexer.peek().kind == TokenKind::Mut {
+            self.lexer.consume(TokenKind::Mut)?;
+            true
+        } else {
+            false
+        };
+
         let token = self.lexer.next();
         let name = if let TokenKind::Identifier(name) = token.kind {
             name
@@ -264,10 +271,11 @@ impl Parser {
         };
 
         self.lexer.consume(TokenKind::Assign)?;
-        let expressions = self.expression()?;
+        let expression = self.expression()?;
         let span_end = self.lexer.current().span();
 
-        let node = SyntaxNode::VariableDeclaration(VariableDeclaration(name, expressions, span_start + span_end));
+        let node =
+            SyntaxNode::VariableDeclaration(VariableDeclaration(name, is_mutable, expression, span_start + span_end));
 
         Ok(self.arena.alloc(node))
     }

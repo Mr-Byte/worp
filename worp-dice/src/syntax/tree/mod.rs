@@ -47,7 +47,7 @@ fn fmt_node(node: &SyntaxNode, nodes: &Arena<SyntaxNode>, f: &mut std::fmt::Form
 
             Ok(())
         }
-        SyntaxNode::VariableDeclaration(VariableDeclaration(name, expr, _)) => {
+        SyntaxNode::VariableDeclaration(VariableDeclaration(name, _, expr, _)) => {
             write!(f, "{} := ", name)?;
             fmt_node(nodes.get(*expr).unwrap(), nodes, f)?;
 
@@ -183,7 +183,7 @@ pub struct Unary(pub UnaryOperator, pub SyntaxNodeId, pub Span);
 pub struct Binary(pub BinaryOperator, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
 
 #[derive(Debug, Clone)]
-pub struct VariableDeclaration(pub String, pub SyntaxNodeId, pub Span);
+pub struct VariableDeclaration(pub String, pub bool, pub SyntaxNodeId, pub Span);
 
 #[derive(Debug, Clone)]
 pub struct Assignment(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);

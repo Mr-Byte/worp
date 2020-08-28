@@ -56,6 +56,9 @@ impl Runtime {
         self.stack.extend(locals);
 
         let result = self.execute_bytecode(script.bytecode().clone(), locals_frame)?;
+
+        println!("{:?}", self.stack);
+
         self.stack.truncate(self.stack.len() - script.call_frame().slot_count);
 
         Ok(result)
@@ -160,6 +163,12 @@ impl Runtime {
             }
         }
 
-        Ok(self.stack.pop().unwrap_or(Value::NONE))
+        // Pop the result off the stack if the length of the stack is longer than the end of the frame.
+        // TODO: Should this be replaced by a return opcode, with the opcode being implicitly injected into scripts?
+        if self.stack.len() > locals_frame.end {
+            Ok(self.stack.pop().unwrap_or(Value::NONE))
+        } else {
+            Ok(Value::NONE)
+        }
     }
 }
