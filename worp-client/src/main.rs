@@ -7,7 +7,9 @@ use worp_dice::{compiler::Compiler, runtime::Runtime};
 fn main() -> Result<()> {
     FmtSubscriber::builder().with_max_level(Level::INFO).init();
 
-    let mut vm = Runtime::default();
+    // TODO: Create a system that handles runtime, plus parsing and execution of scripts as a unit.
+
+    let mut runtime = Runtime::default();
 
     loop {
         let mut input = String::new();
@@ -18,12 +20,12 @@ fn main() -> Result<()> {
         let start = std::time::Instant::now();
         let script = Compiler::compile_script(&input)?;
 
-        match vm.run_script(script) {
+        match runtime.run_script(script) {
             Ok(result) => {
                 let elapsed = start.elapsed();
                 println!("Result ({} ms): {}", (elapsed.as_micros() as f64 / 1000.0), result);
             }
-            Err(err) => eprintln!("{} : {:?}", err, err.span()),
+            Err(err) => eprintln!("{}", err),
         }
     }
 }

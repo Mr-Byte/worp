@@ -15,11 +15,7 @@ pub struct BytecodeGenerator {
 
 impl BytecodeGenerator {
     pub fn generate(self) -> Bytecode {
-        Bytecode::new(
-            self.constants.into_boxed_slice(),
-            self.source_map,
-            Cursor::new(self.data.into_boxed_slice()),
-        )
+        Bytecode::new(self.constants.into_boxed_slice(), self.source_map, self.data.into())
     }
 
     pub fn push_none(&mut self, span: Span) {
