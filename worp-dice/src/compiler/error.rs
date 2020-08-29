@@ -6,4 +6,8 @@ pub enum CompilerError {
     SyntaxError(#[from] SyntaxError),
     #[error("Encountered undeclared variable {0}.")]
     UndeclaredVariable(Symbol),
+    #[error("Cannot assign to immutable variable {0}.")]
+    ImmutableVariable(Symbol),
+    #[error("Invalid assignment target.")]
+    InvalidAssignmentTarget,
 }

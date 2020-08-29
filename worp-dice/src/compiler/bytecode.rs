@@ -4,7 +4,7 @@ use crate::runtime::{
     instruction::Instruction,
 };
 use bytes::BufMut as _;
-use std::{collections::HashMap, io::Cursor};
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct BytecodeGenerator {

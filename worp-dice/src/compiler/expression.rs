@@ -1,7 +1,10 @@
 use super::{error::CompilerError, Compiler};
 use crate::{
     runtime::core::{Span, Symbol, Value},
-    syntax::{Binary, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, Unary, VariableDeclaration},
+    syntax::{
+        Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, Unary, UnaryOperator,
+        VariableDeclaration,
+    },
 };
 
 impl Compiler {
@@ -28,7 +31,6 @@ impl Compiler {
                 let variable = variable.clone();
                 self.variable(variable)?;
             }
-            SyntaxNode::Assignment(_) => todo!(),
             SyntaxNode::Conditional(conditional) => {
                 let conditional = conditional.clone();
                 self.conditional(conditional)?;
@@ -89,6 +91,7 @@ impl Compiler {
         match node {
             Literal::Identifier(name, span) => self.load_variable(name, span)?,
             Literal::None(span) => self.bytecode.push_none(span),
+            Literal::Unit(span) => self.bytecode.push_unit(span),
             Literal::Integer(value, span) => self.bytecode.push_int(value, span),
             Literal::Float(value, span) => self.bytecode.push_float(value, span),
             Literal::String(value, span) => self.bytecode.push_const(Value::new(value), span),
@@ -126,9 +129,9 @@ impl Compiler {
         self.compile(expr)?;
 
         match op {
-            crate::syntax::UnaryOperator::Negate => self.bytecode.neg(span),
-            crate::syntax::UnaryOperator::Not => self.bytecode.not(span),
-            crate::syntax::UnaryOperator::DiceRoll => todo!(),
+            UnaryOperator::Negate => self.bytecode.neg(span),
+            UnaryOperator::Not => self.bytecode.not(span),
+            UnaryOperator::DiceRoll => todo!(),
         }
 
         Ok(())
@@ -136,7 +139,26 @@ impl Compiler {
 
     fn binary_op(&mut self, Binary(op, lhs, rhs, span): Binary) -> Result<(), CompilerError> {
         match op {
-            crate::syntax::BinaryOperator::LogicalAnd => {
+            BinaryOperator::Assignment => {
+                let lhs = self.syntax_tree.get(lhs).expect("Node should exist.");
+
+                if let SyntaxNode::Literal(Literal::Identifier(target, _)) = lhs {
+                    let target = Symbol::new(target);
+                    let local = self.local(target.clone())?;
+                    let slot = local.slot;
+
+                    if !local.is_mutable {
+                        return Err(CompilerError::ImmutableVariable(target));
+                    }
+
+                    self.compile(rhs)?;
+                    self.bytecode.dup(span.clone());
+                    self.bytecode.store_local(slot, span);
+                } else {
+                    return Err(CompilerError::InvalidAssignmentTarget);
+                }
+            }
+            BinaryOperator::LogicalAnd => {
                 self.compile(lhs)?;
                 self.bytecode.dup(span.clone());
                 let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
@@ -144,7 +166,7 @@ impl Compiler {
                 self.compile(rhs)?;
                 self.bytecode.patch_jump_with_current_pos(short_circuit_jump);
             }
-            crate::syntax::BinaryOperator::LogicalOr => {
+            BinaryOperator::LogicalOr => {
                 self.compile(lhs)?;
                 self.bytecode.dup(span.clone());
                 self.bytecode.not(span.clone());
@@ -158,21 +180,21 @@ impl Compiler {
                 self.compile(lhs)?;
 
                 match op {
-                    crate::syntax::BinaryOperator::DiceRoll => todo!(),
-                    crate::syntax::BinaryOperator::Multiply => self.bytecode.mul(span),
-                    crate::syntax::BinaryOperator::Divide => self.bytecode.div(span),
-                    crate::syntax::BinaryOperator::Remainder => self.bytecode.rem(span),
-                    crate::syntax::BinaryOperator::Add => self.bytecode.add(span),
-                    crate::syntax::BinaryOperator::Subtract => self.bytecode.sub(span),
-                    crate::syntax::BinaryOperator::GreaterThan => self.bytecode.gt(span),
-                    crate::syntax::BinaryOperator::LessThan => self.bytecode.lt(span),
-                    crate::syntax::BinaryOperator::GreaterThanEquals => self.bytecode.gte(span),
-                    crate::syntax::BinaryOperator::LessThanEquals => self.bytecode.lte(span),
-                    crate::syntax::BinaryOperator::Equals => self.bytecode.eq(span),
-                    crate::syntax::BinaryOperator::NotEquals => self.bytecode.neq(span),
-                    crate::syntax::BinaryOperator::RangeInclusive => todo!(),
-                    crate::syntax::BinaryOperator::RangeExclusive => todo!(),
-                    crate::syntax::BinaryOperator::Coalesce => todo!(),
+                    BinaryOperator::DiceRoll => todo!(),
+                    BinaryOperator::Multiply => self.bytecode.mul(span),
+                    BinaryOperator::Divide => self.bytecode.div(span),
+                    BinaryOperator::Remainder => self.bytecode.rem(span),
+                    BinaryOperator::Add => self.bytecode.add(span),
+                    BinaryOperator::Subtract => self.bytecode.sub(span),
+                    BinaryOperator::GreaterThan => self.bytecode.gt(span),
+                    BinaryOperator::LessThan => self.bytecode.lt(span),
+                    BinaryOperator::GreaterThanEquals => self.bytecode.gte(span),
+                    BinaryOperator::LessThanEquals => self.bytecode.lte(span),
+                    BinaryOperator::Equals => self.bytecode.eq(span),
+                    BinaryOperator::NotEquals => self.bytecode.neq(span),
+                    BinaryOperator::RangeInclusive => todo!(),
+                    BinaryOperator::RangeExclusive => todo!(),
+                    BinaryOperator::Coalesce => todo!(),
                     _ => unreachable!(),
                 }
             }

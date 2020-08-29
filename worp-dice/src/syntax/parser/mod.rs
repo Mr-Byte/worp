@@ -10,14 +10,14 @@ use id_arena::Arena;
 type SyntaxNodeResult = Result<SyntaxNodeId, SyntaxError>;
 
 struct ParserRule {
-    prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, SyntaxError>>,
+    prefix: Option<fn(&mut Parser, can_assign: bool) -> Result<SyntaxNodeId, SyntaxError>>,
     infix: Option<fn(&mut Parser, lhs: SyntaxNodeId, span: Span) -> Result<SyntaxNodeId, SyntaxError>>,
     precedence: RulePrecedence,
 }
 
 impl ParserRule {
     fn new(
-        prefix: Option<fn(&mut Parser) -> Result<SyntaxNodeId, SyntaxError>>,
+        prefix: Option<fn(&mut Parser, can_assign: bool) -> Result<SyntaxNodeId, SyntaxError>>,
         infix: Option<fn(&mut Parser, lhs: SyntaxNodeId, span: Span) -> Result<SyntaxNodeId, SyntaxError>>,
         precedence: RulePrecedence,
     ) -> Self {
@@ -39,7 +39,7 @@ impl ParserRule {
             TokenKind::None => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::False => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::True => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
-            TokenKind::Identifier(_) => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
+            TokenKind::Identifier(_) => ParserRule::new(Some(Parser::variable), None, RulePrecedence::Primary),
 
             // Objects
             TokenKind::Object => ParserRule::new(Some(Parser::object), None, RulePrecedence::Object),
@@ -48,7 +48,7 @@ impl ParserRule {
             TokenKind::RightSquare => ParserRule::new(None, None, RulePrecedence::None),
 
             // Grouping
-            TokenKind::LeftParen => ParserRule::new(Some(Parser::grouping), None, RulePrecedence::None),
+            TokenKind::LeftParen => ParserRule::new(Some(Parser::grouping), None, RulePrecedence::Primary),
 
             // Delimeters
             TokenKind::RightParen => ParserRule::new(None, None, RulePrecedence::None),
@@ -61,9 +61,6 @@ impl ParserRule {
 
             // Block expressions
             TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
-
-            // Variable declaraitons
-            // TokenKind::Let => ParserRule::new(Some(Parser::variable_decl), None, RulePrecedence::None),
 
             // Operators
             TokenKind::Coalesce => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Coalesce),
@@ -201,7 +198,7 @@ impl Parser {
         let rule = ParserRule::for_token(&next_token)?;
         let mut node = rule
             .prefix
-            .map(|prefix| prefix(self))
+            .map(|prefix| prefix(self, precedence <= RulePrecedence::Assignment))
             .unwrap_or_else(|| Err(SyntaxError::UnexpectedToken(next_token.clone())))?;
 
         loop {
@@ -222,17 +219,17 @@ impl Parser {
         Ok(node)
     }
 
-    fn if_expression(&mut self) -> SyntaxNodeResult {
+    fn if_expression(&mut self, _: bool) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::If)?.span();
         let condition = self.expression()?;
-        let primary = self.block_expression()?;
+        let primary = self.block_expression(false)?;
 
         let secondary = if self.lexer.peek().kind == TokenKind::Else {
             self.lexer.consume(TokenKind::Else)?;
 
             match self.lexer.peek().kind {
-                TokenKind::If => Some(self.if_expression()?),
-                TokenKind::LeftCurly => Some(self.block_expression()?),
+                TokenKind::If => Some(self.if_expression(false)?),
+                TokenKind::LeftCurly => Some(self.block_expression(false)?),
                 _ => None,
             }
         } else {
@@ -245,12 +242,41 @@ impl Parser {
         Ok(self.arena.alloc(node))
     }
 
-    fn block_expression(&mut self) -> SyntaxNodeResult {
+    fn block_expression(&mut self, _: bool) -> SyntaxNodeResult {
         self.lexer.consume(TokenKind::LeftCurly)?;
         let expressions = self.expression_sequence()?;
         self.lexer.consume(TokenKind::RightCurly)?;
 
         Ok(expressions)
+    }
+
+    fn variable(&mut self, can_assign: bool) -> SyntaxNodeResult {
+        let next_token = self.lexer.next();
+        let span_start = next_token.span();
+        let mut expression = if let TokenKind::Identifier(name) = next_token.kind {
+            self.arena.alloc(SyntaxNode::Literal(Literal::Identifier(
+                name.clone(),
+                span_start.clone(),
+            )))
+        } else {
+            return Err(SyntaxError::UnexpectedToken(next_token));
+        };
+
+        if can_assign && self.lexer.peek().kind == TokenKind::Assign {
+            self.lexer.consume(TokenKind::Assign)?;
+
+            let value = self.expression()?;
+            let span_end = self.lexer.current().span();
+
+            expression = self.arena.alloc(SyntaxNode::Binary(Binary(
+                BinaryOperator::Assignment,
+                expression,
+                value,
+                span_start + span_end,
+            )));
+        }
+
+        Ok(expression)
     }
 
     fn variable_decl(&mut self) -> SyntaxNodeResult {
@@ -310,7 +336,7 @@ impl Parser {
         Ok(self.arena.alloc(node))
     }
 
-    fn unary(&mut self) -> SyntaxNodeResult {
+    fn unary(&mut self, _: bool) -> SyntaxNodeResult {
         let token = self.lexer.next();
         let child_node_id = self.parse_precedence(RulePrecedence::Unary)?;
         let operator = match token.kind {
@@ -324,15 +350,27 @@ impl Parser {
         Ok(self.arena.alloc(node))
     }
 
-    fn grouping(&mut self) -> SyntaxNodeResult {
-        self.lexer.consume(TokenKind::LeftParen)?;
-        let expression = self.expression()?;
-        self.lexer.consume(TokenKind::RightParen)?;
+    fn grouping(&mut self, _: bool) -> SyntaxNodeResult {
+        let span_start = self.lexer.consume(TokenKind::LeftParen)?.span();
 
-        Ok(expression)
+        if self.lexer.peek().kind == TokenKind::RightParen {
+            let span_end = self.lexer.consume(TokenKind::RightParen)?.span();
+
+            let node = SyntaxNode::Literal(Literal::Unit(span_start + span_end));
+            Ok(self.arena.alloc(node))
+        } else {
+            // TODO: Inject the remainder of the span?
+            let expression = self.expression()?;
+            // TODO: Detect trailing commas and produce a tuple instead of a group?
+            // How to support single-element tuples?
+            // Do like rust and require a singular trailing comma for single element tuples!
+            self.lexer.consume(TokenKind::RightParen)?;
+
+            Ok(expression)
+        }
     }
 
-    fn object(&mut self) -> SyntaxNodeResult {
+    fn object(&mut self, _: bool) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::Object)?.span();
         self.lexer.consume(TokenKind::LeftCurly)?;
 
@@ -361,7 +399,7 @@ impl Parser {
         Ok(node)
     }
 
-    fn list(&mut self) -> SyntaxNodeResult {
+    fn list(&mut self, _: bool) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::LeftSquare)?.span();
 
         let mut values = Vec::new();
@@ -387,14 +425,13 @@ impl Parser {
         Ok(node)
     }
 
-    fn literal(&mut self) -> SyntaxNodeResult {
+    fn literal(&mut self, _: bool) -> SyntaxNodeResult {
         let token = self.lexer.next();
         let span = token.span();
         let literal = match token.kind {
             TokenKind::Integer(value) => Literal::Integer(value, span),
             TokenKind::Float(value) => Literal::Float(value, span),
             TokenKind::String(value) => Literal::String(value.trim_matches('"').to_owned(), span),
-            TokenKind::Identifier(value) => Literal::Identifier(value, span),
             TokenKind::False => Literal::Boolean(false, span),
             TokenKind::True => Literal::Boolean(true, span),
             TokenKind::None => Literal::None(span),
@@ -503,8 +540,6 @@ mod test {
     fn test_parse_unary_die() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("d8").parse()?;
         let root = syntax_tree.get(syntax_tree.root());
-
-        println!("{}", syntax_tree);
 
         assert!(matches!(
             root,

@@ -72,6 +72,7 @@ fn fmt_node(node: &SyntaxNode, nodes: &Arena<SyntaxNode>, f: &mut std::fmt::Form
         SyntaxNode::Binary(Binary(operator, lhs, rhs, _)) => {
             write!(f, "(")?;
             match operator {
+                BinaryOperator::Assignment => write!(f, "=")?,
                 BinaryOperator::Multiply => write!(f, "*")?,
                 BinaryOperator::Divide => write!(f, "/")?,
                 BinaryOperator::Remainder => write!(f, "%")?,
@@ -115,7 +116,6 @@ pub enum SyntaxNode {
 
     // Statements
     VariableDeclaration(VariableDeclaration),
-    Assignment(Assignment),
     Conditional(Conditional),
     WhileLoop(WhileLoop),
     ForLoop(ForLoop),
@@ -127,6 +127,7 @@ pub enum SyntaxNode {
 pub enum Literal {
     Identifier(String, Span),
     None(Span),
+    Unit(Span),
     Integer(i64, Span),
     Float(f64, Span),
     String(String, Span),
@@ -145,6 +146,7 @@ pub enum UnaryOperator {
 
 #[derive(Debug, Clone)]
 pub enum BinaryOperator {
+    Assignment,
     DiceRoll,
     Multiply,
     Divide,
@@ -184,9 +186,6 @@ pub struct Binary(pub BinaryOperator, pub SyntaxNodeId, pub SyntaxNodeId, pub Sp
 
 #[derive(Debug, Clone)]
 pub struct VariableDeclaration(pub String, pub bool, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Assignment(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
 
 #[derive(Debug, Clone)]
 pub struct Conditional(pub SyntaxNodeId, pub SyntaxNodeId, pub Option<SyntaxNodeId>, pub Span);
