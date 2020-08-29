@@ -28,9 +28,17 @@ macro_rules! unary_op {
     }};
 }
 
-#[derive(Default)]
+// #[derive(Default)]
 pub struct Runtime {
     stack: Vec<Value>,
+}
+
+impl Default for Runtime {
+    fn default() -> Self {
+        Self {
+            stack: Vec::with_capacity(512),
+        }
+    }
 }
 
 impl Runtime {
@@ -58,15 +66,15 @@ impl Runtime {
                 Instruction::PUSH_UNIT => {
                     self.stack.push(Value::UNIT);
                 }
-                Instruction::PUSH_FALSE => self.stack.push(Value::new(false)),
-                Instruction::PUSH_TRUE => self.stack.push(Value::new(true)),
+                Instruction::PUSH_FALSE => self.stack.push(Value::Bool(false)),
+                Instruction::PUSH_TRUE => self.stack.push(Value::Bool(true)),
                 Instruction::PUSH_INT => {
                     let int = cursor.read_int();
-                    self.stack.push(Value::new(int));
+                    self.stack.push(Value::Int(int));
                 }
                 Instruction::PUSH_FLOAT => {
                     let float = cursor.read_float();
-                    self.stack.push(Value::new(float));
+                    self.stack.push(Value::Float(float));
                 }
                 Instruction::PUSH_CONST => {
                     let const_pos = cursor.read_int();
@@ -75,8 +83,8 @@ impl Runtime {
                 }
 
                 Instruction::POP => {
-                    self.stack.pop().ok_or_else(|| RuntimeError::StackUnderflowed)?;
-                    // .with_span(|| bytecode.span())?;
+                    self.stack.pop(); //.ok_or_else(|| RuntimeError::StackUnderflowed)?;
+                                      // .with_span(|| bytecode.span())?;
                 }
                 Instruction::DUP => {
                     let value = self
@@ -94,12 +102,22 @@ impl Runtime {
                 Instruction::MUL => binary_op!(cursor, self.stack, OP_MUL),
                 Instruction::DIV => binary_op!(cursor, self.stack, OP_DIV),
                 Instruction::REM => binary_op!(cursor, self.stack, OP_REM),
-                Instruction::ADD => binary_op!(cursor, self.stack, OP_ADD),
+                Instruction::ADD => match (self.stack.pop().unwrap(), self.stack.pop().unwrap()) {
+                    (Value::Int(lhs), Value::Int(rhs)) => self.stack.push(Value::Int(lhs + rhs)),
+                    _ => todo!(),
+                },
+
+                //binary_op!(cursor, self.stack, OP_ADD),
                 Instruction::SUB => binary_op!(cursor, self.stack, OP_SUB),
 
                 Instruction::GT => binary_op!(cursor, self.stack, OP_GT),
                 Instruction::GTE => binary_op!(cursor, self.stack, OP_GTE),
-                Instruction::LT => binary_op!(cursor, self.stack, OP_LT),
+                Instruction::LT => match (self.stack.pop().unwrap(), self.stack.pop().unwrap()) {
+                    (Value::Int(lhs), Value::Int(rhs)) => self.stack.push(Value::Bool(lhs < rhs)),
+                    _ => todo!(),
+                },
+
+                //binary_op!(cursor, self.stack, OP_LT),
                 Instruction::LTE => binary_op!(cursor, self.stack, OP_LTE),
                 Instruction::EQ => binary_op!(cursor, self.stack, OP_EQ),
                 Instruction::NEQ => binary_op!(cursor, self.stack, OP_NEQ),
@@ -111,7 +129,10 @@ impl Runtime {
                 }
                 Instruction::JUMP_IF_FALSE => {
                     let offset = cursor.read_offset();
-                    let value = *self.stack.pop().unwrap_or(Value::NONE).try_value::<bool>()?;
+                    let value = match self.stack.pop() {
+                        Some(Value::Bool(value)) => value,
+                        _ => todo!(),
+                    };
 
                     if !value {
                         cursor.offset_position(offset)
@@ -128,7 +149,7 @@ impl Runtime {
                 Instruction::STORE_LOCAL => {
                     // TODO Bounds check the slot?
                     let slot = cursor.read_offset() as usize;
-                    let value = self.stack.pop().ok_or_else(|| RuntimeError::StackUnderflowed)?;
+                    let value = self.stack.pop().unwrap(); //.ok_or_else(|| RuntimeError::StackUnderflowed)?;
                     let frame = &mut self.stack[stack_frame.clone()];
 
                     frame[slot] = value;

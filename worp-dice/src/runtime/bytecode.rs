@@ -50,10 +50,12 @@ pub struct BytecodeCursor {
 }
 
 impl BytecodeCursor {
+    #[inline(always)]
     pub fn set_position(&mut self, position: u64) {
         self.cursor.set_position(position)
     }
 
+    #[inline(always)]
     pub fn read_instruction(&mut self) -> Option<Instruction> {
         if self.cursor.has_remaining() {
             Some(self.cursor.get_u8().into())
@@ -62,23 +64,28 @@ impl BytecodeCursor {
         }
     }
 
+    #[inline(always)]
     pub fn read_bool(&mut self) -> bool {
         self.cursor.get_u8() != 0
     }
 
+    #[inline(always)]
     pub fn read_int(&mut self) -> i64 {
         self.cursor.get_i64()
     }
 
+    #[inline(always)]
     pub fn read_float(&mut self) -> f64 {
         self.cursor.get_f64()
     }
 
-    pub fn read_offset(&mut self) -> u16 {
-        self.cursor.get_u16()
+    #[inline(always)]
+    pub fn read_offset(&mut self) -> i16 {
+        self.cursor.get_i16()
     }
 
-    pub fn offset_position(&mut self, offset: u16) {
-        self.set_position(self.cursor.position() + offset as u64);
+    #[inline(always)]
+    pub fn offset_position(&mut self, offset: i16) {
+        self.set_position(self.cursor.position().wrapping_add(offset as u64));
     }
 }

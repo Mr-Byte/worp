@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 macro_rules! define_instructions {
     (prev=$prev:ident @) => {};
     (prev=$prev:ident @ $next:ident $($name:ident)*) => {
@@ -70,5 +72,42 @@ impl Into<u8> for Instruction {
 impl From<u8> for Instruction {
     fn from(value: u8) -> Self {
         Instruction(value)
+    }
+}
+
+impl Debug for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Instruction::HALT => write!(f, "HALT {:#04X}", self.0),
+            Instruction::PUSH_NONE => write!(f, "PUSH_NONE {:#04X}", self.0),
+            Instruction::PUSH_UNIT => write!(f, "PUSH_UNIT {:#04X}", self.0),
+            Instruction::PUSH_FALSE => write!(f, "PUSH_FALSE {:#04X}", self.0),
+            Instruction::PUSH_TRUE => write!(f, "PUSH_TRUE {:#04X}", self.0),
+            Instruction::PUSH_INT => write!(f, "PUSH_INT {:#04X}", self.0),
+            Instruction::PUSH_FLOAT => write!(f, "PUSH_FLOAT {:#04X}", self.0),
+            Instruction::PUSH_CONST => write!(f, "PUSH_CONST {:#04X}", self.0),
+            Instruction::POP => write!(f, "POP {:#04X}", self.0),
+            Instruction::DUP => write!(f, "DUP {:#04X}", self.0),
+            Instruction::LOAD_LOCAL => write!(f, "LOAD_LOCAL {:#04X}", self.0),
+            Instruction::STORE_LOCAL => write!(f, "STORE_LOCAL {:#04X}", self.0),
+            Instruction::NEG => write!(f, "NEG {:#04X}", self.0),
+            Instruction::NOT => write!(f, "NOT {:#04X}", self.0),
+            Instruction::MUL => write!(f, "MUL {:#04X}", self.0),
+            Instruction::DIV => write!(f, "DIV {:#04X}", self.0),
+            Instruction::REM => write!(f, "REM {:#04X}", self.0),
+            Instruction::ADD => write!(f, "ADD {:#04X}", self.0),
+            Instruction::SUB => write!(f, "SUB {:#04X}", self.0),
+            Instruction::GT => write!(f, "GT {:#04X}", self.0),
+            Instruction::GTE => write!(f, "GTE {:#04X}", self.0),
+            Instruction::LT => write!(f, "LT {:#04X}", self.0),
+            Instruction::LTE => write!(f, "LTE {:#04X}", self.0),
+            Instruction::EQ => write!(f, "EQ {:#04X}", self.0),
+            Instruction::NEQ => write!(f, "NEQ {:#04X}", self.0),
+            Instruction::LOGICAL_AND => write!(f, "LOGICAL_AND {:#04X}", self.0),
+            Instruction::LOGICAL_OR => write!(f, "LOGICAL_OR {:#04X}", self.0),
+            Instruction::JUMP => write!(f, "JUMP {:#04X}", self.0),
+            Instruction::JUMP_IF_FALSE => write!(f, "JUMP_IF_FALSE {:#04X}", self.0),
+            i => write!(f, "{:#04X}", i.0),
+        }
     }
 }

@@ -7,7 +7,7 @@ use gc::{Finalize, Gc, Trace};
 use std::{fmt::Display, ops::Deref};
 
 #[derive(Clone, Debug, Trace, Finalize, PartialEq)]
-enum Variant {
+pub enum Value {
     None(lib::None),
     Unit(lib::Unit),
     Bool(bool),
@@ -19,28 +19,25 @@ enum Variant {
     Object(Gc<Box<dyn TypeInstance>>),
 }
 
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
-pub struct Value(Variant);
-
 impl Display for Value {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.0 {
-            Variant::None(none) => none.fmt(fmt),
-            Variant::Unit(unit) => unit.fmt(fmt),
-            Variant::Bool(bool) => bool.fmt(fmt),
-            Variant::Int(int) => int.fmt(fmt),
-            Variant::Float(float) => float.fmt(fmt),
-            Variant::Function(func) => func.fmt(fmt),
-            Variant::List(list) => list.fmt(fmt),
-            Variant::String(string) => string.fmt(fmt),
-            Variant::Object(object) => object.fmt(fmt),
+        match &self {
+            Value::None(none) => none.fmt(fmt),
+            Value::Unit(unit) => unit.fmt(fmt),
+            Value::Bool(bool) => bool.fmt(fmt),
+            Value::Int(int) => int.fmt(fmt),
+            Value::Float(float) => float.fmt(fmt),
+            Value::Function(func) => func.fmt(fmt),
+            Value::List(list) => list.fmt(fmt),
+            Value::String(string) => string.fmt(fmt),
+            Value::Object(object) => object.fmt(fmt),
         }
     }
 }
 
 impl Value {
-    pub const NONE: Self = Value(Variant::None(lib::None));
-    pub const UNIT: Self = Value(Variant::Unit(lib::Unit));
+    pub const NONE: Self = Value::None(lib::None);
+    pub const UNIT: Self = Value::Unit(lib::Unit);
 
     pub fn new<T>(value: T) -> Self
     where
@@ -50,20 +47,18 @@ impl Value {
     }
 
     fn new_object(value: impl TypeInstance + 'static) -> Self {
-        let variant = match_type! {
+        match_type! {
             &value as &dyn TypeInstance,
-                as_none: lib::None => Variant::None(as_none.clone()),
-                as_unit: lib::Unit => Variant::Unit(as_unit.clone()),
-                as_bool: bool => Variant::Bool(*as_bool),
-                as_int: i64 => Variant::Int(*as_int),
-                as_float: f64 => Variant::Float(*as_float),
-                as_func: Func => Variant::Function(as_func.clone()),
-                as_list: List => Variant::List(as_list.clone()),
-                as_string: String => Variant::String(as_string.clone()),
-                _ => Variant::Object(Gc::new(Box::new(value)))
-        };
-
-        Self(variant)
+                as_none: lib::None => Value::None(as_none.clone()),
+                as_unit: lib::Unit => Value::Unit(as_unit.clone()),
+                as_bool: bool => Value::Bool(*as_bool),
+                as_int: i64 => Value::Int(*as_int),
+                as_float: f64 => Value::Float(*as_float),
+                as_func: Func => Value::Function(as_func.clone()),
+                as_list: List => Value::List(as_list.clone()),
+                as_string: String => Value::String(as_string.clone()),
+                _ => Value::Object(Gc::new(Box::new(value)))
+        }
     }
 
     #[inline]
@@ -83,16 +78,16 @@ impl Deref for Value {
     type Target = dyn TypeInstance;
 
     fn deref(&self) -> &Self::Target {
-        match self.0 {
-            Variant::None(ref obj) => &*obj,
-            Variant::Unit(ref obj) => &*obj,
-            Variant::Bool(ref obj) => &*obj,
-            Variant::Int(ref obj) => &*obj,
-            Variant::Float(ref obj) => &*obj,
-            Variant::List(ref obj) => obj,
-            Variant::String(ref obj) => obj,
-            Variant::Function(ref obj) => obj,
-            Variant::Object(ref obj) => &***obj,
+        match self {
+            Value::None(ref obj) => &*obj,
+            Value::Unit(ref obj) => &*obj,
+            Value::Bool(ref obj) => &*obj,
+            Value::Int(ref obj) => &*obj,
+            Value::Float(ref obj) => &*obj,
+            Value::List(ref obj) => obj,
+            Value::String(ref obj) => obj,
+            Value::Function(ref obj) => obj,
+            Value::Object(ref obj) => &***obj,
         }
     }
 }

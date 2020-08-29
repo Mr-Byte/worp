@@ -9,3 +9,6 @@ members = [
     "worp-scroll",
 ]
 default-members = ["worp-client"]
+
+[profile.release]
+debug = true

@@ -167,9 +167,16 @@ impl BytecodeGenerator {
         patch_pos as u64
     }
 
-    pub fn patch_jump_with_current_pos(&mut self, jump_position: u64) {
-        let offset = (self.current_position() - jump_position - 2) as u16;
-        (&mut self.data[jump_position as usize..]).put_u16(offset)
+    pub fn patch_jump(&mut self, jump_position: u64) {
+        let offset = (self.current_position() - jump_position - 2) as i16;
+        (&mut self.data[jump_position as usize..]).put_i16(offset)
+    }
+
+    pub fn jump_back(&mut self, position: u64, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::JUMP.into());
+        let offset = -((self.current_position() - position + 2) as i16);
+        self.data.put_i16(offset);
     }
 
     pub fn current_position(&self) -> u64 {

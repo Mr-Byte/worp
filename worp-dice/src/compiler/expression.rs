@@ -3,7 +3,7 @@ use crate::{
     runtime::core::{Span, Symbol, Value},
     syntax::{
         Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, Unary, UnaryOperator,
-        VariableDeclaration,
+        VariableDeclaration, WhileLoop,
     },
 };
 
@@ -35,7 +35,10 @@ impl Compiler {
                 let conditional = conditional.clone();
                 self.conditional(conditional)?;
             }
-            SyntaxNode::WhileLoop(_) => todo!(),
+            SyntaxNode::WhileLoop(while_loop) => {
+                let while_loop = while_loop.clone();
+                self.while_loop(while_loop)?;
+            }
             SyntaxNode::ForLoop(_) => todo!(),
             SyntaxNode::Block(Block(items, span)) => {
                 let span = span.clone();
@@ -74,15 +77,32 @@ impl Compiler {
         self.compile(primary)?;
 
         let else_jump = self.bytecode.jump(span);
-        // -2 accounts for the jump offset itself.
 
-        self.bytecode.patch_jump_with_current_pos(if_jump);
+        self.bytecode.patch_jump(if_jump);
 
         if let Some(secondary) = secondary {
             self.compile(secondary)?;
         }
 
-        self.bytecode.patch_jump_with_current_pos(else_jump);
+        self.bytecode.patch_jump(else_jump);
+
+        Ok(())
+    }
+
+    fn while_loop(&mut self, WhileLoop(condition, body, span): WhileLoop) -> Result<(), CompilerError> {
+        let loop_start = self.bytecode.current_position();
+        self.compile(condition)?;
+        let loop_end = self.bytecode.jump_if_false(span.clone());
+
+        // TODO: Have a special compile for the body that allows for breaks?
+        self.compile(body)?;
+        // Cleanup the stack at the end of each iteration of the loop.
+        self.bytecode.pop(span.clone());
+        self.bytecode.jump_back(loop_start, span.clone());
+        self.bytecode.patch_jump(loop_end);
+        // Push a unit onto the stack after a loop finishes executing.
+        // TODO: Maybe only do this if the next node is a discard.
+        self.bytecode.push_unit(span);
 
         Ok(())
     }
@@ -164,7 +184,7 @@ impl Compiler {
                 let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
                 self.bytecode.pop(span);
                 self.compile(rhs)?;
-                self.bytecode.patch_jump_with_current_pos(short_circuit_jump);
+                self.bytecode.patch_jump(short_circuit_jump);
             }
             BinaryOperator::LogicalOr => {
                 self.compile(lhs)?;
@@ -173,7 +193,7 @@ impl Compiler {
                 let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
                 self.bytecode.pop(span);
                 self.compile(rhs)?;
-                self.bytecode.patch_jump_with_current_pos(short_circuit_jump);
+                self.bytecode.patch_jump(short_circuit_jump);
             }
             _ => {
                 self.compile(rhs)?;

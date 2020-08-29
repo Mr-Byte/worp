@@ -2,7 +2,7 @@ use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
     Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
-    VariableDeclaration,
+    VariableDeclaration, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -58,6 +58,7 @@ impl ParserRule {
 
             // Control flow
             TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
+            TokenKind::While => ParserRule::new(Some(Parser::while_expression), None, RulePrecedence::None),
 
             // Block expressions
             TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
@@ -239,6 +240,17 @@ impl Parser {
         let span_end = self.lexer.current().span();
 
         let node = SyntaxNode::Conditional(Conditional(condition, primary, secondary, span_start + span_end));
+        Ok(self.arena.alloc(node))
+    }
+
+    fn while_expression(&mut self, _: bool) -> SyntaxNodeResult {
+        let span_start = self.lexer.consume(TokenKind::While)?.span();
+        let condition = self.expression()?;
+        let body = self.block_expression(false)?;
+        let span_end = self.lexer.current().span();
+
+        let node = SyntaxNode::WhileLoop(WhileLoop(condition, body, span_start + span_end));
+
         Ok(self.arena.alloc(node))
     }
 
