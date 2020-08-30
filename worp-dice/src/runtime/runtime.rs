@@ -10,25 +10,6 @@ use crate::runtime::{
 };
 use std::{iter, ops::Range};
 
-macro_rules! binary_op {
-    ($bytecode:expr, $stack:expr, $op:ident) => {{
-        let lhs = $stack.pop().ok_or_else(|| RuntimeError::StackUnderflowed)?;
-        let rhs = $stack.pop().ok_or_else(|| RuntimeError::StackUnderflowed)?;
-        let result = lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs])?;
-
-        $stack.push(result);
-    }};
-}
-
-macro_rules! unary_op {
-    ($bytecode:expr, $stack:expr, $op:expr) => {{
-        let value = $stack.pop().ok_or_else(|| RuntimeError::StackUnderflowed)?;
-        let result = value.get(&ValueKey::Symbol($op))?.call(&[value])?;
-        $stack.push(result);
-    }};
-}
-
-// #[derive(Default)]
 pub struct Runtime {
     stack: Vec<Value>,
 }
@@ -44,7 +25,7 @@ impl Default for Runtime {
 impl Runtime {
     pub fn run_script(&mut self, mut script: Script) -> Result<Value, RuntimeError> {
         // TODO: Move stack frame handling off into separate methods called by execute_bytecode.
-        let stack_frame = self.stack.len()..script.call_frame().slot_count;
+        let stack_frame = self.stack.len()..(script.call_frame().slot_count + self.stack.len());
         let locals = iter::repeat(Value::NONE).take(script.call_frame().slot_count);
         self.stack.extend(locals);
 
@@ -83,45 +64,28 @@ impl Runtime {
                 }
 
                 Instruction::POP => {
-                    self.stack.pop(); //.ok_or_else(|| RuntimeError::StackUnderflowed)?;
-                                      // .with_span(|| bytecode.span())?;
+                    self.stack.pop();
                 }
                 Instruction::DUP => {
-                    let value = self
-                        .stack
-                        .last()
-                        .ok_or_else(|| RuntimeError::StackUnderflowed)?
-                        // .with_span(|| bytecode.span())?
-                        .clone();
+                    let value = self.stack.last().ok_or_else(|| RuntimeError::StackUnderflowed)?.clone();
                     self.stack.push(value);
                 }
 
                 Instruction::NEG => unary_op!(cursor, self.stack, OP_NEG),
                 Instruction::NOT => unary_op!(cursor, self.stack, OP_NOT),
 
-                Instruction::MUL => binary_op!(cursor, self.stack, OP_MUL),
-                Instruction::DIV => binary_op!(cursor, self.stack, OP_DIV),
-                Instruction::REM => binary_op!(cursor, self.stack, OP_REM),
-                Instruction::ADD => match (self.stack.pop().unwrap(), self.stack.pop().unwrap()) {
-                    (Value::Int(lhs), Value::Int(rhs)) => self.stack.push(Value::Int(lhs + rhs)),
-                    _ => todo!(),
-                },
+                Instruction::MUL => arithmetic_op!(self.stack, OP_MUL),
+                Instruction::DIV => arithmetic_op!(self.stack, OP_DIV),
+                Instruction::REM => arithmetic_op!(self.stack, OP_REM),
+                Instruction::ADD => arithmetic_op!(self.stack, OP_ADD),
+                Instruction::SUB => arithmetic_op!(self.stack, OP_SUB),
 
-                //binary_op!(cursor, self.stack, OP_ADD),
-                Instruction::SUB => binary_op!(cursor, self.stack, OP_SUB),
-
-                Instruction::GT => binary_op!(cursor, self.stack, OP_GT),
-                Instruction::GTE => binary_op!(cursor, self.stack, OP_GTE),
-                Instruction::LT => match (self.stack.pop().unwrap(), self.stack.pop().unwrap()) {
-                    (Value::Int(lhs), Value::Int(rhs)) => self.stack.push(Value::Bool(lhs < rhs)),
-                    _ => todo!(),
-                },
-
-                //binary_op!(cursor, self.stack, OP_LT),
-                Instruction::LTE => binary_op!(cursor, self.stack, OP_LTE),
-                Instruction::EQ => binary_op!(cursor, self.stack, OP_EQ),
-                Instruction::NEQ => binary_op!(cursor, self.stack, OP_NEQ),
-                Instruction::HALT => return Ok(self.stack.pop().unwrap_or(Value::NONE)),
+                Instruction::GT => comparison_op!(self.stack, OP_GT),
+                Instruction::GTE => comparison_op!(self.stack, OP_GTE),
+                Instruction::LT => comparison_op!(self.stack, OP_LT),
+                Instruction::LTE => comparison_op!(self.stack, OP_LTE),
+                Instruction::EQ => comparison_op!(self.stack, OP_EQ),
+                Instruction::NEQ => comparison_op!(self.stack, OP_NEQ),
 
                 Instruction::JUMP => {
                     let offset = cursor.read_offset();

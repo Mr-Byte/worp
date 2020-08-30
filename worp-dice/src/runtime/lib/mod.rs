@@ -1,5 +1,5 @@
 mod bool;
-mod dice;
+// mod dice;
 mod float;
 mod func;
 mod int;
@@ -11,7 +11,7 @@ mod string;
 mod unit;
 
 pub(crate) use self::bool::*;
-pub(crate) use dice::{die::*, set::*};
+// pub(crate) use dice::{die::*, set::*};
 pub(crate) use float::*;
 pub(crate) use func::*;
 pub(crate) use int::*;

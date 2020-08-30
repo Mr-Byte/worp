@@ -23,13 +23,13 @@ decl_type! {
         lhs.try_value::<Unit>()?;
         let rhs = rhs.value::<Unit>();
 
-        Ok(Value::new(rhs.is_some()))
+        Ok(Value::Bool(rhs.is_some()))
     }
 
     fn op_neq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         lhs.try_value::<Unit>()?;
         let rhs = rhs.value::<Unit>();
 
-        Ok(Value::new(rhs.is_none()))
+        Ok(Value::Bool(rhs.is_none()))
     }
 }

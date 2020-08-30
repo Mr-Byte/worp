@@ -114,7 +114,7 @@ impl Compiler {
             Literal::Unit(span) => self.bytecode.push_unit(span),
             Literal::Integer(value, span) => self.bytecode.push_int(value, span),
             Literal::Float(value, span) => self.bytecode.push_float(value, span),
-            Literal::String(value, span) => self.bytecode.push_const(Value::new(value), span),
+            Literal::String(value, span) => self.bytecode.push_const(Value::String(value), span),
             Literal::Boolean(value, span) => self.bytecode.push_bool(value, span),
             Literal::List(_, _) => todo!(),
             Literal::Object(_, _) => todo!(),

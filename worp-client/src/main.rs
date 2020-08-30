@@ -11,23 +11,21 @@ fn main() -> Result<()> {
 
     let mut runtime = Runtime::default();
 
-    // loop {
-    let mut input = String::from("let mut x = 0; while x < 100000000 { x = x + 1; }; x");
-    // print!("Input: ");
-    // std::io::stdout().flush()?;
-    // std::io::stdin().read_line(&mut input)?;
+    loop {
+        let mut input = String::new();
+        print!("Input: ");
+        std::io::stdout().flush()?;
+        std::io::stdin().read_line(&mut input)?;
 
-    let start = std::time::Instant::now();
-    let script = Compiler::compile_script(&input)?;
+        let start = std::time::Instant::now();
+        let script = Compiler::compile_script(&input)?;
 
-    match runtime.run_script(script) {
-        Ok(result) => {
-            let elapsed = start.elapsed();
-            println!("Result ({} ms): {}", (elapsed.as_micros() as f64 / 1000.0), result);
-        }
-        Err(err) => eprintln!("{}", err),
-    };
-
-    Ok(())
-    // }
+        match runtime.run_script(script) {
+            Ok(result) => {
+                let elapsed = start.elapsed();
+                println!("Result ({} ms): {}", (elapsed.as_micros() as f64 / 1000.0), result);
+            }
+            Err(err) => eprintln!("{}", err),
+        };
+    }
 }

@@ -66,18 +66,18 @@ decl_type! {
             lhs.iter().chain(iter::once(&rhs)).cloned().collect::<Vec<_>>().into()
         };
 
-        Ok(Value::new(output))
+        Ok(Value::List(output))
     }
 
     fn length(this: Value) -> Result<Value, RuntimeError> {
         let this = this.try_value::<List>()?;
 
-        Ok(Value::new(this.len() as i64))
+        Ok(Value::Int(this.len() as i64))
     }
 
     fn is_empty(this: Value) -> Result<Value, RuntimeError> {
         let this = this.try_value::<List>()?;
 
-        Ok(Value::new(this.is_empty() as bool))
+        Ok(Value::Bool(this.is_empty() as bool))
     }
 }

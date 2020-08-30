@@ -12,7 +12,7 @@ decl_type! {
         if let [value] = args {
             let as_string: String = value.to_string();
 
-            Ok(Value::new(as_string))
+            Ok(Value::String(as_string))
         } else {
             Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
         }
@@ -22,18 +22,18 @@ decl_type! {
         let lhs = lhs.try_value::<String>()?;
         let result = format!("{}{}", lhs, &*rhs);
 
-        Ok(Value::new(result))
+        Ok(Value::String(result))
     }
 
     fn length(this: Value) -> Result<Value, RuntimeError> {
         let this = this.try_value::<String>()?;
 
-        Ok(Value::new(this.len() as i64))
+        Ok(Value::Int(this.len() as i64))
     }
 
     fn is_empty(this: Value) -> Result<Value, RuntimeError> {
         let this = this.try_value::<String>()?;
 
-        Ok(Value::new(this.is_empty() as bool))
+        Ok(Value::Bool(this.is_empty() as bool))
     }
 }

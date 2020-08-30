@@ -20,12 +20,12 @@ pub use symbol::Symbol;
 pub use value::Value;
 
 thread_local! {
-    static TO_STRING: Value = Value::new(Func::new_func1(to_string));
+    static TO_STRING: Value = Value::Func(Func::new_func1(to_string));
 }
 
 fn to_string(object: Value) -> Result<Value, RuntimeError> {
     let string = object.to_string();
-    Ok(Value::new(string))
+    Ok(Value::String(string))
 }
 
 pub trait TypeInstanceBase: Any + Debug + Display + Trace + Finalize {

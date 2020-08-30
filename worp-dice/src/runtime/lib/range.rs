@@ -46,7 +46,7 @@ decl_type! {
                 return Err(RuntimeError::RangeError(*lower, *upper));
             }
 
-            Ok(Value::new(Range::new(*lower, *upper)))
+            Ok(Value::boxed(Range::new(*lower, *upper)))
         } else {
             Err(RuntimeError::InvalidFunctionArgs(2, args.len()))
         }
@@ -92,7 +92,7 @@ decl_type! {
                 return Err(RuntimeError::RangeError(*lower, *upper));
             }
 
-            Ok(Value::new(RangeInclusive::new(*lower, *upper)))
+            Ok(Value::boxed(RangeInclusive::new(*lower, *upper)))
         } else {
             Err(RuntimeError::InvalidFunctionArgs(2, args.len()))
         }

@@ -42,91 +42,91 @@ macro_rules! type_member {
     (op_not => $arg1:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_NOT),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func1(op_not)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func1(op_not)),
         )
     };
 
     (op_neg => $arg1:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_NEG),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func1(op_neg)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func1(op_neg)),
         )
     };
 
     (op_mul => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_MUL),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_mul)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_mul)),
         )
     };
 
     (op_div => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_DIV),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_div)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_div)),
         )
     };
 
     (op_rem => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_REM),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_rem)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_rem)),
         )
     };
 
     (op_add => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_ADD),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_add)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_add)),
         )
     };
 
     (op_sub => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_SUB),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_sub)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_sub)),
         )
     };
 
     (op_eq => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_EQ),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_eq)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_eq)),
         )
     };
 
     (op_neq => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_NEQ),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_neq)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_neq)),
         )
     };
 
     (op_gt => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_GT),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_gt)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_gt)),
         )
     };
 
     (op_lt => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_LT),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_lt)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_lt)),
         )
     };
 
     (op_gte => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_GTE),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_gte)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_gte)),
         )
     };
 
     (op_lte => $arg1:ident, $arg2:ident) => {
         (
             $crate::runtime::core::ValueKey::Symbol($crate::runtime::core::symbol::common::operators::OP_LTE),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2(op_lte)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2(op_lte)),
         )
     };
 
@@ -134,19 +134,19 @@ macro_rules! type_member {
     ($name:ident => ) => {
         (
             Into::<$crate::runtime::core::ValueKey>::into(stringify!($name)),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func0($name)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func0($name)),
         )
     };
     ($name:ident => $arg1:ident) => {
         (
             Into::<$crate::runtime::core::ValueKey>::into(stringify!($name)),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func1($name)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func1($name)),
         )
     };
     ($name:ident => $arg1:ident, $arg2:ident) => {
         (
             Into::<$crate::runtime::core::ValueKey>::into(stringify!($name)),
-            $crate::runtime::core::Value::new($crate::runtime::lib::Func::new_func2($name)),
+            $crate::runtime::core::Value::Func($crate::runtime::lib::Func::new_func2($name)),
         )
     };
 }
@@ -232,4 +232,103 @@ macro_rules! decl_type {
             fn $name ($($arg : $typ),*) $(-> $ret)?  $rest
         )*
     };
+}
+
+// Runtime macros
+macro_rules! op {
+    (OP_MUL, $lhs:expr, $rhs:expr) => {
+        $lhs * $rhs
+    };
+    (OP_DIV, $lhs:expr, $rhs:expr) => {
+        $lhs / $rhs
+    };
+    (OP_REM, $lhs:expr, $rhs:expr) => {
+        $lhs % $rhs
+    };
+    (OP_ADD, $lhs:expr, $rhs:expr) => {
+        $lhs + $rhs
+    };
+    (OP_SUB, $lhs:expr, $rhs:expr) => {
+        $lhs - $rhs
+    };
+    (OP_EQ, $lhs:expr, $rhs:expr) => {
+        $lhs == $rhs
+    };
+    (OP_NEQ, $lhs:expr, $rhs:expr) => {
+        $lhs != $rhs
+    };
+    (OP_GT, $lhs:expr, $rhs:expr) => {
+        $lhs > $rhs
+    };
+    (OP_GTE, $lhs:expr, $rhs:expr) => {
+        $lhs >= $rhs
+    };
+    (OP_LT, $lhs:expr, $rhs:expr) => {
+        $lhs < $rhs
+    };
+    (OP_LTE, $lhs:expr, $rhs:expr) => {
+        $lhs <= $rhs
+    };
+}
+
+#[macro_export]
+macro_rules! arithmetic_op {
+    ($stack:expr, $op:ident) => {
+        match ($stack.pop().unwrap(), $stack.pop().unwrap()) {
+            (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Int(op!($op, lhs, rhs))),
+            (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Float(op!($op, lhs, rhs))),
+            (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs])?),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! comparison_op {
+    ($stack:expr, OP_EQ) => {
+        match ($stack.pop().unwrap(), $stack.pop().unwrap()) {
+            (Value::None(_), Value::None(_)) => $stack.push(Value::Bool(true)),
+            (Value::None(_), _) => $stack.push(Value::Bool(false)),
+            (_, Value::None(_)) => $stack.push(Value::Bool(false)),
+            (Value::Unit(_), Value::Unit(_)) => $stack.push(Value::Bool(true)),
+            (Value::Unit(_), _) => $stack.push(Value::Bool(false)),
+            (_, Value::Unit(_)) => $stack.push(Value::Bool(false)),
+            (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
+            (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
+            (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
+            (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol(OP_EQ))?.call(&[lhs, rhs])?),
+        }
+    };
+
+    ($stack:expr, OP_NEQ) => {
+        match ($stack.pop().unwrap(), $stack.pop().unwrap()) {
+            (Value::None(_), Value::None(_)) => $stack.push(Value::Bool(false)),
+            (Value::None(_), _) => $stack.push(Value::Bool(true)),
+            (_, Value::None(_)) => $stack.push(Value::Bool(true)),
+            (Value::Unit(_), Value::Unit(_)) => $stack.push(Value::Bool(false)),
+            (Value::Unit(_), _) => $stack.push(Value::Bool(true)),
+            (_, Value::Unit(_)) => $stack.push(Value::Bool(true)),
+            (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
+            (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
+            (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
+            (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol(OP_NEQ))?.call(&[lhs, rhs])?),
+        }
+    };
+
+    ($stack:expr, $op:ident) => {
+        match ($stack.pop().unwrap(), $stack.pop().unwrap()) {
+            (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
+            (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
+            (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
+            (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs])?),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! unary_op {
+    ($bytecode:expr, $stack:expr, $op:expr) => {{
+        let value = $stack.pop().ok_or_else(|| RuntimeError::StackUnderflowed)?;
+        let result = value.get(&ValueKey::Symbol($op))?.call(&[value])?;
+        $stack.push(result);
+    }};
 }

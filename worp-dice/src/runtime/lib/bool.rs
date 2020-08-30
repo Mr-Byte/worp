@@ -9,8 +9,8 @@ decl_type! {
     constructor(&self, args: &[Value]) {
         if let [value] = args {
             match_type! { value,
-                as_bool: bool => Ok(Value::new(*as_bool)),
-                as_string: String => Ok(Value::new(as_string.parse::<bool>()?)),
+                as_bool: bool => Ok(Value::Bool(*as_bool)),
+                as_string: String => Ok(Value::Bool(as_string.parse::<bool>()?)),
                 _ => Err(RuntimeError::InvalidType(TypeBool::NAME, value.instance_type().name().clone()))
             }
         } else {
@@ -21,7 +21,7 @@ decl_type! {
     fn op_not(value: Value) -> Result<Value, RuntimeError> {
         let value = value.try_value::<bool>()?;
 
-        Ok(Value::new(!value))
+        Ok(Value::Bool(!value))
     }
 
     fn op_eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
@@ -32,7 +32,7 @@ decl_type! {
             None => false,
         };
 
-        Ok(Value::new(result))
+        Ok(Value::Bool(result))
     }
 
     fn op_neq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
@@ -43,35 +43,35 @@ decl_type! {
             None => true,
         };
 
-        Ok(Value::new(result))
+        Ok(Value::Bool(result))
     }
 
     fn op_gt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         let lhs = lhs.try_value::<bool>()?;
         let rhs = rhs.try_value::<bool>()?;
 
-        Ok(Value::new(lhs > rhs))
+        Ok(Value::Bool(lhs > rhs))
     }
 
     fn op_gte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         let lhs = lhs.try_value::<bool>()?;
         let rhs = rhs.try_value::<bool>()?;
 
-        Ok(Value::new(lhs >= rhs))
+        Ok(Value::Bool(lhs >= rhs))
     }
 
     fn op_lt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         let lhs = lhs.try_value::<bool>()?;
         let rhs = rhs.try_value::<bool>()?;
 
-        Ok(Value::new(lhs < rhs))
+        Ok(Value::Bool(lhs < rhs))
     }
 
     fn op_lte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
         let lhs = lhs.try_value::<bool>()?;
         let rhs = rhs.try_value::<bool>()?;
 
-        Ok(Value::new(lhs <= rhs))
+        Ok(Value::Bool(lhs <= rhs))
     }
 }
 
