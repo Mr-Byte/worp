@@ -458,14 +458,20 @@ impl Parser {
 #[cfg(test)]
 mod test {
     use super::Parser;
-    use crate::syntax::{error::SyntaxError, Binary, BinaryOperator, Literal, SyntaxNode, Unary, UnaryOperator};
+    use crate::syntax::{error::SyntaxError, Binary, BinaryOperator, Block, Literal, SyntaxNode, Unary, UnaryOperator};
 
     #[test]
     fn test_parse_integer() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(root, Some(SyntaxNode::Literal(Literal::Integer(5, _)))));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(node, Some(SyntaxNode::Literal(Literal::Integer(5, _)))));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -473,12 +479,18 @@ mod test {
     #[test]
     fn test_parse_unary_minus() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("-5").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(
-            root,
-            Some(SyntaxNode::Unary(Unary(UnaryOperator::Negate, _, _)))
-        ));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Unary(Unary(UnaryOperator::Negate, _, _)))
+            ));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -486,25 +498,37 @@ mod test {
     #[test]
     fn test_parse_binary_minus() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 - 5").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(
-            root,
-            Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
-        ));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
+            ));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
 
     #[test]
     fn test_parse_binary_minus_with_unary_minus() -> Result<(), SyntaxError> {
-        let syntax_tree = Parser::new("-5 - 5").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let syntax_tree = Parser::new("5 - -5").parse()?;
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(
-            root,
-            Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
-        ));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
+            ));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -512,12 +536,18 @@ mod test {
     #[test]
     fn test_parse_binary_precedence_multiply_right() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 - 5 * 5").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(
-            root,
-            Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
-        ));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
+            ));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -525,12 +555,18 @@ mod test {
     #[test]
     fn test_parse_binary_precedence_multiply_left() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 * 5 - 5").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(
-            root,
-            Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
-        ));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Binary(Binary(BinaryOperator::Subtract, _, _, _)))
+            ));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -538,12 +574,18 @@ mod test {
     #[test]
     fn test_parse_grouping() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("5 * (5 - 5)").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(
-            root,
-            Some(SyntaxNode::Binary(Binary(BinaryOperator::Multiply, _, _, _)))
-        ));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Binary(Binary(BinaryOperator::Multiply, _, _, _)))
+            ));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -551,12 +593,18 @@ mod test {
     #[test]
     fn test_parse_unary_die() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("d8").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(
-            root,
-            Some(SyntaxNode::Unary(Unary(UnaryOperator::DiceRoll, _, _)))
-        ));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Unary(Unary(UnaryOperator::DiceRoll, _, _)))
+            ));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -564,12 +612,18 @@ mod test {
     #[test]
     fn test_parse_binary_dice() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("6d8").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(
-            root,
-            Some(SyntaxNode::Binary(Binary(BinaryOperator::DiceRoll, _, _, _)))
-        ));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Binary(Binary(BinaryOperator::DiceRoll, _, _, _)))
+            ));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -577,9 +631,15 @@ mod test {
     #[test]
     fn test_parse_object_expression() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("object { x: 50, y: 30 }").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(root, Some(SyntaxNode::Literal(Literal::Object(_, _)))));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(node, Some(SyntaxNode::Literal(Literal::Object(_, _)))));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
@@ -587,9 +647,15 @@ mod test {
     #[test]
     fn test_parse_list_expression() -> Result<(), SyntaxError> {
         let syntax_tree = Parser::new("[x, y, 1, 1*2, object {}]").parse()?;
-        let root = syntax_tree.get(syntax_tree.root());
+        let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        assert!(matches!(root, Some(SyntaxNode::Literal(Literal::List(_, _)))));
+        if let SyntaxNode::Block(Block(block, _)) = root {
+            let node = syntax_tree.get(*block.first().unwrap());
+
+            assert!(matches!(node, Some(SyntaxNode::Literal(Literal::List(_, _)))));
+        } else {
+            panic!("Root element is not a block.")
+        }
 
         Ok(())
     }
