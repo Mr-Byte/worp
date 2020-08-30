@@ -24,8 +24,6 @@ pub struct Instruction(u8);
 
 impl Instruction {
     define_instructions! {
-        pub const HALT;
-
         pub const PUSH_NONE;
         pub const PUSH_UNIT;
         pub const PUSH_FALSE;
@@ -78,7 +76,6 @@ impl From<u8> for Instruction {
 impl Debug for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            Instruction::HALT => write!(f, "HALT {:#04X}", self.0),
             Instruction::PUSH_NONE => write!(f, "PUSH_NONE {:#04X}", self.0),
             Instruction::PUSH_UNIT => write!(f, "PUSH_UNIT {:#04X}", self.0),
             Instruction::PUSH_FALSE => write!(f, "PUSH_FALSE {:#04X}", self.0),
@@ -107,7 +104,7 @@ impl Debug for Instruction {
             Instruction::LOGICAL_OR => write!(f, "LOGICAL_OR {:#04X}", self.0),
             Instruction::JUMP => write!(f, "JUMP {:#04X}", self.0),
             Instruction::JUMP_IF_FALSE => write!(f, "JUMP_IF_FALSE {:#04X}", self.0),
-            i => write!(f, "{:#04X}", i.0),
+            i => write!(f, "UNKNOWN {:#04X}", i.0),
         }
     }
 }

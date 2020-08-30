@@ -132,7 +132,6 @@ pub enum Literal {
     Float(f64, Span),
     String(String, Span),
     Boolean(bool, Span),
-    // TODO: Pull these out as their own expression types.
     List(Vec<SyntaxNodeId>, Span),
     Object(Vec<(SyntaxNodeId, SyntaxNodeId)>, Span),
 }

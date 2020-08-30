@@ -65,11 +65,6 @@ impl BytecodeCursor {
     }
 
     #[inline(always)]
-    pub fn read_bool(&mut self) -> bool {
-        self.cursor.get_u8() != 0
-    }
-
-    #[inline(always)]
     pub fn read_int(&mut self) -> i64 {
         self.cursor.get_i64()
     }

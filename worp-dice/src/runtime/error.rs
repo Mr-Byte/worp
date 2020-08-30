@@ -1,5 +1,4 @@
-use super::core::{symbol::Symbol, Span, ValueKey};
-// use crate::syntax::ParserError;
+use super::core::{symbol::Symbol, ValueKey};
 use std::{
     error::Error,
     num::{ParseFloatError, ParseIntError},
@@ -47,31 +46,4 @@ pub enum RuntimeError {
     UnknownInstruction(u8),
     #[error("Runtime Error: Stack underflowed.")]
     StackUnderflowed,
-}
-
-#[derive(thiserror::Error, Debug)]
-#[error("{source}")]
-pub struct SpannedRuntimeError {
-    span: Option<Span>,
-    #[source]
-    source: RuntimeError,
-}
-
-impl SpannedRuntimeError {
-    pub fn span(&self) -> Option<Span> {
-        self.span.clone()
-    }
-}
-
-pub trait Spanned<T> {
-    fn with_span<'a>(self, span: impl FnMut() -> Option<Span> + 'a) -> Result<T, SpannedRuntimeError>;
-}
-
-impl<T> Spanned<T> for Result<T, RuntimeError> {
-    fn with_span<'a>(self, mut span: impl FnMut() -> Option<Span> + 'a) -> Result<T, SpannedRuntimeError> {
-        self.map_err(|err| SpannedRuntimeError {
-            span: span(),
-            source: err,
-        })
-    }
 }

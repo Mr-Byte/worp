@@ -1,12 +1,12 @@
-use super::{bytecode::Bytecode, instruction::Instruction, script::Script};
-use crate::runtime::{
-    core::{
-        symbol::common::operators::{
-            OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
-        },
-        Value, ValueKey,
+#[macro_use]
+mod macros;
+
+use super::{bytecode::Bytecode, error::RuntimeError, instruction::Instruction, script::Script};
+use crate::runtime::core::{
+    symbol::common::operators::{
+        OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
     },
-    error::RuntimeError,
+    Value, ValueKey,
 };
 use std::{iter, ops::Range};
 
