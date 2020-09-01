@@ -28,7 +28,7 @@ impl Display for Script {
         let mut instruction_count = 0;
 
         while let Some(instruction) = cursor.read_instruction() {
-            write!(f, "{:6} | {:<20} | ", instruction_count, format!("{}", instruction))?;
+            write!(f, "{:6} | {:<24} | ", instruction_count, format!("{}", instruction))?;
             instruction_count += 1;
 
             match instruction {
@@ -37,8 +37,9 @@ impl Display for Script {
                 Instruction::PUSH_CONST => write!(f, "{}", cursor.read_int())?,
                 Instruction::JUMP => write!(f, "{}", cursor.read_offset())?,
                 Instruction::JUMP_IF_FALSE => write!(f, "{}", cursor.read_offset())?,
-                Instruction::LOAD_LOCAL => write!(f, "{}", cursor.read_offset())?,
-                Instruction::STORE_LOCAL => write!(f, "{}", cursor.read_offset())?,
+                Instruction::LOAD_LOCAL => write!(f, "{}", cursor.read_u16())?,
+                Instruction::STORE_LOCAL => write!(f, "{}", cursor.read_u16())?,
+                Instruction::ADD_ASSIGN_LOCAL => write!(f, "{}", cursor.read_u16())?,
 
                 _ => (),
             }

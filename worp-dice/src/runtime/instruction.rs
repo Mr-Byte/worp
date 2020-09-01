@@ -2,19 +2,19 @@ use std::fmt::{Debug, Display};
 
 macro_rules! define_instructions {
     (prev=$prev:ident @) => {};
-    (prev=$prev:ident @ $next:ident $($name:ident)*) => {
-        pub const $next: Self = Self(Self::$prev.0 + 1);
+    (prev=$prev:ident @ $vis:vis $next:ident $($sub_vis:vis $name:ident)*) => {
+        $vis const $next: Self = Self(Self::$prev.0 + 1);
         define_instructions! {
             prev=$next @
-            $($name)*
+            $($sub_vis $name)*
         }
     };
 
-    (pub const $first:ident; $(pub const $name:ident;)*) => {
-        pub const $first: Self = Self(0);
+    ($vis:vis const $first:ident; $($sub_vis:vis const $name:ident;)*) => {
+        $vis const $first: Self = Self(0);
         define_instructions! {
             prev=$first @
-            $($name)*
+            $($sub_vis $name)*
         }
     };
 }
@@ -47,6 +47,8 @@ impl Instruction {
         pub const ADD;
         pub const SUB;
 
+        pub const ADD_ASSIGN_LOCAL;
+
         pub const GT;
         pub const GTE;
         pub const LT;
@@ -58,11 +60,20 @@ impl Instruction {
 
         pub const JUMP;
         pub const JUMP_IF_FALSE;
-    }
-}
 
-impl Into<u8> for Instruction {
-    fn into(self) -> u8 {
+        // Not a real instruction!
+        const INSTR_LEN;
+    }
+
+    pub const fn len() -> usize {
+        Self::INSTR_LEN.0 as usize
+    }
+
+    pub const fn index(self) -> usize {
+        self.0 as usize
+    }
+
+    pub const fn value(self) -> u8 {
         self.0
     }
 }
@@ -87,6 +98,7 @@ impl Display for Instruction {
             Instruction::DUP => write!(f, "{:#04X} | DUP", self.0),
             Instruction::LOAD_LOCAL => write!(f, "{:#04X} | LOAD_LOCAL", self.0),
             Instruction::STORE_LOCAL => write!(f, "{:#04X} | STORE_LOCAL", self.0),
+            Instruction::ADD_ASSIGN_LOCAL => write!(f, "{:#04X} | ADD_ASSIGN_LOCAL", self.0),
             Instruction::NEG => write!(f, "{:#04X} | NEG", self.0),
             Instruction::NOT => write!(f, "{:#04X} | NOT", self.0),
             Instruction::MUL => write!(f, "{:#04X} | MUL", self.0),

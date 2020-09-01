@@ -95,13 +95,19 @@ impl Compiler {
         let loop_end = self.bytecode.jump_if_false(span.clone());
 
         // TODO: Have a special compile for the body that allows for breaks?
+        // TODO: Have this take a boolean to indicate it's in a loop body?
+        // Return a list of jump locations to patch for loop breaks.
+        // Handle breaks nested inside blocks that aren't other loops.
         self.compile(body)?;
         // Cleanup the stack at the end of each iteration of the loop.
+        // TODO: Figure out how to optimize out the DUP/POP needed for variable assignments in the final position?
         self.bytecode.pop(span.clone());
         self.bytecode.jump_back(loop_start, span.clone());
         self.bytecode.patch_jump(loop_end);
         // Push a unit onto the stack after a loop finishes executing.
         // TODO: Maybe only do this if the next node is a discard.
+        // If the next node is a discard, consume it and don't push to the stack?
+        // ^ This could help improve performance.
         self.bytecode.push_unit(span);
 
         Ok(())
@@ -159,6 +165,26 @@ impl Compiler {
 
     fn binary_op(&mut self, Binary(op, lhs, rhs, span): Binary) -> Result<(), CompilerError> {
         match op {
+            // TODO: Separate assignments out into their own class of operators.
+            BinaryOperator::AddAssignment => {
+                let lhs = self.syntax_tree.get(lhs).expect("Node should exist.");
+
+                if let SyntaxNode::Literal(Literal::Identifier(target, _)) = lhs {
+                    let target = Symbol::new(target);
+                    let local = self.local(target.clone())?;
+                    let slot = local.slot;
+
+                    if !local.is_mutable {
+                        return Err(CompilerError::ImmutableVariable(target));
+                    }
+
+                    self.compile(rhs)?;
+                    // Since assignments are always followed by a discard, make this a no-op?
+                    self.bytecode.add_assign_local(slot, span);
+                } else {
+                    return Err(CompilerError::InvalidAssignmentTarget);
+                }
+            }
             BinaryOperator::Assignment => {
                 let lhs = self.syntax_tree.get(lhs).expect("Node should exist.");
 
@@ -172,7 +198,6 @@ impl Compiler {
                     }
 
                     self.compile(rhs)?;
-                    self.bytecode.dup(span.clone());
                     self.bytecode.store_local(slot, span);
                 } else {
                     return Err(CompilerError::InvalidAssignmentTarget);

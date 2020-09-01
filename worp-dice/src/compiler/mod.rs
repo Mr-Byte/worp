@@ -21,6 +21,7 @@ pub struct Compiler {
 }
 
 impl Compiler {
+    #[allow(dead_code)]
     pub fn compile_module(input: &str) -> Result<Module, CompilerError> {
         let syntax_tree = Parser::new(input).parse()?;
         let mut compiler = Self {

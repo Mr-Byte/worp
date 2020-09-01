@@ -40,6 +40,15 @@ impl Lexer {
             Err(SyntaxError::UnexpectedToken(next))
         }
     }
+
+    pub fn consume_one_of(&mut self, kinds: &[TokenKind]) -> Result<Token, SyntaxError> {
+        let next = self.next();
+        if kinds.contains(&next.kind) {
+            Ok(next)
+        } else {
+            Err(SyntaxError::UnexpectedToken(next))
+        }
+    }
 }
 
 #[cfg(test)]

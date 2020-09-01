@@ -80,6 +80,11 @@ impl BytecodeCursor {
     }
 
     #[inline(always)]
+    pub fn read_u16(&mut self) -> u16 {
+        self.cursor.get_u16()
+    }
+
+    #[inline(always)]
     pub fn offset_position(&mut self, offset: i16) {
         self.set_position(self.cursor.position().wrapping_add(offset as u64));
     }

@@ -274,18 +274,24 @@ impl Parser {
             return Err(SyntaxError::UnexpectedToken(next_token));
         };
 
-        if can_assign && self.lexer.peek().kind == TokenKind::Assign {
-            self.lexer.consume(TokenKind::Assign)?;
+        let next_token_kind = self.lexer.peek().kind;
+        if can_assign && (next_token_kind == TokenKind::Assign || next_token_kind == TokenKind::AddAssign) {
+            let kind = self
+                .lexer
+                .consume_one_of(&[TokenKind::Assign, TokenKind::AddAssign])?
+                .kind;
 
             let value = self.expression()?;
             let span_end = self.lexer.current().span();
+            let op = match kind {
+                TokenKind::AddAssign => BinaryOperator::AddAssignment,
+                TokenKind::Assign => BinaryOperator::Assignment,
+                _ => todo!(),
+            };
 
-            expression = self.arena.alloc(SyntaxNode::Binary(Binary(
-                BinaryOperator::Assignment,
-                expression,
-                value,
-                span_start + span_end,
-            )));
+            expression = self
+                .arena
+                .alloc(SyntaxNode::Binary(Binary(op, expression, value, span_start + span_end)));
         }
 
         Ok(expression)

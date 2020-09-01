@@ -20,17 +20,17 @@ impl BytecodeGenerator {
 
     pub fn push_none(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::PUSH_NONE.into());
+        self.data.put_u8(Instruction::PUSH_NONE.value());
     }
 
     pub fn push_unit(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::PUSH_UNIT.into());
+        self.data.put_u8(Instruction::PUSH_UNIT.value());
     }
 
     pub fn push_int(&mut self, value: i64, span: Span) {
         self.source_map.insert(self.data.len() as u64, span.clone());
-        self.data.put_u8(Instruction::PUSH_INT.into());
+        self.data.put_u8(Instruction::PUSH_INT.value());
 
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_i64(value);
@@ -38,7 +38,7 @@ impl BytecodeGenerator {
 
     pub fn push_float(&mut self, value: f64, span: Span) {
         self.source_map.insert(self.data.len() as u64, span.clone());
-        self.data.put_u8(Instruction::PUSH_FLOAT.into());
+        self.data.put_u8(Instruction::PUSH_FLOAT.value());
 
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_f64(value);
@@ -52,7 +52,7 @@ impl BytecodeGenerator {
         };
 
         self.source_map.insert(self.data.len() as u64, span.clone());
-        self.data.put_u8(instruction.into());
+        self.data.put_u8(instruction.value());
     }
 
     pub fn push_const(&mut self, value: Value, span: Span) {
@@ -64,7 +64,7 @@ impl BytecodeGenerator {
         };
 
         self.source_map.insert(self.data.len() as u64, span.clone());
-        self.data.put_u8(Instruction::PUSH_CONST.into());
+        self.data.put_u8(Instruction::PUSH_CONST.value());
 
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u64(position as u64);
@@ -72,85 +72,85 @@ impl BytecodeGenerator {
 
     pub fn pop(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::POP.into());
+        self.data.put_u8(Instruction::POP.value());
     }
 
     pub fn dup(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::DUP.into());
+        self.data.put_u8(Instruction::DUP.value());
     }
 
     pub fn mul(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::MUL.into());
+        self.data.put_u8(Instruction::MUL.value());
     }
 
     pub fn div(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::DIV.into());
+        self.data.put_u8(Instruction::DIV.value());
     }
 
     pub fn rem(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::REM.into());
+        self.data.put_u8(Instruction::REM.value());
     }
 
     pub fn add(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::ADD.into());
+        self.data.put_u8(Instruction::ADD.value());
     }
 
     pub fn sub(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::SUB.into());
+        self.data.put_u8(Instruction::SUB.value());
     }
 
     pub fn eq(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::EQ.into());
+        self.data.put_u8(Instruction::EQ.value());
     }
 
     pub fn neq(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::NEQ.into());
+        self.data.put_u8(Instruction::NEQ.value());
     }
 
     pub fn gt(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::GT.into());
+        self.data.put_u8(Instruction::GT.value());
     }
 
     pub fn gte(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::GTE.into());
+        self.data.put_u8(Instruction::GTE.value());
     }
 
     pub fn lt(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::LT.into());
+        self.data.put_u8(Instruction::LT.value());
     }
 
     pub fn lte(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::LTE.into());
+        self.data.put_u8(Instruction::LTE.value());
     }
 
     pub fn neg(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::NEG.into());
+        self.data.put_u8(Instruction::NEG.value());
     }
 
     pub fn not(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::NOT.into());
+        self.data.put_u8(Instruction::NOT.value());
     }
 
     #[must_use = "Jumps must be patched."]
     pub fn jump(&mut self, span: Span) -> u64 {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::JUMP.into());
+        self.data.put_u8(Instruction::JUMP.value());
 
-        self.data.put_u16(0);
+        self.data.put_i16(0);
         let patch_pos = self.data.len() - 2;
 
         patch_pos as u64
@@ -159,9 +159,9 @@ impl BytecodeGenerator {
     #[must_use = "Jumps must be patched."]
     pub fn jump_if_false(&mut self, span: Span) -> u64 {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::JUMP_IF_FALSE.into());
+        self.data.put_u8(Instruction::JUMP_IF_FALSE.value());
 
-        self.data.put_u16(0);
+        self.data.put_i16(0);
         let patch_pos = self.data.len() - 2;
 
         patch_pos as u64
@@ -174,7 +174,7 @@ impl BytecodeGenerator {
 
     pub fn jump_back(&mut self, position: u64, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::JUMP.into());
+        self.data.put_u8(Instruction::JUMP.value());
         let offset = -((self.current_position() - position + 2) as i16);
         self.data.put_i16(offset);
     }
@@ -185,13 +185,19 @@ impl BytecodeGenerator {
 
     pub fn store_local(&mut self, slot: u16, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::STORE_LOCAL.into());
+        self.data.put_u8(Instruction::STORE_LOCAL.value());
         self.data.put_u16(slot);
     }
 
     pub fn load_local(&mut self, slot: u16, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(Instruction::LOAD_LOCAL.into());
+        self.data.put_u8(Instruction::LOAD_LOCAL.value());
+        self.data.put_u16(slot);
+    }
+
+    pub fn add_assign_local(&mut self, slot: u16, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::ADD_ASSIGN_LOCAL.value());
         self.data.put_u16(slot);
     }
 }

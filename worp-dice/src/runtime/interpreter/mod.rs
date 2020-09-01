@@ -105,21 +105,36 @@ impl Runtime {
 
                 Instruction::LOAD_LOCAL => {
                     // TODO Bounds check the slot?
-                    let slot = cursor.read_offset() as usize;
+                    let slot = cursor.read_u16() as usize;
                     let frame = &self.stack[stack_frame.clone()];
                     let value = frame[slot].clone();
                     self.stack.push(value);
                 }
                 Instruction::STORE_LOCAL => {
                     // TODO Bounds check the slot?
-                    let slot = cursor.read_offset() as usize;
-                    let value = self.stack.pop().unwrap(); //.ok_or_else(|| RuntimeError::StackUnderflowed)?;
+                    let slot = cursor.read_u16() as usize;
+                    let value = self.stack.pop().unwrap();
                     let frame = &mut self.stack[stack_frame.clone()];
 
                     frame[slot] = value;
+                    let result = frame[slot].clone();
+                    self.stack.push(result);
+                }
+                Instruction::ADD_ASSIGN_LOCAL => {
+                    let slot = cursor.read_u16() as usize;
+                    let value = self.stack.pop().unwrap();
+                    let frame = &mut self.stack[stack_frame.clone()];
+
+                    match (&frame[slot], value) {
+                        (Value::Int(lhs), Value::Int(rhs)) => frame[slot] = Value::Int(lhs + rhs),
+                        _ => todo!(),
+                    }
+
+                    let result = frame[slot].clone();
+                    self.stack.push(result);
                 }
 
-                unknown => return Err(RuntimeError::UnknownInstruction(unknown.into())),
+                unknown => return Err(RuntimeError::UnknownInstruction(unknown.value())),
             }
         }
 

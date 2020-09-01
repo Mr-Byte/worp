@@ -72,6 +72,7 @@ fn fmt_node(node: &SyntaxNode, nodes: &Arena<SyntaxNode>, f: &mut std::fmt::Form
         SyntaxNode::Binary(Binary(operator, lhs, rhs, _)) => {
             write!(f, "(")?;
             match operator {
+                BinaryOperator::AddAssignment => write!(f, "+=")?,
                 BinaryOperator::Assignment => write!(f, "=")?,
                 BinaryOperator::Multiply => write!(f, "*")?,
                 BinaryOperator::Divide => write!(f, "/")?,
@@ -145,6 +146,7 @@ pub enum UnaryOperator {
 
 #[derive(Debug, Clone)]
 pub enum BinaryOperator {
+    AddAssignment,
     Assignment,
     DiceRoll,
     Multiply,
