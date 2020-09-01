@@ -37,9 +37,9 @@ impl Display for Script {
                 Instruction::PUSH_CONST => write!(f, "{}", cursor.read_int())?,
                 Instruction::JUMP => write!(f, "{}", cursor.read_offset())?,
                 Instruction::JUMP_IF_FALSE => write!(f, "{}", cursor.read_offset())?,
-                Instruction::LOAD_LOCAL => write!(f, "{}", cursor.read_u16())?,
-                Instruction::STORE_LOCAL => write!(f, "{}", cursor.read_u16())?,
-                Instruction::ADD_ASSIGN_LOCAL => write!(f, "{}", cursor.read_u16())?,
+                Instruction::LOAD_LOCAL => write!(f, "{}", cursor.read_u8())?,
+                Instruction::STORE_LOCAL => write!(f, "{}", cursor.read_u8())?,
+                Instruction::ADD_ASSIGN_LOCAL => write!(f, "{}", cursor.read_u8())?,
 
                 _ => (),
             }

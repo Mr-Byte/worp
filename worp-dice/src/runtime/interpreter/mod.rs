@@ -17,7 +17,7 @@ pub struct Runtime {
 impl Default for Runtime {
     fn default() -> Self {
         Self {
-            stack: Vec::with_capacity(512),
+            stack: Vec::with_capacity(32),
         }
     }
 }
@@ -105,14 +105,14 @@ impl Runtime {
 
                 Instruction::LOAD_LOCAL => {
                     // TODO Bounds check the slot?
-                    let slot = cursor.read_u16() as usize;
+                    let slot = cursor.read_u8() as usize;
                     let frame = &self.stack[stack_frame.clone()];
                     let value = frame[slot].clone();
                     self.stack.push(value);
                 }
                 Instruction::STORE_LOCAL => {
                     // TODO Bounds check the slot?
-                    let slot = cursor.read_u16() as usize;
+                    let slot = cursor.read_u8() as usize;
                     let value = self.stack.pop().unwrap();
                     let frame = &mut self.stack[stack_frame.clone()];
 
@@ -121,7 +121,7 @@ impl Runtime {
                     self.stack.push(result);
                 }
                 Instruction::ADD_ASSIGN_LOCAL => {
-                    let slot = cursor.read_u16() as usize;
+                    let slot = cursor.read_u8() as usize;
                     let value = self.stack.pop().unwrap();
                     let frame = &mut self.stack[stack_frame.clone()];
 

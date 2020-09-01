@@ -22,12 +22,23 @@ macro_rules! define_instructions {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Instruction(u8);
 
+// TODO: Fuse PUSH_INT/FLOAT/CONST into a single opcode, that use a single byte to represent the index of the const
+// TODO: Add an opcode to represent 0 and 1 literals for ints and floats.
+
 impl Instruction {
     define_instructions! {
         pub const PUSH_NONE;
         pub const PUSH_UNIT;
+
         pub const PUSH_FALSE;
         pub const PUSH_TRUE;
+
+        pub const PUSHI_ZERO;
+        pub const PUSHI_ONE;
+        pub const PUSHF_ZERO;
+        pub const PUSHF_ONE;
+
+        // TODO: Fuse these.
         pub const PUSH_INT;
         pub const PUSH_FLOAT;
         pub const PUSH_CONST;
@@ -60,17 +71,6 @@ impl Instruction {
 
         pub const JUMP;
         pub const JUMP_IF_FALSE;
-
-        // Not a real instruction!
-        const INSTR_LEN;
-    }
-
-    pub const fn len() -> usize {
-        Self::INSTR_LEN.0 as usize
-    }
-
-    pub const fn index(self) -> usize {
-        self.0 as usize
     }
 
     pub const fn value(self) -> u8 {

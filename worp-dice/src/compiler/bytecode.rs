@@ -183,21 +183,21 @@ impl BytecodeGenerator {
         (self.data.len()) as u64
     }
 
-    pub fn store_local(&mut self, slot: u16, span: Span) {
+    pub fn store_local(&mut self, slot: u8, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::STORE_LOCAL.value());
-        self.data.put_u16(slot);
+        self.data.put_u8(slot);
     }
 
-    pub fn load_local(&mut self, slot: u16, span: Span) {
+    pub fn load_local(&mut self, slot: u8, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::LOAD_LOCAL.value());
-        self.data.put_u16(slot);
+        self.data.put_u8(slot);
     }
 
-    pub fn add_assign_local(&mut self, slot: u16, span: Span) {
+    pub fn add_assign_local(&mut self, slot: u8, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::ADD_ASSIGN_LOCAL.value());
-        self.data.put_u16(slot);
+        self.data.put_u8(slot);
     }
 }

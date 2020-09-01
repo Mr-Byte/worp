@@ -73,14 +73,14 @@ impl Compiler {
         self.scope_depth -= 1;
     }
 
-    pub(self) fn add_local(&mut self, name: Symbol, is_mutable: bool) -> u16 {
+    pub(self) fn add_local(&mut self, name: Symbol, is_mutable: bool) -> u8 {
         let slot = self.locals.len();
 
         let local = Local {
             name,
             is_mutable,
             scope_depth: self.scope_depth,
-            slot: self.locals.len() as u16,
+            slot: self.locals.len() as u8,
         };
 
         self.locals.push(local);
@@ -90,7 +90,7 @@ impl Compiler {
             self.call_frame.slot_count = slot + 1;
         }
 
-        slot as u16
+        slot as u8
     }
 
     pub(self) fn local(&self, name: Symbol) -> Result<&Local, CompilerError> {
@@ -107,6 +107,6 @@ impl Compiler {
 struct Local {
     name: Symbol,
     scope_depth: usize,
-    slot: u16,
+    slot: u8,
     is_mutable: bool,
 }
