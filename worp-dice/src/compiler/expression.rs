@@ -137,7 +137,8 @@ impl Compiler {
         let slot = self.add_local(name.clone(), is_mutable);
 
         self.compile(value)?;
-        self.bytecode.store_local(slot, span);
+        self.bytecode.store_local(slot, span.clone());
+        self.bytecode.pop(span);
 
         Ok(())
     }

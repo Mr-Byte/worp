@@ -8,32 +8,32 @@ use crate::runtime::core::{
     },
     Value, ValueKey,
 };
-use std::{iter, ops::Range};
+use std::ops::Range;
 
 pub struct Runtime {
-    stack: Vec<Value>,
+    stack: Stack,
 }
 
 impl Default for Runtime {
     fn default() -> Self {
         Self {
-            stack: Vec::with_capacity(32),
+            stack: Stack::default(),
         }
     }
 }
 
 impl Runtime {
     pub fn run_script(&mut self, mut script: Script) -> Result<Value, RuntimeError> {
-        // TODO: Move stack frame handling off into separate methods called by execute_bytecode.
         let stack_frame = self.stack.len()..(script.call_frame().slot_count + self.stack.len());
-        let locals = iter::repeat(Value::NONE).take(script.call_frame().slot_count);
-        self.stack.extend(locals);
+        let slot_count = script.call_frame().slot_count;
 
-        let result = self.execute_bytecode(&script.bytecode(), stack_frame)?;
+        self.stack.reserve_slots(slot_count);
 
-        self.stack.truncate(self.stack.len() - script.call_frame().slot_count);
+        let result = self.execute_bytecode(&script.bytecode(), stack_frame);
 
-        Ok(result)
+        self.stack.release_slots(slot_count);
+
+        Ok(result?)
     }
 
     fn execute_bytecode(&mut self, bytecode: &Bytecode, stack_frame: Range<usize>) -> Result<Value, RuntimeError> {
@@ -49,6 +49,10 @@ impl Runtime {
                 }
                 Instruction::PUSH_FALSE => self.stack.push(Value::Bool(false)),
                 Instruction::PUSH_TRUE => self.stack.push(Value::Bool(true)),
+
+                Instruction::PUSHI_ZERO => self.stack.push(Value::Int(0)),
+                Instruction::PUSHI_ONE => self.stack.push(Value::Int(1)),
+
                 Instruction::PUSH_INT => {
                     let int = cursor.read_int();
                     self.stack.push(Value::Int(int));
@@ -67,7 +71,7 @@ impl Runtime {
                     self.stack.pop();
                 }
                 Instruction::DUP => {
-                    let value = self.stack.last().ok_or_else(|| RuntimeError::StackUnderflowed)?.clone();
+                    let value = self.stack.top();
                     self.stack.push(value);
                 }
 
@@ -94,7 +98,7 @@ impl Runtime {
                 Instruction::JUMP_IF_FALSE => {
                     let offset = cursor.read_offset();
                     let value = match self.stack.pop() {
-                        Some(Value::Bool(value)) => value,
+                        Value::Bool(value) => value,
                         _ => todo!(),
                     };
 
@@ -106,15 +110,15 @@ impl Runtime {
                 Instruction::LOAD_LOCAL => {
                     // TODO Bounds check the slot?
                     let slot = cursor.read_u8() as usize;
-                    let frame = &self.stack[stack_frame.clone()];
+                    let frame = self.stack.slots(stack_frame.clone());
                     let value = frame[slot].clone();
                     self.stack.push(value);
                 }
                 Instruction::STORE_LOCAL => {
                     // TODO Bounds check the slot?
                     let slot = cursor.read_u8() as usize;
-                    let value = self.stack.pop().unwrap();
-                    let frame = &mut self.stack[stack_frame.clone()];
+                    let value = self.stack.pop();
+                    let frame = self.stack.slots(stack_frame.clone());
 
                     frame[slot] = value;
                     let result = frame[slot].clone();
@@ -122,11 +126,12 @@ impl Runtime {
                 }
                 Instruction::ADD_ASSIGN_LOCAL => {
                     let slot = cursor.read_u8() as usize;
-                    let value = self.stack.pop().unwrap();
-                    let frame = &mut self.stack[stack_frame.clone()];
+                    let value = self.stack.pop();
+                    let frame = self.stack.slots(stack_frame.clone());
 
-                    match (&frame[slot], value) {
-                        (Value::Int(lhs), Value::Int(rhs)) => frame[slot] = Value::Int(lhs + rhs),
+                    match (&mut frame[slot], value) {
+                        (Value::Int(lhs), Value::Int(rhs)) => *lhs += rhs,
+                        (Value::Float(lhs), Value::Float(rhs)) => *lhs += rhs,
                         _ => todo!(),
                     }
 
@@ -140,6 +145,57 @@ impl Runtime {
 
         // TODO: Make it an error for the stack to be empty at the end of execution.
         // Also assert that the stack hasn't underflowed into the call frame.
-        Ok(self.stack.pop().unwrap_or(Value::NONE))
+        Ok(self.stack.pop())
+    }
+}
+
+#[derive(Debug)]
+struct Stack {
+    values: [Value; 32],
+    stack_ptr: usize,
+}
+
+// TODO: Enforce stack overflows and underflows.
+// TODO: Figure out why the stack keeps growing with each subsequent execution.
+impl Stack {
+    fn push(&mut self, value: Value) {
+        self.values[self.stack_ptr] = value;
+        self.stack_ptr += 1;
+    }
+
+    fn pop(&mut self) -> Value {
+        let value = std::mem::replace(&mut self.values[self.stack_ptr - 1], Value::NONE);
+        self.stack_ptr -= 1;
+
+        value
+    }
+
+    fn reserve_slots(&mut self, count: usize) {
+        self.stack_ptr += count;
+    }
+
+    fn release_slots(&mut self, count: usize) {
+        self.stack_ptr -= count;
+    }
+
+    fn slots(&mut self, slots: Range<usize>) -> &mut [Value] {
+        &mut self.values[slots]
+    }
+
+    fn len(&self) -> usize {
+        self.stack_ptr
+    }
+
+    fn top(&self) -> Value {
+        self.values[self.stack_ptr - 1].clone()
+    }
+}
+
+impl Default for Stack {
+    fn default() -> Self {
+        Self {
+            values: [Value::NONE; 32],
+            stack_ptr: 0,
+        }
     }
 }

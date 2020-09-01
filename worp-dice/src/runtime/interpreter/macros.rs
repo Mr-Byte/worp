@@ -37,7 +37,7 @@ macro_rules! op {
 #[macro_export]
 macro_rules! arithmetic_op {
     ($stack:expr, $op:ident) => {
-        match ($stack.pop().unwrap(), $stack.pop().unwrap()) {
+        match ($stack.pop(), $stack.pop()) {
             (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Int(op!($op, lhs, rhs))),
             (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Float(op!($op, lhs, rhs))),
             (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs])?),
@@ -48,7 +48,7 @@ macro_rules! arithmetic_op {
 #[macro_export]
 macro_rules! comparison_op {
     ($stack:expr, OP_EQ) => {
-        match ($stack.pop().unwrap(), $stack.pop().unwrap()) {
+        match ($stack.pop(), $stack.pop()) {
             (Value::None(_), Value::None(_)) => $stack.push(Value::Bool(true)),
             (Value::None(_), _) => $stack.push(Value::Bool(false)),
             (_, Value::None(_)) => $stack.push(Value::Bool(false)),
@@ -63,7 +63,7 @@ macro_rules! comparison_op {
     };
 
     ($stack:expr, OP_NEQ) => {
-        match ($stack.pop().unwrap(), $stack.pop().unwrap()) {
+        match ($stack.pop(), $stack.pop()) {
             (Value::None(_), Value::None(_)) => $stack.push(Value::Bool(false)),
             (Value::None(_), _) => $stack.push(Value::Bool(true)),
             (_, Value::None(_)) => $stack.push(Value::Bool(true)),
@@ -78,7 +78,7 @@ macro_rules! comparison_op {
     };
 
     ($stack:expr, $op:ident) => {
-        match ($stack.pop().unwrap(), $stack.pop().unwrap()) {
+        match ($stack.pop(), $stack.pop()) {
             (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
             (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
             (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
@@ -90,7 +90,7 @@ macro_rules! comparison_op {
 #[macro_export]
 macro_rules! unary_op {
     ($bytecode:expr, $stack:expr, $op:expr) => {{
-        let value = $stack.pop().ok_or_else(|| RuntimeError::StackUnderflowed)?;
+        let value = $stack.pop();
         let result = value.get(&ValueKey::Symbol($op))?.call(&[value])?;
         $stack.push(result);
     }};

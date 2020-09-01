@@ -91,6 +91,8 @@ impl Display for Instruction {
             Instruction::PUSH_UNIT => write!(f, "{:#04X} | PUSH_UNIT", self.0),
             Instruction::PUSH_FALSE => write!(f, "{:#04X} | PUSH_FALSE", self.0),
             Instruction::PUSH_TRUE => write!(f, "{:#04X} | PUSH_TRUE", self.0),
+            Instruction::PUSHI_ZERO => write!(f, "{:04X} | PUSHI_ZERO", self.0),
+            Instruction::PUSHI_ONE => write!(f, "{:04X} | PUSHI_ONE", self.0),
             Instruction::PUSH_INT => write!(f, "{:#04X} | PUSH_INT", self.0),
             Instruction::PUSH_FLOAT => write!(f, "{:#04X} | PUSH_FLOAT", self.0),
             Instruction::PUSH_CONST => write!(f, "{:#04X} | PUSH_CONST", self.0),
