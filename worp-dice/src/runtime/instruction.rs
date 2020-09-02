@@ -39,6 +39,9 @@ impl Instruction {
         pub const POP;
         pub const DUP;
 
+        pub const BUILD_LIST;
+        pub const BUILD_OBJECT;
+
         pub const LOAD_LOCAL;
         pub const STORE_LOCAL;
 
@@ -83,39 +86,43 @@ impl From<u8> for Instruction {
 
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:04X} |", self.0)?;
+
         match *self {
-            Instruction::PUSH_NONE => write!(f, "{:#04X} | PUSH_NONE", self.0),
-            Instruction::PUSH_UNIT => write!(f, "{:#04X} | PUSH_UNIT", self.0),
-            Instruction::PUSH_FALSE => write!(f, "{:#04X} | PUSH_FALSE", self.0),
-            Instruction::PUSH_TRUE => write!(f, "{:#04X} | PUSH_TRUE", self.0),
-            Instruction::PUSH_I0 => write!(f, "{:04X} | PUSH_I0", self.0),
-            Instruction::PUSH_I1 => write!(f, "{:04X} | PUSH_I1", self.0),
-            Instruction::PUSH_F0 => write!(f, "{:04X} | PUSHF_F0", self.0),
-            Instruction::PUSH_F1 => write!(f, "{:04X} | PUSH_F1", self.0),
-            Instruction::PUSH_CONST => write!(f, "{:#04X} | PUSH_CONST", self.0),
-            Instruction::POP => write!(f, "{:#04X} | POP", self.0),
-            Instruction::DUP => write!(f, "{:#04X} | DUP", self.0),
-            Instruction::LOAD_LOCAL => write!(f, "{:#04X} | LOAD_LOCAL", self.0),
-            Instruction::STORE_LOCAL => write!(f, "{:#04X} | STORE_LOCAL", self.0),
-            Instruction::ADD_ASSIGN_LOCAL => write!(f, "{:#04X} | ADD_ASSIGN_LOCAL", self.0),
-            Instruction::NEG => write!(f, "{:#04X} | NEG", self.0),
-            Instruction::NOT => write!(f, "{:#04X} | NOT", self.0),
-            Instruction::MUL => write!(f, "{:#04X} | MUL", self.0),
-            Instruction::DIV => write!(f, "{:#04X} | DIV", self.0),
-            Instruction::REM => write!(f, "{:#04X} | REM", self.0),
-            Instruction::ADD => write!(f, "{:#04X} | ADD", self.0),
-            Instruction::SUB => write!(f, "{:#04X} | SUB", self.0),
-            Instruction::GT => write!(f, "{:#04X} | GT", self.0),
-            Instruction::GTE => write!(f, "{:#04X} | GTE", self.0),
-            Instruction::LT => write!(f, "{:#04X} | LT", self.0),
-            Instruction::LTE => write!(f, "{:#04X} | LTE", self.0),
-            Instruction::EQ => write!(f, "{:#04X} | EQ", self.0),
-            Instruction::NEQ => write!(f, "{:#04X} | NEQ", self.0),
-            Instruction::LOGICAL_AND => write!(f, "{:#04X} | LOGICAL_AND", self.0),
-            Instruction::LOGICAL_OR => write!(f, "{:#04X} | LOGICAL_OR", self.0),
-            Instruction::JUMP => write!(f, "{:#04X} | JUMP", self.0),
-            Instruction::JUMP_IF_FALSE => write!(f, "{:#04X} | JUMP_IF_FALSE", self.0),
-            i => write!(f, "{:#04X} | UNKNOWN", i.0),
+            Instruction::PUSH_NONE => write!(f, "PUSH_NONE"),
+            Instruction::PUSH_UNIT => write!(f, "PUSH_UNIT"),
+            Instruction::PUSH_FALSE => write!(f, "PUSH_FALSE"),
+            Instruction::PUSH_TRUE => write!(f, "PUSH_TRUE"),
+            Instruction::PUSH_I0 => write!(f, "PUSH_I0"),
+            Instruction::PUSH_I1 => write!(f, "PUSH_I1"),
+            Instruction::PUSH_F0 => write!(f, "PUSHF_F0"),
+            Instruction::PUSH_F1 => write!(f, "PUSH_F1"),
+            Instruction::PUSH_CONST => write!(f, "PUSH_CONST"),
+            Instruction::POP => write!(f, "POP"),
+            Instruction::DUP => write!(f, "DUP"),
+            Instruction::BUILD_LIST => write!(f, "BUILD_LIST"),
+            Instruction::BUILD_OBJECT => write!(f, "BUILD_OBJECT"),
+            Instruction::LOAD_LOCAL => write!(f, "LOAD_LOCAL"),
+            Instruction::STORE_LOCAL => write!(f, "STORE_LOCAL"),
+            Instruction::ADD_ASSIGN_LOCAL => write!(f, "ADD_ASSIGN_LOCAL"),
+            Instruction::NEG => write!(f, "NEG"),
+            Instruction::NOT => write!(f, "NOT"),
+            Instruction::MUL => write!(f, "MUL"),
+            Instruction::DIV => write!(f, "DIV"),
+            Instruction::REM => write!(f, "REM"),
+            Instruction::ADD => write!(f, "ADD"),
+            Instruction::SUB => write!(f, "SUB"),
+            Instruction::GT => write!(f, "GT"),
+            Instruction::GTE => write!(f, "GTE"),
+            Instruction::LT => write!(f, "LT"),
+            Instruction::LTE => write!(f, "LTE"),
+            Instruction::EQ => write!(f, "EQ"),
+            Instruction::NEQ => write!(f, "NEQ"),
+            Instruction::LOGICAL_AND => write!(f, "LOGICAL_AND"),
+            Instruction::LOGICAL_OR => write!(f, "LOGICAL_OR"),
+            Instruction::JUMP => write!(f, "JUMP"),
+            Instruction::JUMP_IF_FALSE => write!(f, "JUMP_IF_FALSE"),
+            _ => write!(f, "UNKNOWN"),
         }
     }
 }
