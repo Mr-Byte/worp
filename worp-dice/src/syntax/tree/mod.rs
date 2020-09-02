@@ -1,6 +1,5 @@
 use crate::runtime::core::Span;
 use id_arena::{Arena, Id};
-use std::fmt::Display;
 
 pub type SyntaxNodeId = Id<SyntaxNode>;
 

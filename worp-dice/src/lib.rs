@@ -8,9 +8,10 @@ mod runtime;
 mod syntax;
 
 pub use compiler::error::CompilerError;
-pub use runtime::core::Symbol;
-pub use runtime::core::Value;
-pub use runtime::error::RuntimeError;
+pub use runtime::{
+    core::{Symbol, Value},
+    error::RuntimeError,
+};
 pub use syntax::SyntaxError;
 
 #[derive(Default)]

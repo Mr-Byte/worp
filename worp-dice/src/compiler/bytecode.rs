@@ -35,27 +35,27 @@ impl BytecodeGenerator {
             Instruction::PUSH_FALSE
         };
 
-        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(instruction.value());
     }
 
     pub fn push_i0(&mut self, span: Span) {
-        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::PUSH_I0.value());
     }
 
     pub fn push_i1(&mut self, span: Span) {
-        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::PUSH_I1.value());
     }
 
     pub fn push_f0(&mut self, span: Span) {
-        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::PUSH_F0.value());
     }
 
     pub fn push_f1(&mut self, span: Span) {
-        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::PUSH_F1.value());
     }
 

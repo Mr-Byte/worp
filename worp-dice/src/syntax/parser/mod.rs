@@ -266,10 +266,8 @@ impl Parser {
         let next_token = self.lexer.next();
         let span_start = next_token.span();
         let mut expression = if let TokenKind::Identifier(name) = next_token.kind {
-            self.arena.alloc(SyntaxNode::Literal(Literal::Identifier(
-                name.clone(),
-                span_start.clone(),
-            )))
+            self.arena
+                .alloc(SyntaxNode::Literal(Literal::Identifier(name, span_start.clone())))
         } else {
             return Err(SyntaxError::UnexpectedToken(next_token));
         };

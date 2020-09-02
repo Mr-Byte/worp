@@ -150,7 +150,7 @@ impl Compiler {
         VariableDeclaration(name, is_mutable, value, span): VariableDeclaration,
     ) -> Result<(), CompilerError> {
         let name = Symbol::new(name);
-        let slot = self.add_local(name.clone(), is_mutable);
+        let slot = self.add_local(name, is_mutable);
 
         self.compile(value)?;
         self.bytecode.store_local(slot, span.clone());
