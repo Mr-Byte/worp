@@ -116,6 +116,34 @@ impl Runtime {
                     let result = frame[slot].clone();
                     self.stack.push(result);
                 }
+                Instruction::MUL_ASSIGN_LOCAL => {
+                    let slot = cursor.read_u8() as usize;
+                    let value = self.stack.pop();
+                    let frame = self.stack.slots(stack_frame.clone());
+
+                    match (&mut frame[slot], value) {
+                        (Value::Int(lhs), Value::Int(rhs)) => *lhs *= rhs,
+                        (Value::Float(lhs), Value::Float(rhs)) => *lhs *= rhs,
+                        _ => todo!(),
+                    }
+
+                    let result = frame[slot].clone();
+                    self.stack.push(result);
+                }
+                Instruction::DIV_ASSIGN_LOCAL => {
+                    let slot = cursor.read_u8() as usize;
+                    let value = self.stack.pop();
+                    let frame = self.stack.slots(stack_frame.clone());
+
+                    match (&mut frame[slot], value) {
+                        (Value::Int(lhs), Value::Int(rhs)) => *lhs /= rhs,
+                        (Value::Float(lhs), Value::Float(rhs)) => *lhs /= rhs,
+                        _ => todo!(),
+                    }
+
+                    let result = frame[slot].clone();
+                    self.stack.push(result);
+                }
                 Instruction::ADD_ASSIGN_LOCAL => {
                     let slot = cursor.read_u8() as usize;
                     let value = self.stack.pop();
@@ -124,6 +152,20 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs += rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs += rhs,
+                        _ => todo!(),
+                    }
+
+                    let result = frame[slot].clone();
+                    self.stack.push(result);
+                }
+                Instruction::SUB_ASSIGN_LOCAL => {
+                    let slot = cursor.read_u8() as usize;
+                    let value = self.stack.pop();
+                    let frame = self.stack.slots(stack_frame.clone());
+
+                    match (&mut frame[slot], value) {
+                        (Value::Int(lhs), Value::Int(rhs)) => *lhs -= rhs,
+                        (Value::Float(lhs), Value::Float(rhs)) => *lhs -= rhs,
                         _ => todo!(),
                     }
 
@@ -141,14 +183,12 @@ impl Runtime {
     }
 }
 
-#[derive(Debug)]
 struct Stack {
-    values: [Value; 32],
+    values: [Value; 512],
     stack_ptr: usize,
 }
 
 // TODO: Enforce stack overflows and underflows.
-// TODO: Figure out why the stack keeps growing with each subsequent execution.
 impl Stack {
     fn push(&mut self, value: Value) {
         self.values[self.stack_ptr] = value;
@@ -186,7 +226,7 @@ impl Stack {
 impl Default for Stack {
     fn default() -> Self {
         Self {
-            values: [Value::NONE; 32],
+            values: [Value::NONE; 512],
             stack_ptr: 0,
         }
     }

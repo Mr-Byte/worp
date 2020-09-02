@@ -199,9 +199,27 @@ impl BytecodeGenerator {
         self.data.put_u8(slot);
     }
 
+    pub fn mul_assign_local(&mut self, slot: u8, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::MUL_ASSIGN_LOCAL.value());
+        self.data.put_u8(slot);
+    }
+
+    pub fn div_assign_local(&mut self, slot: u8, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::DIV_ASSIGN_LOCAL.value());
+        self.data.put_u8(slot);
+    }
+
     pub fn add_assign_local(&mut self, slot: u8, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::ADD_ASSIGN_LOCAL.value());
+        self.data.put_u8(slot);
+    }
+
+    pub fn sub_assign_local(&mut self, slot: u8, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::SUB_ASSIGN_LOCAL.value());
         self.data.put_u8(slot);
     }
 }

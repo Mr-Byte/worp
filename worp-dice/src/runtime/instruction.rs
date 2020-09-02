@@ -51,7 +51,11 @@ impl Instruction {
         pub const ADD;
         pub const SUB;
 
+        pub const MUL_ASSIGN_LOCAL;
+        pub const DIV_ASSIGN_LOCAL;
         pub const ADD_ASSIGN_LOCAL;
+        pub const SUB_ASSIGN_LOCAL;
+        // TODO: &= and |= ?
 
         pub const GT;
         pub const GTE;

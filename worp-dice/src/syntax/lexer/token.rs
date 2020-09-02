@@ -92,8 +92,14 @@ pub enum TokenKind {
     LessEqual,
     #[token("=")]
     Assign,
+    #[token("*=")]
+    MulAssign,
+    #[token("/=")]
+    DivAssign,
     #[token("+=")]
     AddAssign,
+    #[token("-=")]
+    SubAssign,
     #[token("d")]
     DiceRoll,
     #[token("&&")]

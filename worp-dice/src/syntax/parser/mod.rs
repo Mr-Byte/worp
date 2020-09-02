@@ -1,8 +1,8 @@
 use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
-    Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator,
-    VariableDeclaration, WhileLoop,
+    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId,
+    SyntaxTree, Unary, UnaryOperator, VariableDeclaration, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -275,23 +275,44 @@ impl Parser {
         };
 
         let next_token_kind = self.lexer.peek().kind;
-        if can_assign && (next_token_kind == TokenKind::Assign || next_token_kind == TokenKind::AddAssign) {
+        let is_assignent = matches!(
+            next_token_kind,
+            TokenKind::Assign
+                | TokenKind::MulAssign
+                | TokenKind::DivAssign
+                | TokenKind::AddAssign
+                | TokenKind::SubAssign
+        );
+
+        if can_assign && is_assignent {
             let kind = self
                 .lexer
-                .consume_one_of(&[TokenKind::Assign, TokenKind::AddAssign])?
+                .consume_one_of(&[
+                    TokenKind::Assign,
+                    TokenKind::MulAssign,
+                    TokenKind::DivAssign,
+                    TokenKind::AddAssign,
+                    TokenKind::SubAssign,
+                ])?
                 .kind;
 
             let value = self.expression()?;
             let span_end = self.lexer.current().span();
             let op = match kind {
-                TokenKind::AddAssign => BinaryOperator::AddAssignment,
-                TokenKind::Assign => BinaryOperator::Assignment,
+                TokenKind::Assign => AssignmentOperator::Assignment,
+                TokenKind::MulAssign => AssignmentOperator::MulAssignment,
+                TokenKind::DivAssign => AssignmentOperator::DivAssignment,
+                TokenKind::AddAssign => AssignmentOperator::AddAssignment,
+                TokenKind::SubAssign => AssignmentOperator::SubAssignment,
                 _ => todo!(),
             };
 
-            expression = self
-                .arena
-                .alloc(SyntaxNode::Binary(Binary(op, expression, value, span_start + span_end)));
+            expression = self.arena.alloc(SyntaxNode::Assignment(Assignment(
+                op,
+                expression,
+                value,
+                span_start + span_end,
+            )));
         }
 
         Ok(expression)

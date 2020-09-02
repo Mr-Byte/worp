@@ -2,8 +2,8 @@ use super::{error::CompilerError, Compiler};
 use crate::{
     runtime::core::{Span, Symbol, Value},
     syntax::{
-        Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId, Unary, UnaryOperator,
-        VariableDeclaration, WhileLoop,
+        Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Conditional, Literal, SyntaxNode, SyntaxNodeId,
+        Unary, UnaryOperator, VariableDeclaration, WhileLoop,
     },
 };
 
@@ -19,6 +19,10 @@ impl Compiler {
             SyntaxNode::SafeAccess(_) => todo!(),
             SyntaxNode::FieldAccess(_) => todo!(),
             SyntaxNode::Index(_) => todo!(),
+            SyntaxNode::Assignment(assignment) => {
+                let assignment = assignment.clone();
+                self.assignment(assignment)?;
+            }
             SyntaxNode::Unary(unary) => {
                 let unary = unary.clone();
                 self.unary_op(unary)?;
@@ -164,6 +168,35 @@ impl Compiler {
         Ok(())
     }
 
+    fn assignment(&mut self, Assignment(op, lhs, rhs, span): Assignment) -> Result<(), CompilerError> {
+        let lhs = self.syntax_tree.get(lhs).expect("Node should exist.");
+
+        if let SyntaxNode::Literal(Literal::Identifier(target, _)) = lhs {
+            let target = Symbol::new(target);
+            let local = self.local(target.clone())?;
+            let slot = local.slot;
+
+            if !local.is_mutable {
+                return Err(CompilerError::ImmutableVariable(target));
+            }
+
+            self.compile(rhs)?;
+
+            match op {
+                AssignmentOperator::Assignment => self.bytecode.store_local(slot, span),
+                AssignmentOperator::MulAssignment => self.bytecode.mul_assign_local(slot, span),
+                AssignmentOperator::DivAssignment => self.bytecode.div_assign_local(slot, span),
+                AssignmentOperator::AddAssignment => self.bytecode.add_assign_local(slot, span),
+                AssignmentOperator::SubAssignment => self.bytecode.sub_assign_local(slot, span),
+                _ => todo!(),
+            }
+        } else {
+            return Err(CompilerError::InvalidAssignmentTarget);
+        }
+
+        Ok(())
+    }
+
     fn unary_op(&mut self, Unary(op, expr, span): Unary) -> Result<(), CompilerError> {
         self.compile(expr)?;
 
@@ -178,44 +211,6 @@ impl Compiler {
 
     fn binary_op(&mut self, Binary(op, lhs, rhs, span): Binary) -> Result<(), CompilerError> {
         match op {
-            // TODO: Separate assignments out into their own class of operators.
-            BinaryOperator::AddAssignment => {
-                let lhs = self.syntax_tree.get(lhs).expect("Node should exist.");
-
-                if let SyntaxNode::Literal(Literal::Identifier(target, _)) = lhs {
-                    let target = Symbol::new(target);
-                    let local = self.local(target.clone())?;
-                    let slot = local.slot;
-
-                    if !local.is_mutable {
-                        return Err(CompilerError::ImmutableVariable(target));
-                    }
-
-                    self.compile(rhs)?;
-                    // Since assignments are always followed by a discard, make this a no-op?
-                    self.bytecode.add_assign_local(slot, span);
-                } else {
-                    return Err(CompilerError::InvalidAssignmentTarget);
-                }
-            }
-            BinaryOperator::Assignment => {
-                let lhs = self.syntax_tree.get(lhs).expect("Node should exist.");
-
-                if let SyntaxNode::Literal(Literal::Identifier(target, _)) = lhs {
-                    let target = Symbol::new(target);
-                    let local = self.local(target.clone())?;
-                    let slot = local.slot;
-
-                    if !local.is_mutable {
-                        return Err(CompilerError::ImmutableVariable(target));
-                    }
-
-                    self.compile(rhs)?;
-                    self.bytecode.store_local(slot, span);
-                } else {
-                    return Err(CompilerError::InvalidAssignmentTarget);
-                }
-            }
             BinaryOperator::LogicalAnd => {
                 self.compile(lhs)?;
                 self.bytecode.dup(span.clone());

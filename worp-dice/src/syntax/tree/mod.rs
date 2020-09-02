@@ -23,87 +23,6 @@ impl SyntaxTree {
     }
 }
 
-impl Display for SyntaxTree {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(root) = self.get(self.root) {
-            fmt_node(root, &self.nodes, f)
-        } else {
-            write!(f, "")
-        }
-    }
-}
-
-fn fmt_node(node: &SyntaxNode, nodes: &Arena<SyntaxNode>, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match node {
-        SyntaxNode::Discard(_) => {
-            write!(f, ";")?;
-            Ok(())
-        }
-        SyntaxNode::Block(Block(statements, _)) => {
-            for statement in statements {
-                let statement = nodes.get(*statement).unwrap();
-                fmt_node(&statement, nodes, f)?;
-            }
-
-            Ok(())
-        }
-        SyntaxNode::VariableDeclaration(VariableDeclaration(name, _, expr, _)) => {
-            write!(f, "{} := ", name)?;
-            fmt_node(nodes.get(*expr).unwrap(), nodes, f)?;
-
-            Ok(())
-        }
-        SyntaxNode::Literal(literal) => match literal {
-            Literal::Identifier(name, _) => write!(f, "{}", name),
-            Literal::Integer(integer, _) => write!(f, "{}", integer),
-            _ => todo!(),
-        },
-        SyntaxNode::Unary(Unary(operator, expr, _)) => {
-            match operator {
-                UnaryOperator::Negate => write!(f, "-")?,
-                UnaryOperator::Not => write!(f, "!")?,
-                UnaryOperator::DiceRoll => write!(f, "d")?,
-            }
-
-            fmt_node(nodes.get(*expr).unwrap(), nodes, f)?;
-
-            Ok(())
-        }
-        SyntaxNode::Binary(Binary(operator, lhs, rhs, _)) => {
-            write!(f, "(")?;
-            match operator {
-                BinaryOperator::AddAssignment => write!(f, "+=")?,
-                BinaryOperator::Assignment => write!(f, "=")?,
-                BinaryOperator::Multiply => write!(f, "*")?,
-                BinaryOperator::Divide => write!(f, "/")?,
-                BinaryOperator::Remainder => write!(f, "%")?,
-                BinaryOperator::Add => write!(f, "+")?,
-                BinaryOperator::Subtract => write!(f, "-")?,
-                BinaryOperator::DiceRoll => write!(f, "d")?,
-                BinaryOperator::GreaterThan => write!(f, ">")?,
-                BinaryOperator::LessThan => write!(f, "<")?,
-                BinaryOperator::GreaterThanEquals => write!(f, ">=")?,
-                BinaryOperator::LessThanEquals => write!(f, "<=")?,
-                BinaryOperator::Equals => write!(f, "==")?,
-                BinaryOperator::NotEquals => write!(f, "!=")?,
-                BinaryOperator::LogicalAnd => write!(f, "&&")?,
-                BinaryOperator::LogicalOr => write!(f, "||")?,
-                BinaryOperator::RangeInclusive => write!(f, "..=")?,
-                BinaryOperator::RangeExclusive => write!(f, "..")?,
-                BinaryOperator::Coalesce => write!(f, "??")?,
-            }
-            write!(f, " ")?;
-            fmt_node(nodes.get(*lhs).unwrap(), nodes, f)?;
-            write!(f, " ")?;
-            fmt_node(nodes.get(*rhs).unwrap(), nodes, f)?;
-            write!(f, ")")?;
-
-            Ok(())
-        }
-        _ => todo!(),
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum SyntaxNode {
     Literal(Literal),
@@ -114,6 +33,7 @@ pub enum SyntaxNode {
     // Operators
     Unary(Unary),
     Binary(Binary),
+    Assignment(Assignment),
 
     // Statements
     VariableDeclaration(VariableDeclaration),
@@ -145,9 +65,25 @@ pub enum UnaryOperator {
 }
 
 #[derive(Debug, Clone)]
+pub struct SafeAccess(pub SyntaxNodeId, pub String, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct FieldAccess(pub SyntaxNodeId, pub String, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct FunctionCall(pub SyntaxNodeId, pub Vec<SyntaxNodeId>, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Index(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Unary(pub UnaryOperator, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Binary(pub BinaryOperator, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
+
+#[derive(Debug, Clone)]
 pub enum BinaryOperator {
-    AddAssignment,
-    Assignment,
     DiceRoll,
     Multiply,
     Divide,
@@ -168,22 +104,16 @@ pub enum BinaryOperator {
 }
 
 #[derive(Debug, Clone)]
-pub struct SafeAccess(pub SyntaxNodeId, pub String, pub Span);
+pub struct Assignment(pub AssignmentOperator, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
 
 #[derive(Debug, Clone)]
-pub struct FieldAccess(pub SyntaxNodeId, pub String, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct FunctionCall(pub SyntaxNodeId, pub Vec<SyntaxNodeId>, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Index(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Unary(pub UnaryOperator, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Binary(pub BinaryOperator, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
+pub enum AssignmentOperator {
+    Assignment,
+    MulAssignment,
+    DivAssignment,
+    AddAssignment,
+    SubAssignment,
+}
 
 #[derive(Debug, Clone)]
 pub struct VariableDeclaration(pub String, pub bool, pub SyntaxNodeId, pub Span);
