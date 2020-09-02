@@ -28,30 +28,6 @@ impl BytecodeGenerator {
         self.data.put_u8(Instruction::PUSH_UNIT.value());
     }
 
-    pub fn push_int(&mut self, value: i64, span: Span) {
-        if value == 0 {
-            self.data.put_u8(Instruction::PUSHI_ZERO.value());
-            self.source_map.insert(self.data.len() as u64, span);
-        } else if value == 1 {
-            self.data.put_u8(Instruction::PUSHI_ONE.value());
-            self.source_map.insert(self.data.len() as u64, span);
-        } else {
-            self.source_map.insert(self.data.len() as u64, span.clone());
-            self.data.put_u8(Instruction::PUSH_INT.value());
-
-            self.source_map.insert(self.data.len() as u64, span);
-            self.data.put_i64(value);
-        }
-    }
-
-    pub fn push_float(&mut self, value: f64, span: Span) {
-        self.source_map.insert(self.data.len() as u64, span.clone());
-        self.data.put_u8(Instruction::PUSH_FLOAT.value());
-
-        self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_f64(value);
-    }
-
     pub fn push_bool(&mut self, value: bool, span: Span) {
         let instruction = if value {
             Instruction::PUSH_TRUE
@@ -61,6 +37,26 @@ impl BytecodeGenerator {
 
         self.source_map.insert(self.data.len() as u64, span.clone());
         self.data.put_u8(instruction.value());
+    }
+
+    pub fn push_i0(&mut self, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.data.put_u8(Instruction::PUSH_I0.value());
+    }
+
+    pub fn push_i1(&mut self, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.data.put_u8(Instruction::PUSH_I1.value());
+    }
+
+    pub fn push_f0(&mut self, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.data.put_u8(Instruction::PUSH_F0.value());
+    }
+
+    pub fn push_f1(&mut self, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.data.put_u8(Instruction::PUSH_F1.value());
     }
 
     pub fn push_const(&mut self, value: Value, span: Span) {
@@ -75,7 +71,7 @@ impl BytecodeGenerator {
         self.data.put_u8(Instruction::PUSH_CONST.value());
 
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u64(position as u64);
+        self.data.put_u8(position as u8);
     }
 
     pub fn pop(&mut self, span: Span) {

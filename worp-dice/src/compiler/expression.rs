@@ -118,8 +118,20 @@ impl Compiler {
             Literal::Identifier(name, span) => self.load_variable(name, span)?,
             Literal::None(span) => self.bytecode.push_none(span),
             Literal::Unit(span) => self.bytecode.push_unit(span),
-            Literal::Integer(value, span) => self.bytecode.push_int(value, span),
-            Literal::Float(value, span) => self.bytecode.push_float(value, span),
+            Literal::Integer(value, span) => match value {
+                0 => self.bytecode.push_i0(span),
+                1 => self.bytecode.push_i1(span),
+                _ => self.bytecode.push_const(Value::Int(value), span),
+            },
+            Literal::Float(value, span) => {
+                if value == 0.0 {
+                    self.bytecode.push_f0(span);
+                } else if value == 1.0 {
+                    self.bytecode.push_f1(span);
+                } else {
+                    self.bytecode.push_const(Value::Float(value), span);
+                }
+            }
             Literal::String(value, span) => self.bytecode.push_const(Value::String(value), span),
             Literal::Boolean(value, span) => self.bytecode.push_bool(value, span),
             Literal::List(_, _) => todo!(),

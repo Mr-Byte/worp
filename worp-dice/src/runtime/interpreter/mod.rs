@@ -49,20 +49,12 @@ impl Runtime {
                 }
                 Instruction::PUSH_FALSE => self.stack.push(Value::Bool(false)),
                 Instruction::PUSH_TRUE => self.stack.push(Value::Bool(true)),
-
-                Instruction::PUSHI_ZERO => self.stack.push(Value::Int(0)),
-                Instruction::PUSHI_ONE => self.stack.push(Value::Int(1)),
-
-                Instruction::PUSH_INT => {
-                    let int = cursor.read_int();
-                    self.stack.push(Value::Int(int));
-                }
-                Instruction::PUSH_FLOAT => {
-                    let float = cursor.read_float();
-                    self.stack.push(Value::Float(float));
-                }
+                Instruction::PUSH_I0 => self.stack.push(Value::Int(0)),
+                Instruction::PUSH_I1 => self.stack.push(Value::Int(1)),
+                Instruction::PUSH_F0 => self.stack.push(Value::Float(0.0)),
+                Instruction::PUSH_F1 => self.stack.push(Value::Float(1.0)),
                 Instruction::PUSH_CONST => {
-                    let const_pos = cursor.read_int();
+                    let const_pos = cursor.read_u8();
                     let value = bytecode.constants()[const_pos as usize].clone();
                     self.stack.push(value);
                 }

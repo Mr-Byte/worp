@@ -19,7 +19,7 @@ fn main() -> Result<()> {
 
         let start = std::time::Instant::now();
 
-        match runtime.run_script(&input) {
+        match runtime.disassemble_script(&input) {
             Ok(result) => {
                 let elapsed = start.elapsed();
                 println!("Result ({} ms): {}", (elapsed.as_micros() as f64 / 1000.0), result);

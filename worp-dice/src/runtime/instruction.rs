@@ -22,9 +22,6 @@ macro_rules! define_instructions {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Instruction(u8);
 
-// TODO: Fuse PUSH_INT/FLOAT/CONST into a single opcode, that use a single byte to represent the index of the const
-// TODO: Add an opcode to represent 0 and 1 literals for ints and floats.
-
 impl Instruction {
     define_instructions! {
         pub const PUSH_NONE;
@@ -33,14 +30,10 @@ impl Instruction {
         pub const PUSH_FALSE;
         pub const PUSH_TRUE;
 
-        pub const PUSHI_ZERO;
-        pub const PUSHI_ONE;
-        pub const PUSHF_ZERO;
-        pub const PUSHF_ONE;
-
-        // TODO: Fuse these.
-        pub const PUSH_INT;
-        pub const PUSH_FLOAT;
+        pub const PUSH_I0;
+        pub const PUSH_I1;
+        pub const PUSH_F0;
+        pub const PUSH_F1;
         pub const PUSH_CONST;
 
         pub const POP;
@@ -91,10 +84,10 @@ impl Display for Instruction {
             Instruction::PUSH_UNIT => write!(f, "{:#04X} | PUSH_UNIT", self.0),
             Instruction::PUSH_FALSE => write!(f, "{:#04X} | PUSH_FALSE", self.0),
             Instruction::PUSH_TRUE => write!(f, "{:#04X} | PUSH_TRUE", self.0),
-            Instruction::PUSHI_ZERO => write!(f, "{:04X} | PUSHI_ZERO", self.0),
-            Instruction::PUSHI_ONE => write!(f, "{:04X} | PUSHI_ONE", self.0),
-            Instruction::PUSH_INT => write!(f, "{:#04X} | PUSH_INT", self.0),
-            Instruction::PUSH_FLOAT => write!(f, "{:#04X} | PUSH_FLOAT", self.0),
+            Instruction::PUSH_I0 => write!(f, "{:04X} | PUSH_I0", self.0),
+            Instruction::PUSH_I1 => write!(f, "{:04X} | PUSH_I1", self.0),
+            Instruction::PUSH_F0 => write!(f, "{:04X} | PUSHF_F0", self.0),
+            Instruction::PUSH_F1 => write!(f, "{:04X} | PUSH_F1", self.0),
             Instruction::PUSH_CONST => write!(f, "{:#04X} | PUSH_CONST", self.0),
             Instruction::POP => write!(f, "{:#04X} | POP", self.0),
             Instruction::DUP => write!(f, "{:#04X} | DUP", self.0),
