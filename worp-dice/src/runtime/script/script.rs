@@ -31,13 +31,14 @@ impl Display for Script {
             write!(f, "{:6} | {:<24} | ", position, format!("{}", instruction))?;
 
             match instruction {
-                Instruction::PUSH_CONST => write!(f, "{}", cursor.read_u8())?,
-                Instruction::JUMP => write!(f, "{}", cursor.read_offset())?,
-                Instruction::JUMP_IF_FALSE => write!(f, "{}", cursor.read_offset())?,
-                Instruction::LOAD_LOCAL => write!(f, "{}", cursor.read_u8())?,
-                Instruction::STORE_LOCAL => write!(f, "{}", cursor.read_u8())?,
-                Instruction::ADD_ASSIGN_LOCAL => write!(f, "{}", cursor.read_u8())?,
-
+                Instruction::JUMP | Instruction::JUMP_IF_FALSE => write!(f, "{}", cursor.read_offset())?,
+                Instruction::PUSH_CONST
+                | Instruction::LOAD_LOCAL
+                | Instruction::STORE_LOCAL
+                | Instruction::MUL_ASSIGN_LOCAL
+                | Instruction::DIV_ASSIGN_LOCAL
+                | Instruction::ADD_ASSIGN_LOCAL
+                | Instruction::SUB_ASSIGN_LOCAL => write!(f, "{}", cursor.read_u8())?,
                 _ => (),
             }
 
