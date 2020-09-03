@@ -38,7 +38,8 @@ impl Display for Script {
                 | Instruction::MUL_ASSIGN_LOCAL
                 | Instruction::DIV_ASSIGN_LOCAL
                 | Instruction::ADD_ASSIGN_LOCAL
-                | Instruction::SUB_ASSIGN_LOCAL => write!(f, "{}", cursor.read_u8())?,
+                | Instruction::SUB_ASSIGN_LOCAL
+                | Instruction::BUILD_LIST => write!(f, "{}", cursor.read_u8())?,
                 _ => (),
             }
 

@@ -34,10 +34,6 @@ impl Bytecode {
         &self.inner.constants
     }
 
-    pub fn span_of(&self, position: usize) -> Option<Span> {
-        self.inner.source_map.get(&(position as u64)).cloned()
-    }
-
     pub fn cursor(&self) -> BytecodeCursor {
         BytecodeCursor {
             cursor: Cursor::new(self.inner.data.clone()),

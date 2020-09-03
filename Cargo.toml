@@ -11,4 +11,4 @@ members = [
 default-members = ["worp-client"]
 
 [profile.release]
-debug = true
+lto = true

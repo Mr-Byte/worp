@@ -1,7 +1,7 @@
 #[macro_use]
 mod macros;
 
-use super::{bytecode::Bytecode, error::RuntimeError, instruction::Instruction, script::Script};
+use super::{bytecode::Bytecode, error::RuntimeError, instruction::Instruction, script::Script, lib::List};
 use crate::runtime::core::{
     symbol::common::operators::{
         OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
@@ -65,6 +65,13 @@ impl Runtime {
                 Instruction::DUP => {
                     let value = self.stack.top();
                     self.stack.push(value);
+                }
+
+                Instruction::BUILD_LIST => {
+                    let count = cursor.read_u8() as usize;
+                    let items = self.stack.pop_count(count).to_vec();
+                    
+                    self.stack.push(Value::List(items.into()));
                 }
 
                 Instruction::NEG => unary_op!(cursor, self.stack, OP_NEG),
@@ -200,6 +207,12 @@ impl Stack {
         self.stack_ptr -= 1;
 
         value
+    }
+
+    fn pop_count(&mut self, count: usize) -> &mut [Value] {
+        let items = &mut self.values[self.stack_ptr-count..self.stack_ptr];
+        self.stack_ptr -= count;
+        items
     }
 
     fn reserve_slots(&mut self, count: usize) {
