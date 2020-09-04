@@ -10,4 +10,7 @@ pub enum CompilerError {
     ImmutableVariable(Symbol),
     #[error("Invalid assignment target.")]
     InvalidAssignmentTarget,
+
+    #[error("Internal Compiler Error: {0}")]
+    InternalCompilerError(String),
 }

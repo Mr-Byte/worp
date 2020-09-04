@@ -1,16 +1,20 @@
 use crate::runtime::core::Span;
 use id_arena::{Arena, Id};
+use std::rc::Rc;
 
 pub type SyntaxNodeId = Id<SyntaxNode>;
 
 pub struct SyntaxTree {
     root: SyntaxNodeId,
-    nodes: Arena<SyntaxNode>,
+    nodes: Rc<Arena<SyntaxNode>>,
 }
 
 impl SyntaxTree {
     pub(crate) fn new(root: SyntaxNodeId, nodes: Arena<SyntaxNode>) -> Self {
-        Self { root, nodes }
+        Self {
+            root,
+            nodes: Rc::new(nodes),
+        }
     }
 
     pub fn root(&self) -> SyntaxNodeId {
@@ -19,6 +23,13 @@ impl SyntaxTree {
 
     pub fn get(&self, id: SyntaxNodeId) -> Option<&SyntaxNode> {
         self.nodes.get(id)
+    }
+
+    pub fn child(&self, id: SyntaxNodeId) -> Option<SyntaxTree> {
+        self.nodes.get(id).map(|_| Self {
+            root: id,
+            nodes: self.nodes.clone(),
+        })
     }
 }
 

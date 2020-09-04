@@ -1,4 +1,4 @@
-use super::{error::CompilerError, Compiler};
+use super::{error::CompilerError, scope::ScopeKind, Compiler};
 use crate::{
     runtime::core::{Span, Symbol, Value},
     syntax::{
@@ -48,7 +48,7 @@ impl Compiler {
                 let span = span.clone();
                 let items = items.clone();
 
-                self.begin_scope();
+                self.begin_scope(ScopeKind::Block);
 
                 for expression in items.iter() {
                     self.compile(*expression)?;
@@ -64,7 +64,7 @@ impl Compiler {
                     None => self.bytecode.push_unit(span),
                 }
 
-                self.end_scope();
+                self.end_scope()?;
             }
             SyntaxNode::Discard(span) => self.bytecode.pop(span.clone()),
         }
@@ -144,7 +144,7 @@ impl Compiler {
                 }
 
                 self.bytecode.build_list(list.len() as u8, span);
-            },
+            }
             Literal::Object(_, _) => todo!(),
         };
 
@@ -156,7 +156,7 @@ impl Compiler {
         VariableDeclaration(name, is_mutable, value, span): VariableDeclaration,
     ) -> Result<(), CompilerError> {
         let name = Symbol::new(name);
-        let slot = self.add_local(name, is_mutable);
+        let slot = self.add_local(name, is_mutable)?;
 
         self.compile(value)?;
         self.bytecode.store_local(slot, span.clone());
