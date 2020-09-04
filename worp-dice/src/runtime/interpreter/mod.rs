@@ -1,7 +1,7 @@
 #[macro_use]
 mod macros;
 
-use super::{bytecode::Bytecode, error::RuntimeError, instruction::Instruction, script::Script, lib::List};
+use super::{bytecode::Bytecode, error::RuntimeError, instruction::Instruction, script::Script};
 use crate::runtime::core::{
     symbol::common::operators::{
         OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
@@ -70,7 +70,7 @@ impl Runtime {
                 Instruction::BUILD_LIST => {
                     let count = cursor.read_u8() as usize;
                     let items = self.stack.pop_count(count).to_vec();
-                    
+
                     self.stack.push(Value::List(items.into()));
                 }
 
@@ -131,7 +131,7 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs *= rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs *= rhs,
-                        _ => todo!(),
+                        (lhs, rhs) => *lhs = lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs.clone(), rhs])?,
                     }
 
                     let result = frame[slot].clone();
@@ -145,7 +145,7 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs /= rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs /= rhs,
-                        _ => todo!(),
+                        (lhs, rhs) => *lhs = lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs.clone(), rhs])?,
                     }
 
                     let result = frame[slot].clone();
@@ -159,7 +159,7 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs += rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs += rhs,
-                        _ => todo!(),
+                        (lhs, rhs) => *lhs = lhs.get(&ValueKey::Symbol(OP_ADD))?.call(&[lhs.clone(), rhs])?,
                     }
 
                     let result = frame[slot].clone();
@@ -173,7 +173,7 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs -= rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs -= rhs,
-                        _ => todo!(),
+                        (lhs, rhs) => *lhs = lhs.get(&ValueKey::Symbol(OP_SUB))?.call(&[lhs.clone(), rhs])?,
                     }
 
                     let result = frame[slot].clone();
@@ -210,7 +210,7 @@ impl Stack {
     }
 
     fn pop_count(&mut self, count: usize) -> &mut [Value] {
-        let items = &mut self.values[self.stack_ptr-count..self.stack_ptr];
+        let items = &mut self.values[self.stack_ptr - count..self.stack_ptr];
         self.stack_ptr -= count;
         items
     }

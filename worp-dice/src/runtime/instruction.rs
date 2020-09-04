@@ -39,6 +39,7 @@ impl Instruction {
         pub const POP;
         pub const DUP;
 
+        pub const BUILD_TUPLE;
         pub const BUILD_LIST;
         pub const BUILD_OBJECT;
 
@@ -86,7 +87,7 @@ impl From<u8> for Instruction {
 
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:04X} |", self.0)?;
+        write!(f, "{:02X} |", self.0)?;
 
         match *self {
             Instruction::PUSH_NONE => write!(f, "PUSH_NONE"),
