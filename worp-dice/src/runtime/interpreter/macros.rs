@@ -37,10 +37,10 @@ macro_rules! op {
 #[macro_export]
 macro_rules! arithmetic_op {
     ($stack:expr, $op:ident) => {
-        match ($stack.pop(), $stack.pop()) {
-            (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Int(op!($op, lhs, rhs))),
-            (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Float(op!($op, lhs, rhs))),
-            (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs])?),
+        match ($stack.pop(), $stack.top()) {
+            (Value::Int(lhs), Value::Int(rhs)) => *rhs = op!($op, lhs, *rhs),
+            (Value::Float(lhs), Value::Float(rhs)) => *rhs = op!($op, lhs, *rhs),
+            (lhs, rhs) => *rhs = lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs.clone()])?,
         }
     };
 }
@@ -85,13 +85,4 @@ macro_rules! comparison_op {
             (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs])?),
         }
     };
-}
-
-#[macro_export]
-macro_rules! unary_op {
-    ($bytecode:expr, $stack:expr, $op:expr) => {{
-        let value = $stack.pop();
-        let result = value.get(&ValueKey::Symbol($op))?.call(&[value])?;
-        $stack.push(result);
-    }};
 }

@@ -41,12 +41,8 @@ impl Runtime {
 
         while let Some(instruction) = cursor.read_instruction() {
             match instruction {
-                Instruction::PUSH_NONE => {
-                    self.stack.push(Value::NONE);
-                }
-                Instruction::PUSH_UNIT => {
-                    self.stack.push(Value::UNIT);
-                }
+                Instruction::PUSH_NONE => self.stack.push(Value::NONE),
+                Instruction::PUSH_UNIT => self.stack.push(Value::UNIT),
                 Instruction::PUSH_FALSE => self.stack.push(Value::Bool(false)),
                 Instruction::PUSH_TRUE => self.stack.push(Value::Bool(true)),
                 Instruction::PUSH_I0 => self.stack.push(Value::Int(0)),
@@ -54,8 +50,8 @@ impl Runtime {
                 Instruction::PUSH_F0 => self.stack.push(Value::Float(0.0)),
                 Instruction::PUSH_F1 => self.stack.push(Value::Float(1.0)),
                 Instruction::PUSH_CONST => {
-                    let const_pos = cursor.read_u8();
-                    let value = bytecode.constants()[const_pos as usize].clone();
+                    let const_pos = cursor.read_u8() as usize;
+                    let value = bytecode.constants()[const_pos].clone();
                     self.stack.push(value);
                 }
 
@@ -63,7 +59,7 @@ impl Runtime {
                     self.stack.pop();
                 }
                 Instruction::DUP => {
-                    let value = self.stack.top();
+                    let value = self.stack.top().clone();
                     self.stack.push(value);
                 }
 
@@ -74,8 +70,15 @@ impl Runtime {
                     self.stack.push(Value::List(items.into()));
                 }
 
-                Instruction::NEG => unary_op!(cursor, self.stack, OP_NEG),
-                Instruction::NOT => unary_op!(cursor, self.stack, OP_NOT),
+                Instruction::NEG => match self.stack.top() {
+                    Value::Int(value) => *value = -*value,
+                    Value::Float(value) => *value = -*value,
+                    value => *value = value.get(&ValueKey::Symbol(OP_NEG))?.call(&[value.clone()])?,
+                },
+                Instruction::NOT => match self.stack.top() {
+                    Value::Bool(value) => *value = !*value,
+                    value => *value = value.get(&ValueKey::Symbol(OP_NOT))?.call(&[value.clone()])?,
+                },
 
                 Instruction::MUL => arithmetic_op!(self.stack, OP_MUL),
                 Instruction::DIV => arithmetic_op!(self.stack, OP_DIV),
@@ -231,8 +234,8 @@ impl Stack {
         self.stack_ptr
     }
 
-    fn top(&self) -> Value {
-        self.values[self.stack_ptr - 1].clone()
+    fn top(&mut self) -> &mut Value {
+        &mut self.values[self.stack_ptr - 1]
     }
 }
 
