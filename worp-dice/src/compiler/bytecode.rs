@@ -1,7 +1,6 @@
 use crate::runtime::{
-    bytecode::Bytecode,
     core::{Span, Value},
-    instruction::Instruction,
+    interpreter::{bytecode::Bytecode, instruction::Instruction},
 };
 use bytes::BufMut as _;
 use std::collections::HashMap;

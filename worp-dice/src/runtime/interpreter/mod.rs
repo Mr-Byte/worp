@@ -1,13 +1,23 @@
 #[macro_use]
 mod macros;
 
-use super::{bytecode::Bytecode, error::RuntimeError, instruction::Instruction, script::Script};
-use crate::runtime::core::{
-    symbol::common::operators::{
-        OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
+pub(crate) mod bytecode;
+pub(crate) mod callframe;
+pub(crate) mod instruction;
+pub(crate) mod script;
+
+use crate::{
+    runtime::core::{
+        symbol::common::operators::{
+            OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
+        },
+        Value, ValueKey,
     },
-    Value, ValueKey,
+    RuntimeError,
 };
+use bytecode::Bytecode;
+use instruction::Instruction;
+use script::Script;
 use std::ops::Range;
 
 pub struct Runtime {

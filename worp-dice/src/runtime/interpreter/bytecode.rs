@@ -1,7 +1,7 @@
 use super::instruction::Instruction;
 use crate::runtime::core::{Span, Value};
 use bytes::Buf as _;
-use std::{collections::HashMap, io::Cursor, rc::Rc};
+use std::{collections::HashMap, fmt::Display, io::Cursor, rc::Rc};
 
 #[derive(Debug)]
 struct BytecodeInner {
@@ -38,6 +38,35 @@ impl Bytecode {
         BytecodeCursor {
             cursor: Cursor::new(self.inner.data.clone()),
         }
+    }
+}
+
+impl Display for Bytecode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut cursor = self.cursor();
+        let mut position = 0;
+
+        while let Some(instruction) = cursor.read_instruction() {
+            write!(f, "{:6} | {:<24} | ", position, format!("{}", instruction))?;
+
+            match instruction {
+                Instruction::JUMP | Instruction::JUMP_IF_FALSE => write!(f, "{}", cursor.read_offset())?,
+                Instruction::PUSH_CONST
+                | Instruction::LOAD_LOCAL
+                | Instruction::STORE_LOCAL
+                | Instruction::MUL_ASSIGN_LOCAL
+                | Instruction::DIV_ASSIGN_LOCAL
+                | Instruction::ADD_ASSIGN_LOCAL
+                | Instruction::SUB_ASSIGN_LOCAL
+                | Instruction::BUILD_LIST => write!(f, "{}", cursor.read_u8())?,
+                _ => (),
+            }
+
+            position = cursor.position();
+
+            writeln!(f)?;
+        }
+        Ok(())
     }
 }
 

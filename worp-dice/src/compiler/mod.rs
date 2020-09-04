@@ -1,7 +1,7 @@
 use crate::{
     runtime::{
         core::Symbol,
-        script::{CallFrame, Module, Script},
+        interpreter::{callframe::CallFrame, script::Script},
     },
     syntax::{Parser, SyntaxTree},
 };
@@ -21,23 +21,23 @@ pub struct Compiler {
 }
 
 impl Compiler {
-    #[allow(dead_code)]
-    pub fn compile_module(input: &str) -> Result<Module, CompilerError> {
-        let syntax_tree = Parser::new(input).parse()?;
-        let mut compiler = Self {
-            syntax_tree,
-            bytecode: BytecodeGenerator::default(),
-            call_frame: CallFrame::default(),
-            scope_depth: 0,
-            locals: Vec::new(),
-        };
+    // #[allow(dead_code)]
+    // pub fn compile_module(input: &str) -> Result<Module, CompilerError> {
+    //     let syntax_tree = Parser::new(input).parse()?;
+    //     let mut compiler = Self {
+    //         syntax_tree,
+    //         bytecode: BytecodeGenerator::default(),
+    //         call_frame: CallFrame::default(),
+    //         scope_depth: 0,
+    //         locals: Vec::new(),
+    //     };
 
-        compiler.compile(compiler.syntax_tree.root())?;
+    //     compiler.compile(compiler.syntax_tree.root())?;
 
-        let module = Module::new(compiler.bytecode.generate());
+    //     let module = Module::new(compiler.bytecode.generate());
 
-        Ok(module)
-    }
+    //     Ok(module)
+    // }
 
     // TODO: Disallow item exports in scripts.
     pub fn compile_script(input: &str) -> Result<Script, CompilerError> {
