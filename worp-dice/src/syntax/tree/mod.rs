@@ -52,6 +52,8 @@ pub enum SyntaxNode {
     ForLoop(ForLoop),
     Block(Block),
     Discard(Span),
+    Break(Span),
+    Continue(Span),
 }
 
 #[derive(Debug, Clone)]

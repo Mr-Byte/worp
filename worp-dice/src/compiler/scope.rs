@@ -41,4 +41,8 @@ impl ScopeStack {
             })
             .ok_or_else(|| CompilerError::InternalCompilerError(String::from("Scope stack underflowed.")))
     }
+
+    pub fn in_context_of(&self, kind: ScopeKind) -> bool {
+        self.stack.contains(&kind)
+    }
 }

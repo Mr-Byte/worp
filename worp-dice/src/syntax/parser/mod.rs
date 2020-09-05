@@ -59,6 +59,8 @@ impl ParserRule {
             // Control flow
             TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
             TokenKind::While => ParserRule::new(Some(Parser::while_expression), None, RulePrecedence::None),
+            TokenKind::Break => ParserRule::new(Some(Parser::control_flow), None, RulePrecedence::None),
+            TokenKind::Continue => ParserRule::new(Some(Parser::control_flow), None, RulePrecedence::None),
 
             // Block expressions
             TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
@@ -250,6 +252,20 @@ impl Parser {
         let span_end = self.lexer.current().span();
 
         let node = SyntaxNode::WhileLoop(WhileLoop(condition, body, span_start + span_end));
+
+        Ok(self.arena.alloc(node))
+    }
+
+    fn control_flow(&mut self, _: bool) -> SyntaxNodeResult {
+        let token = self.lexer.next();
+
+        let node = match token.kind {
+            TokenKind::Break => SyntaxNode::Break(token.span()),
+            TokenKind::Continue => SyntaxNode::Continue(token.span()),
+            _ => return Err(SyntaxError::UnexpectedToken(token)),
+        };
+
+        self.lexer.consume(TokenKind::Semicolon)?;
 
         Ok(self.arena.alloc(node))
     }

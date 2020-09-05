@@ -44,30 +44,42 @@ impl Compiler {
                 self.while_loop(while_loop)?;
             }
             SyntaxNode::ForLoop(_) => todo!(),
-            SyntaxNode::Block(Block(items, span)) => {
+            SyntaxNode::Break(span) => {
                 let span = span.clone();
-                let items = items.clone();
-
-                self.begin_scope(ScopeKind::Block);
-
-                for expression in items.iter() {
-                    self.compile(*expression)?;
-                }
-
-                // If the block is empty or the last element is a discard of variable, push unit onto the stack.
-                match items.last() {
-                    Some(node) => match self.syntax_tree.get(*node) {
-                        Some(SyntaxNode::Discard(_)) => self.bytecode.push_unit(span),
-                        Some(SyntaxNode::VariableDeclaration(_)) => self.bytecode.push_unit(span),
-                        _ => {}
-                    },
-                    None => self.bytecode.push_unit(span),
-                }
-
-                self.end_scope()?;
+                self.break_statement(span)?;
+            }
+            SyntaxNode::Continue(span) => {
+                let span = span.clone();
+                self.continue_statement(span)?;
+            }
+            SyntaxNode::Block(block) => {
+                let block = block.clone();
+                self.block(block, ScopeKind::Block)?;
             }
             SyntaxNode::Discard(span) => self.bytecode.pop(span.clone()),
         }
+
+        Ok(())
+    }
+
+    fn block(&mut self, Block(items, span): Block, kind: ScopeKind) -> Result<(), CompilerError> {
+        self.begin_scope(kind);
+
+        for expression in items.iter() {
+            self.compile(*expression)?;
+        }
+
+        // If the block is empty or the last element is a discard of variable, push unit onto the stack.
+        match items.last() {
+            Some(node) => match self.syntax_tree.get(*node) {
+                Some(SyntaxNode::Discard(_)) => self.bytecode.push_unit(span),
+                Some(SyntaxNode::VariableDeclaration(_)) => self.bytecode.push_unit(span),
+                _ => {}
+            },
+            None => self.bytecode.push_unit(span),
+        }
+
+        self.end_scope()?;
 
         Ok(())
     }
@@ -98,21 +110,36 @@ impl Compiler {
         self.compile(condition)?;
         let loop_end = self.bytecode.jump_if_false(span.clone());
 
-        // TODO: Have a special compile for the body that allows for breaks?
-        // TODO: Have this take a boolean to indicate it's in a loop body?
-        // Return a list of jump locations to patch for loop breaks.
-        // Handle breaks nested inside blocks that aren't other loops.
-        self.compile(body)?;
-        // Cleanup the stack at the end of each iteration of the loop.
-        // TODO: Figure out how to optimize out the DUP/POP needed for variable assignments in the final position?
+        if let Some(SyntaxNode::Block(block)) = self.syntax_tree.get(body) {
+            let block = block.clone();
+            self.block(block, ScopeKind::Loop)?;
+        } else {
+            return Err(CompilerError::InternalCompilerError(String::from(
+                "While loop bodies should only ever contain blocks.",
+            )));
+        }
+
         self.bytecode.pop(span.clone());
         self.bytecode.jump_back(loop_start, span.clone());
         self.bytecode.patch_jump(loop_end);
-        // Push a unit onto the stack after a loop finishes executing.
-        // TODO: Maybe only do this if the next node is a discard.
-        // If the next node is a discard, consume it and don't push to the stack?
-        // ^ This could help improve performance.
+
         self.bytecode.push_unit(span);
+
+        Ok(())
+    }
+
+    fn break_statement(&mut self, span: Span) -> Result<(), CompilerError> {
+        if !self.scope_stack.in_context_of(ScopeKind::Loop) {
+            return Err(CompilerError::InvalidBreak);
+        }
+
+        Ok(())
+    }
+
+    fn continue_statement(&mut self, span: Span) -> Result<(), CompilerError> {
+        if !self.scope_stack.in_context_of(ScopeKind::Loop) {
+            return Err(CompilerError::InvalidContinue);
+        }
 
         Ok(())
     }

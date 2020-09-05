@@ -11,6 +11,11 @@ pub enum CompilerError {
     #[error("Invalid assignment target.")]
     InvalidAssignmentTarget,
 
+    #[error("The break keyword can only be used inside loops.")]
+    InvalidBreak,
+    #[error("The continue keyword can only be used inside loops.")]
+    InvalidContinue,
+
     #[error("Internal Compiler Error: {0}")]
     InternalCompilerError(String),
 }
