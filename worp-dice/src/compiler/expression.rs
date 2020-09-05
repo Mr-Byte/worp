@@ -8,7 +8,7 @@ use crate::{
 };
 
 impl Compiler {
-    pub(crate) fn compile(&mut self, node: SyntaxNodeId) -> Result<(), CompilerError> {
+    pub(crate) fn expression(&mut self, node: SyntaxNodeId) -> Result<(), CompilerError> {
         let node = self.syntax_tree.get(node).unwrap();
 
         match node {
@@ -63,10 +63,10 @@ impl Compiler {
     }
 
     fn block(&mut self, Block(items, span): Block, kind: ScopeKind) -> Result<(), CompilerError> {
-        self.begin_scope(kind);
+        self.scope_stack.push_scope(kind);
 
         for expression in items.iter() {
-            self.compile(*expression)?;
+            self.expression(*expression)?;
         }
 
         // If the block is empty or the last element is a discard of variable, push unit onto the stack.
@@ -79,7 +79,7 @@ impl Compiler {
             None => self.bytecode.push_unit(span),
         }
 
-        self.end_scope()?;
+        self.scope_stack.pop_scope();
 
         Ok(())
     }
@@ -88,16 +88,16 @@ impl Compiler {
         &mut self,
         Conditional(condition, primary, secondary, span): Conditional,
     ) -> Result<(), CompilerError> {
-        self.compile(condition)?;
+        self.expression(condition)?;
         let if_jump = self.bytecode.jump_if_false(span.clone());
-        self.compile(primary)?;
+        self.expression(primary)?;
 
         let else_jump = self.bytecode.jump(span);
 
         self.bytecode.patch_jump(if_jump);
 
         if let Some(secondary) = secondary {
-            self.compile(secondary)?;
+            self.expression(secondary)?;
         }
 
         self.bytecode.patch_jump(else_jump);
@@ -107,7 +107,7 @@ impl Compiler {
 
     fn while_loop(&mut self, WhileLoop(condition, body, span): WhileLoop) -> Result<(), CompilerError> {
         let loop_start = self.bytecode.current_position();
-        self.compile(condition)?;
+        self.expression(condition)?;
         let loop_end = self.bytecode.jump_if_false(span.clone());
 
         if let Some(SyntaxNode::Block(block)) = self.syntax_tree.get(body) {
@@ -167,7 +167,7 @@ impl Compiler {
             Literal::Boolean(value, span) => self.bytecode.push_bool(value, span),
             Literal::List(list, span) => {
                 for item in &list {
-                    self.compile(*item)?;
+                    self.expression(*item)?;
                 }
 
                 self.bytecode.build_list(list.len() as u8, span);
@@ -183,9 +183,9 @@ impl Compiler {
         VariableDeclaration(name, is_mutable, value, span): VariableDeclaration,
     ) -> Result<(), CompilerError> {
         let name = Symbol::new(name);
-        let slot = self.add_local(name, is_mutable)?;
+        let slot = self.scope_stack.add_local(name, is_mutable)? as u8;
 
-        self.compile(value)?;
+        self.expression(value)?;
         self.bytecode.store_local(slot, span.clone());
         self.bytecode.pop(span);
 
@@ -194,7 +194,7 @@ impl Compiler {
 
     fn load_variable(&mut self, name: String, span: Span) -> Result<(), CompilerError> {
         let name = Symbol::new(name);
-        let slot = self.local(name)?.slot;
+        let slot = self.scope_stack.local(name)?.slot as u8;
 
         self.bytecode.load_local(slot, span);
 
@@ -207,14 +207,14 @@ impl Compiler {
         match lhs {
             SyntaxNode::Literal(Literal::Identifier(target, _)) => {
                 let target = Symbol::new(target);
-                let local = self.local(target.clone())?;
-                let slot = local.slot;
+                let local = self.scope_stack.local(target.clone())?;
+                let slot = local.slot as u8;
 
                 if !local.is_mutable {
                     return Err(CompilerError::ImmutableVariable(target));
                 }
 
-                self.compile(rhs)?;
+                self.expression(rhs)?;
 
                 match op {
                     AssignmentOperator::Assignment => self.bytecode.store_local(slot, span),
@@ -231,7 +231,7 @@ impl Compiler {
     }
 
     fn unary_op(&mut self, Unary(op, expr, span): Unary) -> Result<(), CompilerError> {
-        self.compile(expr)?;
+        self.expression(expr)?;
 
         match op {
             UnaryOperator::Negate => self.bytecode.neg(span),
@@ -245,25 +245,25 @@ impl Compiler {
     fn binary_op(&mut self, Binary(op, lhs, rhs, span): Binary) -> Result<(), CompilerError> {
         match op {
             BinaryOperator::LogicalAnd => {
-                self.compile(lhs)?;
+                self.expression(lhs)?;
                 self.bytecode.dup(span.clone());
                 let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
                 self.bytecode.pop(span);
-                self.compile(rhs)?;
+                self.expression(rhs)?;
                 self.bytecode.patch_jump(short_circuit_jump);
             }
             BinaryOperator::LogicalOr => {
-                self.compile(lhs)?;
+                self.expression(lhs)?;
                 self.bytecode.dup(span.clone());
                 self.bytecode.not(span.clone());
                 let short_circuit_jump = self.bytecode.jump_if_false(span.clone());
                 self.bytecode.pop(span);
-                self.compile(rhs)?;
+                self.expression(rhs)?;
                 self.bytecode.patch_jump(short_circuit_jump);
             }
             _ => {
-                self.compile(rhs)?;
-                self.compile(lhs)?;
+                self.expression(rhs)?;
+                self.expression(lhs)?;
 
                 match op {
                     BinaryOperator::DiceRoll => todo!(),

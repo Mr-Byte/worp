@@ -26,6 +26,7 @@ impl Bytecode {
         }
     }
 
+    #[allow(dead_code)]
     pub fn source_map(&self) -> &HashMap<u64, Span> {
         &self.inner.source_map
     }
