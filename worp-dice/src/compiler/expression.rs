@@ -79,7 +79,7 @@ impl Compiler {
             None => self.bytecode.push_unit(span),
         }
 
-        self.scope_stack.pop_scope();
+        self.scope_stack.pop_scope()?;
 
         Ok(())
     }
@@ -107,31 +107,62 @@ impl Compiler {
 
     fn while_loop(&mut self, WhileLoop(condition, body, span): WhileLoop) -> Result<(), CompilerError> {
         let loop_start = self.bytecode.current_position();
+
+        self.scope_stack.push_scope(ScopeKind::Loop);
+
         self.expression(condition)?;
         let loop_end = self.bytecode.jump_if_false(span.clone());
 
         if let Some(SyntaxNode::Block(block)) = self.syntax_tree.get(body) {
-            let block = block.clone();
-            self.block(block, ScopeKind::Loop)?;
+            let Block(items, _span) = block.clone();
+
+            // NOTE: Loops should always end in a discard.  The stack should be left unaltered after each iteration.
+            // This means some detection should be done to enforce that the loop ends in some operation that leaves the stack
+            // in its original state.
+
+            if let Some(node) = items.last() {
+                if !matches!(self.syntax_tree.get(*node), 
+                      Some(SyntaxNode::Discard(_))
+                    | Some(SyntaxNode::VariableDeclaration(_))
+                    | Some(SyntaxNode::Break(_)) 
+                    | Some(SyntaxNode::Continue(_)) 
+                    | None)
+                {
+                    return Err(CompilerError::InvalidLoopEnding);
+                }
+            }
+
+            for expression in items.iter() {
+                self.expression(*expression)?;
+            }
         } else {
             return Err(CompilerError::InternalCompilerError(String::from(
                 "While loop bodies should only ever contain blocks.",
             )));
         }
 
-        self.bytecode.pop(span.clone());
         self.bytecode.jump_back(loop_start, span.clone());
+        self.bytecode.pop(span.clone());
+
+        let scope_close = self.scope_stack.pop_scope()?;
         self.bytecode.patch_jump(loop_end);
+
+        for location in scope_close.exit_points.iter() {
+            self.bytecode.patch_jump(*location as u64);
+        }
 
         self.bytecode.push_unit(span);
 
         Ok(())
     }
 
-    fn break_statement(&mut self, _span: Span) -> Result<(), CompilerError> {
+    fn break_statement(&mut self, span: Span) -> Result<(), CompilerError> {
         if !self.scope_stack.in_context_of(ScopeKind::Loop) {
             return Err(CompilerError::InvalidBreak);
         }
+
+        let patch_location = self.bytecode.jump(span);
+        self.scope_stack.add_loop_exit_point(patch_location as usize)?;
 
         Ok(())
     }

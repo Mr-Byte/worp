@@ -13,6 +13,8 @@ pub enum CompilerError {
     InvalidBreak,
     #[error("The continue keyword can only be used inside loops.")]
     InvalidContinue,
+    #[error("Loops cannot end with an expression. Try adding ; to the last statement.")]
+    InvalidLoopEnding,
 
     #[error("Internal Compiler Error: {0}")]
     InternalCompilerError(String),
