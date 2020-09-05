@@ -38,8 +38,8 @@ macro_rules! op {
 macro_rules! arithmetic_op {
     ($stack:expr, $op:ident) => {
         match ($stack.pop(), $stack.top()) {
-            (Value::Int(lhs), Value::Int(rhs)) => *rhs = op!($op, lhs, *rhs),
-            (Value::Float(lhs), Value::Float(rhs)) => *rhs = op!($op, lhs, *rhs),
+            (Value::Int(lhs), Value::Int(rhs)) => *rhs += lhs,
+            (Value::Float(lhs), Value::Float(rhs)) => *rhs += lhs,
             (lhs, rhs) => *rhs = lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs.clone()])?,
         }
     };

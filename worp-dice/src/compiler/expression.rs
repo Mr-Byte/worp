@@ -128,7 +128,7 @@ impl Compiler {
         Ok(())
     }
 
-    fn break_statement(&mut self, span: Span) -> Result<(), CompilerError> {
+    fn break_statement(&mut self, _span: Span) -> Result<(), CompilerError> {
         if !self.scope_stack.in_context_of(ScopeKind::Loop) {
             return Err(CompilerError::InvalidBreak);
         }
@@ -136,7 +136,7 @@ impl Compiler {
         Ok(())
     }
 
-    fn continue_statement(&mut self, span: Span) -> Result<(), CompilerError> {
+    fn continue_statement(&mut self, _span: Span) -> Result<(), CompilerError> {
         if !self.scope_stack.in_context_of(ScopeKind::Loop) {
             return Err(CompilerError::InvalidContinue);
         }

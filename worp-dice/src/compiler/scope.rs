@@ -67,6 +67,6 @@ impl ScopeStack {
             }
         }
 
-        return false;
+        false
     }
 }
