@@ -59,8 +59,6 @@ impl ParserRule {
             // Control flow
             TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
             TokenKind::While => ParserRule::new(Some(Parser::while_expression), None, RulePrecedence::None),
-            TokenKind::Break => ParserRule::new(Some(Parser::control_flow), None, RulePrecedence::None),
-            TokenKind::Continue => ParserRule::new(Some(Parser::control_flow), None, RulePrecedence::None),
 
             // Block expressions
             TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
@@ -167,7 +165,10 @@ impl Parser {
 
             if next_token.kind == TokenKind::Let {
                 let expression = self.variable_decl()?;
-                self.lexer.consume(TokenKind::Semicolon)?;
+                items.push(expression);
+                next_token = self.lexer.peek();
+            } else if next_token.kind == TokenKind::Break || next_token.kind == TokenKind::Continue {
+                let expression = self.control_flow()?;
                 items.push(expression);
                 next_token = self.lexer.peek();
             } else {
@@ -183,7 +184,7 @@ impl Parser {
 
                     next_token = self.lexer.peek();
                 }
-            };
+            }
         }
 
         let span_end = next_token.span();
@@ -256,7 +257,7 @@ impl Parser {
         Ok(self.arena.alloc(node))
     }
 
-    fn control_flow(&mut self, _: bool) -> SyntaxNodeResult {
+    fn control_flow(&mut self) -> SyntaxNodeResult {
         let token = self.lexer.next();
 
         let node = match token.kind {
@@ -333,6 +334,7 @@ impl Parser {
     }
 
     fn variable_decl(&mut self) -> SyntaxNodeResult {
+        // TODO: Force variable decls to require a `;` after them.
         let span_start = self.lexer.consume(TokenKind::Let)?.span();
 
         let is_mutable = if self.lexer.peek().kind == TokenKind::Mut {
@@ -352,6 +354,8 @@ impl Parser {
         self.lexer.consume(TokenKind::Assign)?;
         let expression = self.expression()?;
         let span_end = self.lexer.current().span();
+
+        self.lexer.consume(TokenKind::Semicolon)?;
 
         let node =
             SyntaxNode::VariableDeclaration(VariableDeclaration(name, is_mutable, expression, span_start + span_end));

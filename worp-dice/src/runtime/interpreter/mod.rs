@@ -34,8 +34,6 @@ impl Default for Runtime {
 
 impl Runtime {
     pub fn run_script(&mut self, mut script: Script) -> Result<Value, RuntimeError> {
-        println!("{:?}", self.stack);
-
         let stack_frame = self.stack.len()..(script.call_frame().slot_count + self.stack.len());
         let slot_count = script.call_frame().slot_count;
 
@@ -205,9 +203,10 @@ impl Runtime {
     }
 }
 
-#[derive(Debug)]
+const MAX_STACK_SIZE: usize = 512;
+
 struct Stack {
-    values: [Value; 32],
+    values: [Value; MAX_STACK_SIZE],
     stack_ptr: usize,
 }
 
@@ -255,7 +254,7 @@ impl Stack {
 impl Default for Stack {
     fn default() -> Self {
         Self {
-            values: [Value::NONE; 32],
+            values: [Value::NONE; MAX_STACK_SIZE],
             stack_ptr: 0,
         }
     }
