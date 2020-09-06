@@ -14,6 +14,7 @@ pub(super) enum ScopeKind {
     Function,
     Block,
     Loop,
+    If,
 }
 
 impl ScopeKind {
@@ -22,11 +23,7 @@ impl ScopeKind {
     }
 
     fn is_block(self) -> bool {
-        matches!(self, ScopeKind::Block | ScopeKind::Loop)
-    }
-
-    fn is_loop(self) -> bool {
-        self == ScopeKind::Loop
+        matches!(self, ScopeKind::Block | ScopeKind::Loop | ScopeKind::If)
     }
 }
 
@@ -71,23 +68,26 @@ impl ScopeStack {
         }
     }
 
-    // TODO: Include a parameter for an optional entry point into a scope.
-    // TODO: Include a way to append an exit point to the nearest loop scope.
-    //       These exit points will be patched by the compiler when the scope is finished compiling.
-    pub fn push_scope(&mut self, kind: ScopeKind) {
+    /// Start a new scope of the specified kind, with an optional entry point.
+    pub fn push_scope(&mut self, kind: ScopeKind, entry_point: Option<usize>) {
         self.stack.push(ScopeContext {
             kind,
             depth: self.stack.len(),
+            entry_point,
             ..Default::default()
         });
     }
 
+    /// Pop the top scope off the scope stack and return it.
     pub fn pop_scope(&mut self) -> Result<ScopeContext, CompilerError> {
         self.stack
             .pop()
             .ok_or_else(|| CompilerError::InternalCompilerError(String::from("Scope stack underflowed.")))
     }
 
+    /// Find the first scope of the specified kind.
+    /// If the specified scope is of type Loop, Block, or If and a Function, Script, or Module boundary is encountered
+    /// before the specified scope can be found, this function returns None.
     pub fn first_of_kind(&self, kind: ScopeKind) -> Option<&ScopeContext> {
         for context in self.stack.iter().rev() {
             if context.kind == kind {
@@ -100,6 +100,9 @@ impl ScopeStack {
         None
     }
 
+    /// Find the first scope of the specified kind as a mutable reference.
+    /// If the specified scope is of type Loop, Block, or If and a Function, Script, or Module boundary is encountered
+    /// before the specified scope can be found, this function returns None.
     pub fn first_of_kind_mut(&mut self, kind: ScopeKind) -> Option<&mut ScopeContext> {
         for context in self.stack.iter_mut().rev() {
             if context.kind == kind {
@@ -112,10 +115,14 @@ impl ScopeStack {
         None
     }
 
+    /// Determine whether or not if the stack currently contains a context of the specified scope type.
+    /// If the specified scope is of type Loop, Block, or If and a Function, Script, or Module boundary is encountered
+    /// before the specified scope can be found, this function returns false.
     pub fn in_context_of(&self, kind: ScopeKind) -> bool {
         self.first_of_kind(kind).is_some()
     }
 
+    /// Add a new local variable to the top level scope.
     pub fn add_local(&mut self, name: Symbol, is_mutable: bool) -> Result<usize, CompilerError> {
         self.top_mut()?.slot_count += 1;
 
@@ -132,6 +139,9 @@ impl ScopeStack {
         Ok(slot)
     }
 
+    /// Find the first local variable with the specified name, starting at the top of the stack and working towards the bottom.
+    /// This searches each scope in reverse order of variable declarations, so that the most recently used declaration is
+    /// return first.
     pub fn local(&self, name: Symbol) -> Result<ScopeVariable, CompilerError> {
         self.stack
             .iter()
@@ -148,12 +158,6 @@ impl ScopeStack {
             .ok_or_else(|| CompilerError::InternalCompilerError(String::from("Scope stack underflowed.")))
     }
 
-    pub fn top(&self) -> Result<&ScopeContext, CompilerError> {
-        self.stack
-            .last()
-            .ok_or_else(|| CompilerError::InternalCompilerError(String::from("Scope stack underflowed.")))
-    }
-
     /// Push the bytecode location of an exit point to the inner most loop's scope, to later be patched.
     pub fn add_loop_exit_point(&mut self, exit_point: usize) -> Result<(), CompilerError> {
         let scope = self.first_of_kind_mut(ScopeKind::Loop).ok_or_else(|| todo!())?;
@@ -163,17 +167,9 @@ impl ScopeStack {
         Ok(())
     }
 
-    /// Set the bytecode location of the entry point to the inner most loop's scope.
-    pub fn set_loop_entry_point(&mut self, entry_point: usize) -> Result<(), CompilerError> {
-        let scope = self.first_of_kind_mut(ScopeKind::Loop).ok_or_else(|| todo!())?;
-
-        scope.entry_point = Some(entry_point);
-
-        Ok(())
-    }
-
-    pub fn loop_entry_point(&mut self) -> Result<usize, CompilerError> {
-        let scope = self.first_of_kind(ScopeKind::Loop).ok_or_else(|| todo!())?;
+    /// Get the entry point of the first scope to match the specified kind.
+    pub fn entry_point(&mut self, kind: ScopeKind) -> Result<usize, CompilerError> {
+        let scope = self.first_of_kind(kind).ok_or_else(|| todo!())?;
 
         scope
             .entry_point

@@ -183,7 +183,7 @@ impl Parser {
                 items.push(expression);
                 next_token = self.lexer.peek();
             } else if next_token.kind == TokenKind::While {
-                let expression = self.while_expression()?;
+                let expression = self.while_statement()?;
                 items.push(expression);
                 next_token = self.lexer.peek();
             } else if next_token.kind == TokenKind::Let {
@@ -199,10 +199,6 @@ impl Parser {
 
                 items.push(expression);
                 next_token = self.lexer.peek();
-
-                if self.lexer.current().kind == TokenKind::RightCurly {
-                    println!("current={:?} next={:?}", self.lexer.current().kind, next_token.kind)
-                }
 
                 if next_token.kind == TokenKind::Semicolon {
                     let semi_token = self.lexer.consume(TokenKind::Semicolon)?;
@@ -254,7 +250,6 @@ impl Parser {
         let span_start = self.lexer.consume(TokenKind::If)?.span();
         let condition = self.expression()?;
         let primary = self.block_expression(false)?;
-
         let secondary = if self.lexer.peek().kind == TokenKind::Else {
             self.lexer.consume(TokenKind::Else)?;
 
@@ -266,20 +261,13 @@ impl Parser {
         } else {
             None
         };
-
         let span_end = self.lexer.current().span();
-
-        println!(
-            "current={:?} next={:?}",
-            self.lexer.current().kind,
-            self.lexer.peek().kind
-        );
-
         let node = SyntaxNode::Conditional(Conditional(condition, primary, secondary, span_start + span_end));
+
         Ok(self.arena.alloc(node))
     }
 
-    fn while_expression(&mut self) -> SyntaxNodeResult {
+    fn while_statement(&mut self) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::While)?.span();
         let condition = self.expression()?;
         let body = self.block_expression(false)?;

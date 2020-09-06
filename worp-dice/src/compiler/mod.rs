@@ -1,8 +1,5 @@
 use crate::{
-    runtime::{
-        core::Symbol,
-        interpreter::{callframe::CallFrame, script::Script},
-    },
+    runtime::interpreter::{callframe::CallFrame, script::Script},
     syntax::{Parser, SyntaxTree},
     SyntaxError,
 };

@@ -63,7 +63,7 @@ impl Compiler {
     }
 
     fn block(&mut self, Block(items, span): Block, kind: ScopeKind) -> Result<(), CompilerError> {
-        self.scope_stack.push_scope(kind);
+        self.scope_stack.push_scope(kind, None);
 
         for expression in items.iter() {
             self.expression(*expression)?;
@@ -108,8 +108,8 @@ impl Compiler {
     fn while_loop(&mut self, WhileLoop(condition, body, span): WhileLoop) -> Result<(), CompilerError> {
         let loop_start = self.bytecode.current_position();
 
-        self.scope_stack.push_scope(ScopeKind::Loop);
-        self.scope_stack.set_loop_entry_point(loop_start as usize)?;
+        self.scope_stack.push_scope(ScopeKind::Loop, Some(loop_start as usize));
+       
 
         self.expression(condition)?;
         let loop_end = self.bytecode.jump_if_false(span.clone());
@@ -173,7 +173,7 @@ impl Compiler {
             return Err(CompilerError::InvalidContinue);
         }
 
-        let loop_start = self.scope_stack.loop_entry_point()?;
+        let loop_start = self.scope_stack.entry_point(ScopeKind::Loop)?;
         self.bytecode.jump_back(loop_start as u64, span);
 
         Ok(())
