@@ -1,5 +1,4 @@
 use super::{error::RuntimeError, lib::Func};
-use gc::{Finalize, Trace};
 use std::{
     any::Any,
     fmt::{Debug, Display},
@@ -28,7 +27,7 @@ fn to_string(object: Value) -> Result<Value, RuntimeError> {
     Ok(Value::String(string))
 }
 
-pub trait TypeInstanceBase: Any + Debug + Display + Trace + Finalize {
+pub trait TypeInstanceBase: Any + Debug + Display {
     fn as_any(&self) -> &dyn Any;
 
     /// Reflection facilities.

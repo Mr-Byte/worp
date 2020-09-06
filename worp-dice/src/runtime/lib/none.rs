@@ -2,10 +2,9 @@ use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
 };
-use gc::{Finalize, Trace};
 use std::fmt::Display;
 
-#[derive(Clone, Debug, Eq, PartialEq, Trace, Finalize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct None;
 
 impl TypeInstance for None {}

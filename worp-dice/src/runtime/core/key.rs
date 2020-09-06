@@ -1,10 +1,9 @@
 use crate::runtime::core::symbol::Symbol;
-use gc::{Finalize, Trace};
 use std::fmt::Display;
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Trace, Finalize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum ValueKey {
-    Symbol(#[unsafe_ignore_trace] Symbol),
+    Symbol(Symbol),
     Index(i64),
 }
 

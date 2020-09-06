@@ -3,10 +3,9 @@ use crate::runtime::{
     error::RuntimeError,
     lib::{self, Func, List},
 };
-use gc::{Finalize, Gc, Trace};
-use std::{fmt::Display, ops::Deref};
+use std::{fmt::Display, ops::Deref, rc::Rc};
 
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum Value {
     None(lib::None),
     Unit(lib::Unit),
@@ -16,7 +15,7 @@ pub enum Value {
     Func(Func),
     List(List),
     String(String),
-    Object(Gc<Box<dyn TypeInstance>>),
+    Object(Rc<dyn TypeInstance>),
 }
 
 impl Value {
@@ -24,7 +23,7 @@ impl Value {
     pub const UNIT: Self = Value::Unit(lib::Unit);
 
     pub fn boxed<T: TypeInstance>(value: T) -> Value {
-        Value::Object(Gc::new(Box::new(value)))
+        Value::Object(Rc::new(value))
     }
 
     #[inline]
@@ -36,6 +35,23 @@ impl Value {
                 expected.clone(),
                 self.instance_type().name().clone(),
             ))
+        }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::None(_), Value::None(_)) => true,
+            (Value::Unit(_), Value::Unit(_)) => true,
+            (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
+            (Value::Int(lhs), Value::Int(rhs)) => lhs == rhs,
+            (Value::Float(lhs), Value::Float(rhs)) => lhs == rhs,
+            (Value::Func(lhs), Value::Func(rhs)) => lhs == rhs,
+            (Value::List(lhs), Value::List(rhs)) => lhs == rhs,
+            (Value::String(lhs), Value::String(rhs)) => lhs == rhs,
+            (Value::Object(lhs), Value::Object(rhs)) => lhs == rhs,
+            _ => false,
         }
     }
 }
@@ -69,7 +85,7 @@ impl Deref for Value {
             Value::List(ref obj) => obj,
             Value::String(ref obj) => obj,
             Value::Func(ref obj) => obj,
-            Value::Object(ref obj) => &***obj,
+            Value::Object(ref obj) => &**obj,
         }
     }
 }

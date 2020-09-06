@@ -2,11 +2,10 @@ use crate::runtime::{
     core::{TypeInstance, Value, ValueKey},
     error::RuntimeError,
 };
-use gc::{Finalize, Gc, Trace};
-use std::{fmt::Display, iter, ops::Deref};
+use std::{fmt::Display, iter, ops::Deref, rc::Rc};
 
-#[derive(Debug, Clone, Trace, Finalize, PartialEq)]
-pub struct List(Gc<Vec<Value>>);
+#[derive(Debug, Clone, PartialEq)]
+pub struct List(Rc<Vec<Value>>);
 
 impl TypeInstance for List {
     fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
@@ -51,7 +50,7 @@ impl Deref for List {
 
 impl From<Vec<Value>> for List {
     fn from(value: Vec<Value>) -> Self {
-        Self(Gc::new(value))
+        Self(Rc::new(value))
     }
 }
 
