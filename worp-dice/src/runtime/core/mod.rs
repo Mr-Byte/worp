@@ -90,6 +90,9 @@ impl dyn TypeInstance {
 
 impl PartialEq for dyn TypeInstance {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other)
+        std::ptr::eq(
+            self as *const dyn TypeInstance as *const u8,
+            other as *const dyn TypeInstance as *const u8,
+        )
     }
 }

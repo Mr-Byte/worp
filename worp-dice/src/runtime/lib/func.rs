@@ -68,8 +68,10 @@ impl Display for Func {
     }
 }
 
+type Func0Object = dyn Fn() -> Result<Value, RuntimeError>;
+
 #[derive(Clone)]
-struct Func0(Rc<dyn Fn() -> Result<Value, RuntimeError>>);
+struct Func0(Rc<Func0Object>);
 
 impl Func0 {
     fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
@@ -83,12 +85,17 @@ impl Func0 {
 
 impl PartialEq for Func0 {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(&*self.0, &*other.0)
+        std::ptr::eq(
+            &*self.0 as *const Func0Object as *const u8,
+            &*other.0 as *const Func0Object as *const u8,
+        )
     }
 }
 
+type Func1Object = dyn Fn(Value) -> Result<Value, RuntimeError>;
+
 #[derive(Clone)]
-struct Func1(Rc<dyn Fn(Value) -> Result<Value, RuntimeError>>);
+struct Func1(Rc<Func1Object>);
 
 impl Func1 {
     fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
@@ -102,12 +109,17 @@ impl Func1 {
 
 impl PartialEq for Func1 {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(&*self.0, &*other.0)
+        std::ptr::eq(
+            &*self.0 as *const Func1Object as *const u8,
+            &*other.0 as *const Func1Object as *const u8,
+        )
     }
 }
 
+type Func2Object = dyn Fn(Value, Value) -> Result<Value, RuntimeError>;
+
 #[derive(Clone)]
-pub struct Func2(Rc<dyn Fn(Value, Value) -> Result<Value, RuntimeError>>);
+pub struct Func2(Rc<Func2Object>);
 
 impl Func2 {
     fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
@@ -121,6 +133,9 @@ impl Func2 {
 
 impl PartialEq for Func2 {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(&*self.0, &*other.0)
+        std::ptr::eq(
+            &*self.0 as *const Func2Object as *const u8,
+            &*other.0 as *const Func2Object as *const u8,
+        )
     }
 }

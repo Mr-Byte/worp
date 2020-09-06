@@ -9,19 +9,18 @@ use id_arena::Arena;
 
 type SyntaxNodeResult = Result<SyntaxNodeId, SyntaxError>;
 
+type PrefixParser = fn(&mut Parser, can_assign: bool) -> Result<SyntaxNodeId, SyntaxError>;
+type InfixParser = fn(&mut Parser, lhs: SyntaxNodeId, span: Span) -> Result<SyntaxNodeId, SyntaxError>;
+
 #[derive(Default)]
 struct ParserRule {
-    prefix: Option<fn(&mut Parser, can_assign: bool) -> Result<SyntaxNodeId, SyntaxError>>,
-    infix: Option<fn(&mut Parser, lhs: SyntaxNodeId, span: Span) -> Result<SyntaxNodeId, SyntaxError>>,
+    prefix: Option<PrefixParser>,
+    infix: Option<InfixParser>,
     precedence: RulePrecedence,
 }
 
 impl ParserRule {
-    fn new(
-        prefix: Option<fn(&mut Parser, can_assign: bool) -> Result<SyntaxNodeId, SyntaxError>>,
-        infix: Option<fn(&mut Parser, lhs: SyntaxNodeId, span: Span) -> Result<SyntaxNodeId, SyntaxError>>,
-        precedence: RulePrecedence,
-    ) -> Self {
+    fn new(prefix: Option<PrefixParser>, infix: Option<InfixParser>, precedence: RulePrecedence) -> Self {
         Self {
             prefix,
             infix,
