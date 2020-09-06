@@ -171,4 +171,13 @@ impl ScopeStack {
 
         Ok(())
     }
+
+    pub fn loop_entry_point(&mut self) -> Result<usize, CompilerError> {
+        let scope = self.first_of_kind(ScopeKind::Loop).ok_or_else(|| todo!())?;
+
+        scope
+            .entry_point
+            .clone()
+            .ok_or_else(|| CompilerError::InternalCompilerError(String::from("Not in a loop context.")))
+    }
 }

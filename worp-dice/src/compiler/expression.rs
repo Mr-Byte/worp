@@ -109,6 +109,7 @@ impl Compiler {
         let loop_start = self.bytecode.current_position();
 
         self.scope_stack.push_scope(ScopeKind::Loop);
+        self.scope_stack.set_loop_entry_point(loop_start as usize)?;
 
         self.expression(condition)?;
         let loop_end = self.bytecode.jump_if_false(span.clone());
@@ -167,10 +168,13 @@ impl Compiler {
         Ok(())
     }
 
-    fn continue_statement(&mut self, _span: Span) -> Result<(), CompilerError> {
+    fn continue_statement(&mut self, span: Span) -> Result<(), CompilerError> {
         if !self.scope_stack.in_context_of(ScopeKind::Loop) {
             return Err(CompilerError::InvalidContinue);
         }
+
+        let loop_start = self.scope_stack.loop_entry_point()?;
+        self.bytecode.jump_back(loop_start as u64, span);
 
         Ok(())
     }
