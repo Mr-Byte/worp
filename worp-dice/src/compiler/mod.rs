@@ -3,15 +3,19 @@ use crate::{
     syntax::{Parser, SyntaxTree},
     SyntaxError,
 };
-use bytecode::BytecodeGenerator;
+use components::{
+    assembler::Assembler,
+    scope::{ScopeKind, ScopeStack},
+};
 use error::CompilerError;
-use scope::{ScopeKind, ScopeStack};
 
 pub mod error;
 
-mod bytecode;
-mod expression;
-mod scope;
+mod components;
+mod expressions;
+mod if_statements;
+mod loops;
+mod operators;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum CompilationKind {
@@ -28,7 +32,7 @@ pub enum CompilationUnit {
 
 pub struct Compiler {
     syntax_tree: SyntaxTree,
-    bytecode: BytecodeGenerator,
+    assembler: Assembler,
     scope_stack: ScopeStack,
     kind: CompilationKind,
 }
@@ -44,7 +48,7 @@ impl Compiler {
         Self {
             syntax_tree,
             kind,
-            bytecode: BytecodeGenerator::default(),
+            assembler: Assembler::default(),
             scope_stack: ScopeStack::new(scope_kind),
         }
     }
@@ -57,7 +61,7 @@ impl Compiler {
         };
 
         let compilation_unit = match self.kind {
-            CompilationKind::Script => CompilationUnit::Script(Script::new(self.bytecode.generate(), call_frame)),
+            CompilationKind::Script => CompilationUnit::Script(Script::new(self.assembler.generate(), call_frame)),
             _ => todo!(),
         };
 

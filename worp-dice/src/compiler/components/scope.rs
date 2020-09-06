@@ -8,7 +8,7 @@ pub struct ScopeVariable {
 }
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
-pub(super) enum ScopeKind {
+pub enum ScopeKind {
     Script,
     Module,
     Function,
@@ -29,7 +29,7 @@ impl ScopeKind {
 
 // TODO: Move variables and variable resolution to scope context.
 #[derive(Clone)]
-pub(super) struct ScopeContext {
+pub struct ScopeContext {
     pub depth: usize,
     pub kind: ScopeKind,
     pub entry_point: Option<usize>,
@@ -51,7 +51,7 @@ impl Default for ScopeContext {
     }
 }
 
-pub(super) struct ScopeStack {
+pub struct ScopeStack {
     stack: Vec<ScopeContext>,
     pub slot_count: usize,
 }

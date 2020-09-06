@@ -6,13 +6,13 @@ use bytes::BufMut as _;
 use std::collections::HashMap;
 
 #[derive(Default)]
-pub struct BytecodeGenerator {
+pub struct Assembler {
     constants: Vec<Value>,
     source_map: HashMap<u64, Span>,
     data: Vec<u8>,
 }
 
-impl BytecodeGenerator {
+impl Assembler {
     pub fn generate(self) -> Bytecode {
         Bytecode::new(self.constants.into_boxed_slice(), self.source_map, self.data.into())
     }
