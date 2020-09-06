@@ -55,6 +55,9 @@ impl ParserRule {
             TokenKind::True => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::Identifier(_) => ParserRule::new(Some(Parser::variable), None, RulePrecedence::Primary),
 
+            //
+            TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
+
             // Objects
             TokenKind::Object => ParserRule::new(Some(Parser::object), None, RulePrecedence::Object),
             TokenKind::LeftSquare => ParserRule::new(Some(Parser::list), None, RulePrecedence::Object),
@@ -63,8 +66,8 @@ impl ParserRule {
             TokenKind::LeftParen => ParserRule::new(Some(Parser::grouping), None, RulePrecedence::Primary),
 
             // Control flow
-            TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
-            TokenKind::While => ParserRule::new(Some(Parser::while_expression), None, RulePrecedence::None),
+            // TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
+            // TokenKind::While => ParserRule::new(Some(Parser::while_expression), None, RulePrecedence::None),
 
             // Block expressions
             TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
@@ -170,15 +173,20 @@ impl Parser {
         let mut next_token = self.lexer.peek();
         let span_start = next_token.span();
 
-        // TODO: Make semi-colons after assignment a hard requirement, disallow chained assignments.
-        // Make semi-colons after free control-flow (if/else/loop/while/for) optional and a no-op.
-        // ^ All loops and free-standing if/else must all leave the stack unaltered at the end of execution.
         loop {
             if next_token.kind == TokenKind::RightCurly || next_token.kind == TokenKind::EndOfInput {
                 break;
             }
 
-            if next_token.kind == TokenKind::Let {
+            if next_token.kind == TokenKind::If {
+                let expression = self.if_expression(false)?;
+                items.push(expression);
+                next_token = self.lexer.peek();
+            } else if next_token.kind == TokenKind::While {
+                let expression = self.while_expression()?;
+                items.push(expression);
+                next_token = self.lexer.peek();
+            } else if next_token.kind == TokenKind::Let {
                 let expression = self.variable_decl()?;
                 items.push(expression);
                 next_token = self.lexer.peek();
@@ -191,6 +199,10 @@ impl Parser {
 
                 items.push(expression);
                 next_token = self.lexer.peek();
+
+                if self.lexer.current().kind == TokenKind::RightCurly {
+                    println!("current={:?} next={:?}", self.lexer.current().kind, next_token.kind)
+                }
 
                 if next_token.kind == TokenKind::Semicolon {
                     let semi_token = self.lexer.consume(TokenKind::Semicolon)?;
@@ -257,11 +269,17 @@ impl Parser {
 
         let span_end = self.lexer.current().span();
 
+        println!(
+            "current={:?} next={:?}",
+            self.lexer.current().kind,
+            self.lexer.peek().kind
+        );
+
         let node = SyntaxNode::Conditional(Conditional(condition, primary, secondary, span_start + span_end));
         Ok(self.arena.alloc(node))
     }
 
-    fn while_expression(&mut self, _: bool) -> SyntaxNodeResult {
+    fn while_expression(&mut self) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::While)?.span();
         let condition = self.expression()?;
         let body = self.block_expression(false)?;
@@ -304,7 +322,6 @@ impl Parser {
             return Err(SyntaxError::UnexpectedToken(next_token));
         };
 
-        // TODO: Extract this up to expression sequence.
         let next_token_kind = self.lexer.peek().kind;
         let is_assignent = matches!(
             next_token_kind,
