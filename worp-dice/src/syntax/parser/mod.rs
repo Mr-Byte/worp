@@ -9,6 +9,7 @@ use id_arena::Arena;
 
 type SyntaxNodeResult = Result<SyntaxNodeId, SyntaxError>;
 
+#[derive(Default)]
 struct ParserRule {
     prefix: Option<fn(&mut Parser, can_assign: bool) -> Result<SyntaxNodeId, SyntaxError>>,
     infix: Option<fn(&mut Parser, lhs: SyntaxNodeId, span: Span) -> Result<SyntaxNodeId, SyntaxError>>,
@@ -32,6 +33,19 @@ impl ParserRule {
 impl ParserRule {
     fn for_token(token: &Token) -> Result<ParserRule, SyntaxError> {
         let rule = match token.kind {
+            // Empty rules
+            TokenKind::RightSquare => ParserRule::default(),
+            TokenKind::RightParen => ParserRule::default(),
+            TokenKind::RightCurly => ParserRule::default(),
+            TokenKind::Semicolon => ParserRule::default(),
+            TokenKind::Comma => ParserRule::default(),
+            TokenKind::Colon => ParserRule::default(),
+            TokenKind::Assign => ParserRule::default(),
+            TokenKind::MulAssign => ParserRule::default(),
+            TokenKind::DivAssign => ParserRule::default(),
+            TokenKind::AddAssign => ParserRule::default(),
+            TokenKind::SubAssign => ParserRule::default(),
+
             // Literals
             TokenKind::Integer(_) => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::Float(_) => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
@@ -43,18 +57,10 @@ impl ParserRule {
 
             // Objects
             TokenKind::Object => ParserRule::new(Some(Parser::object), None, RulePrecedence::Object),
-            TokenKind::RightCurly => ParserRule::new(None, None, RulePrecedence::None),
             TokenKind::LeftSquare => ParserRule::new(Some(Parser::list), None, RulePrecedence::Object),
-            TokenKind::RightSquare => ParserRule::new(None, None, RulePrecedence::None),
 
             // Grouping
             TokenKind::LeftParen => ParserRule::new(Some(Parser::grouping), None, RulePrecedence::Primary),
-
-            // Delimeters
-            TokenKind::RightParen => ParserRule::new(None, None, RulePrecedence::None),
-            TokenKind::Comma => ParserRule::new(None, None, RulePrecedence::None),
-            TokenKind::Semicolon => ParserRule::new(None, None, RulePrecedence::None),
-            TokenKind::Colon => ParserRule::new(None, None, RulePrecedence::None),
 
             // Control flow
             TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
@@ -133,6 +139,12 @@ impl RulePrecedence {
     }
 }
 
+impl Default for RulePrecedence {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 pub struct Parser {
     lexer: Lexer,
     arena: Arena<SyntaxNode>,
@@ -158,6 +170,9 @@ impl Parser {
         let mut next_token = self.lexer.peek();
         let span_start = next_token.span();
 
+        // TODO: Make semi-colons after assignment a hard requirement, disallow chained assignments.
+        // Make semi-colons after free control-flow (if/else/loop/while/for) optional and a no-op.
+        // ^ All loops and free-standing if/else must all leave the stack unaltered at the end of execution.
         loop {
             if next_token.kind == TokenKind::RightCurly || next_token.kind == TokenKind::EndOfInput {
                 break;
@@ -289,6 +304,7 @@ impl Parser {
             return Err(SyntaxError::UnexpectedToken(next_token));
         };
 
+        // TODO: Extract this up to expression sequence.
         let next_token_kind = self.lexer.peek().kind;
         let is_assignent = matches!(
             next_token_kind,
@@ -334,7 +350,6 @@ impl Parser {
     }
 
     fn variable_decl(&mut self) -> SyntaxNodeResult {
-        // TODO: Force variable decls to require a `;` after them.
         let span_start = self.lexer.consume(TokenKind::Let)?.span();
 
         let is_mutable = if self.lexer.peek().kind == TokenKind::Mut {
