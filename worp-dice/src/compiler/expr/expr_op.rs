@@ -1,5 +1,5 @@
-use super::Compiler;
 use crate::{
+    compiler::Compiler,
     syntax::{Binary, BinaryOperator, Unary, UnaryOperator},
     CompilerError,
 };
@@ -18,6 +18,7 @@ impl Compiler {
     }
 
     pub(super) fn binary_op(&mut self, Binary(op, lhs, rhs, span): Binary) -> Result<(), CompilerError> {
+        // TODO: Decmpose this into multiple expressions.
         match op {
             BinaryOperator::LogicalAnd => {
                 self.expression(lhs)?;

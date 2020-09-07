@@ -1,5 +1,5 @@
-use super::{components::scope::ScopeKind, Compiler};
 use crate::{
+    compiler::{component::scope::ScopeKind, Compiler},
     runtime::core::Span,
     syntax::{Block, SyntaxNode, WhileLoop},
     CompilerError,

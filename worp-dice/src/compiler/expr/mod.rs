@@ -1,11 +1,16 @@
-use super::{components::scope::ScopeKind, error::CompilerError, Compiler};
+use super::{component::scope::ScopeKind, Compiler};
 use crate::{
     runtime::core::{Span, Symbol, Value},
     syntax::{Assignment, AssignmentOperator, Block, Literal, SyntaxNode, SyntaxNodeId, VariableDeclaration},
+    CompilerError,
 };
 
+mod expr_if;
+mod expr_loop;
+mod expr_op;
+
 impl Compiler {
-    pub(crate) fn expression(&mut self, node: SyntaxNodeId) -> Result<(), CompilerError> {
+    pub fn expression(&mut self, node: SyntaxNodeId) -> Result<(), CompilerError> {
         let node = self
             .syntax_tree
             .get(node)

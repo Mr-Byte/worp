@@ -3,7 +3,7 @@ use crate::{
     syntax::{Parser, SyntaxTree},
     SyntaxError,
 };
-use components::{
+use component::{
     assembler::Assembler,
     scope::{ScopeKind, ScopeStack},
 };
@@ -11,11 +11,8 @@ use error::CompilerError;
 
 pub mod error;
 
-mod components;
-mod expressions;
-mod if_statements;
-mod loops;
-mod operators;
+mod component;
+mod expr;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum CompilationKind {
