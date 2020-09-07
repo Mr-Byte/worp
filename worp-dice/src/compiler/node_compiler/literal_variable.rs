@@ -1,8 +1,9 @@
-use crate::{compiler::Compiler, runtime::core::Span, CompilerError, Symbol};
+use crate::{compiler::Compiler, syntax::LitIdent, CompilerError, Symbol};
 
-// TODO: Convert this to a NodeCompiler once literals are decomposed into structs-in-variants.
-impl Compiler {
-    pub fn load_variable(&mut self, name: String, span: Span) -> Result<(), CompilerError> {
+use super::NodeCompiler;
+
+impl NodeCompiler<LitIdent> for Compiler {
+    fn compile_node(&mut self, LitIdent(name, span): LitIdent) -> Result<(), CompilerError> {
         let name = Symbol::new(name);
         let slot = self.scope_stack.local(name)?.slot as u8;
 

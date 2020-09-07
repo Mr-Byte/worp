@@ -1,8 +1,9 @@
 use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
-    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, Discard, IfExpression, Literal,
-    SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator, VariableDeclaration, WhileLoop,
+    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, Discard, IfExpression, LitBool,
+    LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, Literal, SyntaxNode, SyntaxNodeId,
+    SyntaxTree, Unary, UnaryOperator, VariableDeclaration, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -304,7 +305,7 @@ impl Parser {
         let span_start = next_token.span();
         let mut expression = if let TokenKind::Identifier(name) = next_token.kind {
             self.arena
-                .alloc(SyntaxNode::Literal(Literal::Identifier(name, span_start.clone())))
+                .alloc(SyntaxNode::Literal(Literal::Ident(LitIdent(name, span_start.clone()))))
         } else {
             return Err(SyntaxError::UnexpectedToken(next_token));
         };
@@ -432,7 +433,7 @@ impl Parser {
         if self.lexer.peek().kind == TokenKind::RightParen {
             let span_end = self.lexer.consume(TokenKind::RightParen)?.span();
 
-            let node = SyntaxNode::Literal(Literal::Unit(span_start + span_end));
+            let node = SyntaxNode::Literal(Literal::Unit(LitUnit(span_start + span_end)));
             Ok(self.arena.alloc(node))
         } else {
             // TODO: Inject the remainder of the span?
@@ -468,9 +469,10 @@ impl Parser {
 
         let span_end = self.lexer.consume(TokenKind::RightCurly)?.span();
 
-        let node = self
-            .arena
-            .alloc(SyntaxNode::Literal(Literal::Object(properties, span_start + span_end)));
+        let node = self.arena.alloc(SyntaxNode::Literal(Literal::Object(LitObject(
+            properties,
+            span_start + span_end,
+        ))));
 
         Ok(node)
     }
@@ -494,9 +496,10 @@ impl Parser {
 
         let span_end = self.lexer.consume(TokenKind::RightSquare)?.span();
 
-        let node = self
-            .arena
-            .alloc(SyntaxNode::Literal(Literal::List(values, span_start + span_end)));
+        let node = self.arena.alloc(SyntaxNode::Literal(Literal::List(LitList(
+            values,
+            span_start + span_end,
+        ))));
 
         Ok(node)
     }
@@ -505,12 +508,12 @@ impl Parser {
         let token = self.lexer.next();
         let span = token.span();
         let literal = match token.kind {
-            TokenKind::Integer(value) => Literal::Integer(value, span),
-            TokenKind::Float(value) => Literal::Float(value, span),
-            TokenKind::String(value) => Literal::String(value.trim_matches('"').to_owned(), span),
-            TokenKind::False => Literal::Boolean(false, span),
-            TokenKind::True => Literal::Boolean(true, span),
-            TokenKind::None => Literal::None(span),
+            TokenKind::Integer(value) => Literal::Integer(LitInt(value, span)),
+            TokenKind::Float(value) => Literal::Float(LitFloat(value, span)),
+            TokenKind::String(value) => Literal::String(LitString(value.trim_matches('"').to_owned(), span)),
+            TokenKind::False => Literal::Bool(LitBool(false, span)),
+            TokenKind::True => Literal::Bool(LitBool(true, span)),
+            TokenKind::None => Literal::None(LitNone(span)),
             _ => return Err(SyntaxError::UnexpectedToken(token.clone())),
         };
         let node = SyntaxNode::Literal(literal);
@@ -522,7 +525,9 @@ impl Parser {
 #[cfg(test)]
 mod test {
     use super::Parser;
-    use crate::syntax::{error::SyntaxError, Binary, BinaryOperator, Block, Literal, SyntaxNode, Unary, UnaryOperator};
+    use crate::syntax::{
+        error::SyntaxError, Binary, BinaryOperator, Block, LitInt, Literal, SyntaxNode, Unary, UnaryOperator,
+    };
 
     #[test]
     fn test_parse_integer() -> Result<(), SyntaxError> {
@@ -532,7 +537,10 @@ mod test {
         if let SyntaxNode::Block(Block(block, _)) = root {
             let node = syntax_tree.get(*block.first().unwrap());
 
-            assert!(matches!(node, Some(SyntaxNode::Literal(Literal::Integer(5, _)))));
+            assert!(matches!(
+                node,
+                Some(SyntaxNode::Literal(Literal::Integer(LitInt(5, _))))
+            ));
         } else {
             panic!("Root element is not a block.")
         }
@@ -700,7 +708,7 @@ mod test {
         if let SyntaxNode::Block(Block(block, _)) = root {
             let node = syntax_tree.get(*block.first().unwrap());
 
-            assert!(matches!(node, Some(SyntaxNode::Literal(Literal::Object(_, _)))));
+            assert!(matches!(node, Some(SyntaxNode::Literal(Literal::Object(_)))));
         } else {
             panic!("Root element is not a block.")
         }
@@ -716,7 +724,7 @@ mod test {
         if let SyntaxNode::Block(Block(block, _)) = root {
             let node = syntax_tree.get(*block.first().unwrap());
 
-            assert!(matches!(node, Some(SyntaxNode::Literal(Literal::List(_, _)))));
+            assert!(matches!(node, Some(SyntaxNode::Literal(Literal::List(_)))));
         } else {
             panic!("Root element is not a block.")
         }

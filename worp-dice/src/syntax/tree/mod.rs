@@ -56,19 +56,46 @@ pub enum SyntaxNode {
     Continue(Continue),
 }
 
+#[derive(Debug, Clone)]
+pub struct LitList(pub Vec<SyntaxNodeId>, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct LitObject(pub Vec<(SyntaxNodeId, SyntaxNodeId)>, pub Span);
+
 // TODO: Split these up into variants of enums.
 #[derive(Debug, Clone)]
 pub enum Literal {
-    Identifier(String, Span),
-    None(Span),
-    Unit(Span),
-    Integer(i64, Span),
-    Float(f64, Span),
-    String(String, Span),
-    Boolean(bool, Span),
-    List(Vec<SyntaxNodeId>, Span),
-    Object(Vec<(SyntaxNodeId, SyntaxNodeId)>, Span),
+    Ident(LitIdent),
+    None(LitNone),
+    Unit(LitUnit),
+    Integer(LitInt),
+    Float(LitFloat),
+    String(LitString),
+    Bool(LitBool),
+    List(LitList),
+    Object(LitObject),
 }
+
+#[derive(Debug, Clone)]
+pub struct LitIdent(pub String, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct LitUnit(pub Span);
+
+#[derive(Debug, Clone)]
+pub struct LitNone(pub Span);
+
+#[derive(Debug, Clone)]
+pub struct LitInt(pub i64, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct LitFloat(pub f64, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct LitString(pub String, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct LitBool(pub bool, pub Span);
 
 #[derive(Debug, Clone)]
 pub enum UnaryOperator {

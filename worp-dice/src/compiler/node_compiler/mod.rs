@@ -13,6 +13,13 @@ mod expr_unary_op;
 mod expr_variable_decl;
 mod expr_while;
 mod literal;
+mod literal_bool;
+mod literal_float;
+mod literal_int;
+mod literal_list;
+mod literal_none;
+mod literal_string;
+mod literal_unit;
 mod literal_variable;
 
 pub(super) trait NodeCompiler<T> {

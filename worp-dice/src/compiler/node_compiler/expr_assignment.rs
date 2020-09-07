@@ -1,6 +1,7 @@
 use super::NodeCompiler;
 use crate::{
     compiler::Compiler,
+    syntax::LitIdent,
     syntax::{Assignment, AssignmentOperator, Literal, SyntaxNode},
     CompilerError, Symbol,
 };
@@ -10,7 +11,7 @@ impl NodeCompiler<Assignment> for Compiler {
         let lhs = self.syntax_tree.get(lhs).expect("Node should exist.");
 
         match lhs {
-            SyntaxNode::Literal(Literal::Identifier(target, _)) => {
+            SyntaxNode::Literal(Literal::Ident(LitIdent(target, _))) => {
                 let target = Symbol::new(target);
                 let local = self.scope_stack.local(target.clone())?;
                 let slot = local.slot as u8;
