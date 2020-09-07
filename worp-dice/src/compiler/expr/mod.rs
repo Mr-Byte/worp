@@ -9,6 +9,10 @@ mod expr_if;
 mod expr_loop;
 mod expr_op;
 
+trait CompileNode<T> {
+    fn compile(&mut self, node: T) -> Result<(), CompilerError>;
+}
+
 impl Compiler {
     pub fn expression(&mut self, node: SyntaxNodeId) -> Result<(), CompilerError> {
         let node = self
@@ -26,7 +30,7 @@ impl Compiler {
             SyntaxNode::Unary(unary) => self.unary_op(unary)?,
             SyntaxNode::Binary(binary) => self.binary_op(binary)?,
             SyntaxNode::VariableDeclaration(variable) => self.variable(variable)?,
-            SyntaxNode::Conditional(conditional) => self.conditional(conditional)?,
+            SyntaxNode::IfExpression(conditional) => self.compile(&conditional)?,
             SyntaxNode::WhileLoop(while_loop) => self.while_loop(while_loop)?,
             SyntaxNode::ForLoop(_) => todo!(),
             SyntaxNode::Break(span) => self.break_statement(span)?,

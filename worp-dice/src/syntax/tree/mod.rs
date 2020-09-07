@@ -47,7 +47,7 @@ pub enum SyntaxNode {
 
     // Statements
     VariableDeclaration(VariableDeclaration),
-    Conditional(Conditional),
+    IfExpression(IfExpression),
     WhileLoop(WhileLoop),
     ForLoop(ForLoop),
     Block(Block),
@@ -56,6 +56,7 @@ pub enum SyntaxNode {
     Continue(Span),
 }
 
+// TODO: Split these up into variants of enums.
 #[derive(Debug, Clone)]
 pub enum Literal {
     Identifier(String, Span),
@@ -131,7 +132,7 @@ pub enum AssignmentOperator {
 pub struct VariableDeclaration(pub String, pub bool, pub SyntaxNodeId, pub Span);
 
 #[derive(Debug, Clone)]
-pub struct Conditional(pub SyntaxNodeId, pub SyntaxNodeId, pub Option<SyntaxNodeId>, pub Span);
+pub struct IfExpression(pub SyntaxNodeId, pub SyntaxNodeId, pub Option<SyntaxNodeId>, pub Span);
 
 #[derive(Debug, Clone)]
 pub struct WhileLoop(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
