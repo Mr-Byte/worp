@@ -51,9 +51,9 @@ pub enum SyntaxNode {
     WhileLoop(WhileLoop),
     ForLoop(ForLoop),
     Block(Block),
-    Discard(Span),
-    Break(Span),
-    Continue(Span),
+    Discard(Discard),
+    Break(Break),
+    Continue(Continue),
 }
 
 // TODO: Split these up into variants of enums.
@@ -142,3 +142,12 @@ pub struct ForLoop(pub String, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
 
 #[derive(Debug, Clone)]
 pub struct Block(pub Vec<SyntaxNodeId>, pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Break(pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Continue(pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Discard(pub Span);

@@ -8,11 +8,11 @@ use component::{
     scope::{ScopeKind, ScopeStack},
 };
 use error::CompilerError;
-
-pub mod error;
+use node_compiler::NodeCompiler as _;
 
 mod component;
-mod expr;
+pub mod error;
+mod node_compiler;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum CompilationKind {
@@ -51,7 +51,7 @@ impl Compiler {
     }
 
     pub fn compile(mut self) -> Result<CompilationUnit, CompilerError> {
-        self.expression(self.syntax_tree.root())?;
+        self.compile_node(self.syntax_tree.root())?;
 
         let call_frame = CallFrame {
             slot_count: self.scope_stack.slot_count,

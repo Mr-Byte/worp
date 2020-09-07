@@ -1,8 +1,8 @@
 use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
-    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, IfExpression, Literal, SyntaxNode, SyntaxNodeId,
-    SyntaxTree, Unary, UnaryOperator, VariableDeclaration, WhileLoop,
+    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, Discard, IfExpression, Literal,
+    SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator, VariableDeclaration, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -201,7 +201,7 @@ impl Parser {
 
                 if next_token.kind == TokenKind::Semicolon {
                     let semi_token = self.lexer.consume(TokenKind::Semicolon)?;
-                    let discard = SyntaxNode::Discard(semi_token.span());
+                    let discard = SyntaxNode::Discard(Discard(semi_token.span()));
                     items.push(self.arena.alloc(discard));
 
                     next_token = self.lexer.peek();
@@ -281,8 +281,8 @@ impl Parser {
         let token = self.lexer.next();
 
         let node = match token.kind {
-            TokenKind::Break => SyntaxNode::Break(token.span()),
-            TokenKind::Continue => SyntaxNode::Continue(token.span()),
+            TokenKind::Break => SyntaxNode::Break(Break(token.span())),
+            TokenKind::Continue => SyntaxNode::Continue(Continue(token.span())),
             _ => return Err(SyntaxError::UnexpectedToken(token)),
         };
 

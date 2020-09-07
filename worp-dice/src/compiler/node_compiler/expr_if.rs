@@ -1,8 +1,8 @@
-use super::CompileNode;
+use super::NodeCompiler;
 use crate::{compiler::Compiler, syntax::IfExpression, CompilerError};
 
-impl CompileNode<&IfExpression> for Compiler {
-    fn compile(
+impl NodeCompiler<&IfExpression> for Compiler {
+    fn compile_node(
         &mut self,
         IfExpression(condition, primary, secondary, span): &IfExpression,
     ) -> Result<(), CompilerError> {
@@ -13,16 +13,16 @@ impl CompileNode<&IfExpression> for Compiler {
         // If an if statement is at the top of a block and is not followed by a discard,
         // enforce that all branches must end in a discard.
 
-        self.expression(*condition)?;
+        self.compile_node(*condition)?;
         let if_jump = self.assembler.jump_if_false(span.clone());
-        self.expression(*primary)?;
+        self.compile_node(*primary)?;
 
         let else_jump = self.assembler.jump(span.clone());
 
         self.assembler.patch_jump(if_jump);
 
         if let Some(secondary) = secondary {
-            self.expression(*secondary)?;
+            self.compile_node(*secondary)?;
         }
 
         self.assembler.patch_jump(else_jump);
