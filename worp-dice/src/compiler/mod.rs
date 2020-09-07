@@ -1,18 +1,19 @@
+use self::{
+    assembler::Assembler,
+    scope::{ScopeKind, ScopeStack},
+};
 use crate::{
     runtime::interpreter::{callframe::CallFrame, script::Script},
     syntax::{Parser, SyntaxTree},
     SyntaxError,
 };
-use component::{
-    assembler::Assembler,
-    scope::{ScopeKind, ScopeStack},
-};
 use error::CompilerError;
 use node_compiler::NodeCompiler as _;
 
-mod component;
+mod assembler;
 pub mod error;
 mod node_compiler;
+mod scope;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum CompilationKind {

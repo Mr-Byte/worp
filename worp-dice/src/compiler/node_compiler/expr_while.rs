@@ -1,6 +1,6 @@
 use super::NodeCompiler;
 use crate::{
-    compiler::{component::scope::ScopeKind, Compiler},
+    compiler::{scope::ScopeKind, Compiler},
     syntax::{Block, SyntaxNode, WhileLoop},
     CompilerError,
 };
