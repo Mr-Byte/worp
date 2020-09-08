@@ -1,36 +1,36 @@
-use super::NodeCompiler;
+use super::NodeVisitor;
 use crate::{
     compiler::Compiler,
     syntax::{Binary, BinaryOperator},
     CompilerError,
 };
 
-impl NodeCompiler<&Binary> for Compiler {
-    fn compile_node(&mut self, Binary(op, lhs, rhs, span): &Binary) -> Result<(), CompilerError> {
+impl NodeVisitor<&Binary> for Compiler {
+    fn visit(&mut self, Binary(op, lhs, rhs, span): &Binary) -> Result<(), CompilerError> {
         // TODO: Decmpose this into multiple expressions.
         match op {
             BinaryOperator::LogicalAnd => {
-                self.compile_node(*lhs)?;
+                self.visit(*lhs)?;
                 self.assembler.dup(span.clone());
 
                 let short_circuit_jump = self.assembler.jump_if_false(span.clone());
                 self.assembler.pop(span.clone());
-                self.compile_node(*rhs)?;
+                self.visit(*rhs)?;
                 self.assembler.patch_jump(short_circuit_jump);
             }
             BinaryOperator::LogicalOr => {
-                self.compile_node(*lhs)?;
+                self.visit(*lhs)?;
                 self.assembler.dup(span.clone());
                 self.assembler.not(span.clone());
 
                 let short_circuit_jump = self.assembler.jump_if_false(span.clone());
                 self.assembler.pop(span.clone());
-                self.compile_node(*rhs)?;
+                self.visit(*rhs)?;
                 self.assembler.patch_jump(short_circuit_jump);
             }
             _ => {
-                self.compile_node(*rhs)?;
-                self.compile_node(*lhs)?;
+                self.visit(*rhs)?;
+                self.visit(*lhs)?;
 
                 match op {
                     BinaryOperator::DiceRoll => todo!(),

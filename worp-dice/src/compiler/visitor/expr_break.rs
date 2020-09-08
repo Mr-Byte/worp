@@ -1,12 +1,12 @@
-use super::NodeCompiler;
+use super::NodeVisitor;
 use crate::{
     compiler::{scope::ScopeKind, Compiler},
     syntax::Break,
     CompilerError,
 };
 
-impl NodeCompiler<&Break> for Compiler {
-    fn compile_node(&mut self, Break(span): &Break) -> Result<(), crate::CompilerError> {
+impl NodeVisitor<&Break> for Compiler {
+    fn visit(&mut self, Break(span): &Break) -> Result<(), crate::CompilerError> {
         if !self.scope_stack.in_context_of(ScopeKind::Loop) {
             return Err(CompilerError::InvalidBreak);
         }

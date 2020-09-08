@@ -1,11 +1,11 @@
 use crate::{compiler::Compiler, syntax::LitList, CompilerError};
 
-use super::NodeCompiler;
+use super::NodeVisitor;
 
-impl NodeCompiler<&LitList> for Compiler {
-    fn compile_node(&mut self, LitList(value, span): &LitList) -> Result<(), CompilerError> {
+impl NodeVisitor<&LitList> for Compiler {
+    fn visit(&mut self, LitList(value, span): &LitList) -> Result<(), CompilerError> {
         for item in value {
-            self.compile_node(*item)?;
+            self.visit(*item)?;
         }
 
         self.assembler.build_list(value.len() as u8, span.clone());

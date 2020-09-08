@@ -1,4 +1,4 @@
-use super::NodeCompiler;
+use super::NodeVisitor;
 use crate::{
     compiler::Compiler,
     syntax::LitIdent,
@@ -6,8 +6,8 @@ use crate::{
     CompilerError, Symbol,
 };
 
-impl NodeCompiler<&Assignment> for Compiler {
-    fn compile_node(&mut self, Assignment(op, lhs, rhs, span): &Assignment) -> Result<(), CompilerError> {
+impl NodeVisitor<&Assignment> for Compiler {
+    fn visit(&mut self, Assignment(op, lhs, rhs, span): &Assignment) -> Result<(), CompilerError> {
         let lhs = self.syntax_tree.get(*lhs).expect("Node should exist.");
 
         match lhs {
@@ -20,7 +20,7 @@ impl NodeCompiler<&Assignment> for Compiler {
                     return Err(CompilerError::ImmutableVariable(target));
                 }
 
-                self.compile_node(*rhs)?;
+                self.visit(*rhs)?;
 
                 match op {
                     AssignmentOperator::Assignment => self.assembler.store_local(slot, span.clone()),

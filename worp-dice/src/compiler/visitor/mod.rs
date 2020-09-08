@@ -1,7 +1,5 @@
-use super::Compiler;
 use crate::CompilerError;
 
-mod expr;
 mod expr_assignment;
 mod expr_binary_op;
 mod expr_block;
@@ -19,9 +17,8 @@ mod literal_none;
 mod literal_string;
 mod literal_unit;
 mod literal_variable;
+mod syntax_node;
 
-pub(super) trait NodeCompiler<T> {
-    fn compile_node(&mut self, node: T) -> Result<(), CompilerError>;
+pub(super) trait NodeVisitor<T> {
+    fn visit(&mut self, node: T) -> Result<(), CompilerError>;
 }
-
-impl Compiler {}

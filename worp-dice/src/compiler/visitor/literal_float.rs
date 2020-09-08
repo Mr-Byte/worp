@@ -1,9 +1,9 @@
 use crate::{compiler::Compiler, syntax::LitFloat, CompilerError, Value};
 
-use super::NodeCompiler;
+use super::NodeVisitor;
 
-impl NodeCompiler<&LitFloat> for Compiler {
-    fn compile_node(&mut self, LitFloat(value, span): &LitFloat) -> Result<(), CompilerError> {
+impl NodeVisitor<&LitFloat> for Compiler {
+    fn visit(&mut self, LitFloat(value, span): &LitFloat) -> Result<(), CompilerError> {
         if *value == 0.0 {
             self.assembler.push_f0(span.clone());
         } else if *value == 1.0 {

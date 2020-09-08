@@ -8,12 +8,12 @@ use crate::{
     SyntaxError,
 };
 use error::CompilerError;
-use node_compiler::NodeCompiler as _;
+use visitor::NodeVisitor as _;
 
 mod assembler;
 pub mod error;
-mod node_compiler;
 mod scope;
+mod visitor;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum CompilationKind {
@@ -52,7 +52,7 @@ impl Compiler {
     }
 
     pub fn compile(mut self) -> Result<CompilationUnit, CompilerError> {
-        self.compile_node(self.syntax_tree.root())?;
+        self.visit(self.syntax_tree.root())?;
 
         let call_frame = CallFrame {
             slot_count: self.scope_stack.slot_count,
