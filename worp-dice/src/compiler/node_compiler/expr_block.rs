@@ -5,8 +5,8 @@ use crate::{
     CompilerError,
 };
 
-impl NodeCompiler<Block> for Compiler {
-    fn compile_node(&mut self, Block(items, trailing_expression, span): Block) -> Result<(), CompilerError> {
+impl NodeCompiler<&Block> for Compiler {
+    fn compile_node(&mut self, Block(items, trailing_expression, span): &Block) -> Result<(), CompilerError> {
         self.scope_stack.push_scope(ScopeKind::Block, None);
 
         for expression in items.iter() {
@@ -15,9 +15,9 @@ impl NodeCompiler<Block> for Compiler {
         }
 
         if let Some(trailing_expression) = trailing_expression {
-            self.compile_node(trailing_expression)?;
+            self.compile_node(*trailing_expression)?;
         } else {
-            self.assembler.push_unit(span);
+            self.assembler.push_unit(span.clone());
         }
 
         self.scope_stack.pop_scope()?;

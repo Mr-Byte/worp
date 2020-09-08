@@ -7,8 +7,6 @@ use worp_dice::Dice;
 fn main() -> Result<()> {
     FmtSubscriber::builder().with_max_level(Level::INFO).init();
 
-    // TODO: Create a system that handles runtime, plus parsing and execution of scripts as a unit.
-
     let mut runtime = Dice::default();
 
     loop {

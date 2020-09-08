@@ -27,7 +27,7 @@ impl NodeCompiler<SyntaxNodeId> for Compiler {
             SyntaxNode::ForLoop(_) => todo!(),
             SyntaxNode::Break(break_node) => self.compile_node(break_node)?,
             SyntaxNode::Continue(continue_node) => self.compile_node(continue_node)?,
-            SyntaxNode::Block(block) => self.compile_node(block)?,
+            SyntaxNode::Block(block) => self.compile_node(&block)?,
         }
 
         Ok(())

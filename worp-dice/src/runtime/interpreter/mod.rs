@@ -43,8 +43,6 @@ impl Runtime {
 
         self.stack.release_slots(slot_count);
 
-        println!("{:?}", self.stack);
-
         Ok(result?)
     }
 
@@ -203,9 +201,8 @@ impl Runtime {
     }
 }
 
-const MAX_STACK_SIZE: usize = 8;
+const MAX_STACK_SIZE: usize = 512;
 
-#[derive(Debug)]
 struct Stack {
     values: [Value; MAX_STACK_SIZE],
     stack_ptr: usize,
