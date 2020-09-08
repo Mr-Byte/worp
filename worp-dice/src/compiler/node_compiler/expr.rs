@@ -14,7 +14,15 @@ impl NodeCompiler<SyntaxNodeId> for Compiler {
             .expect("Node should never be empty.");
 
         match &node {
-            SyntaxNode::Literal(literal) => self.compile_node(literal)?,
+            SyntaxNode::LitIdent(literal) => self.compile_node(literal)?,
+            SyntaxNode::LitUnit(literal) => self.compile_node(literal)?,
+            SyntaxNode::LitNone(literal) => self.compile_node(literal)?,
+            SyntaxNode::LitBool(literal) => self.compile_node(literal)?,
+            SyntaxNode::LitInt(literal) => self.compile_node(literal)?,
+            SyntaxNode::LitFloat(literal) => self.compile_node(literal)?,
+            SyntaxNode::LitString(literal) => self.compile_node(literal)?,
+            SyntaxNode::LitObject(literal) => todo!(), //self.compile_node(literal)?,
+            SyntaxNode::LitList(literal) => self.compile_node(literal)?,
             SyntaxNode::SafeAccess(_) => todo!(),
             SyntaxNode::FieldAccess(_) => todo!(),
             SyntaxNode::Index(_) => todo!(),

@@ -35,7 +35,18 @@ impl SyntaxTree {
 
 #[derive(Debug, Clone)]
 pub enum SyntaxNode {
-    Literal(Literal),
+    // Literals
+    LitIdent(LitIdent),
+    LitNone(LitNone),
+    LitUnit(LitUnit),
+    LitInt(LitInt),
+    LitFloat(LitFloat),
+    LitString(LitString),
+    LitBool(LitBool),
+    LitList(LitList),
+    LitObject(LitObject),
+
+    // Member access
     SafeAccess(SafeAccess),
     FieldAccess(FieldAccess),
     Index(Index),
@@ -45,8 +56,10 @@ pub enum SyntaxNode {
     Binary(Binary),
     Assignment(Assignment),
 
-    // Statements
+    // Declarations
     VariableDeclaration(VariableDeclaration),
+
+    // Control flow
     IfExpression(IfExpression),
     WhileLoop(WhileLoop),
     ForLoop(ForLoop),
@@ -60,20 +73,6 @@ pub struct LitList(pub Vec<SyntaxNodeId>, pub Span);
 
 #[derive(Debug, Clone)]
 pub struct LitObject(pub Vec<(SyntaxNodeId, SyntaxNodeId)>, pub Span);
-
-// TODO: Split these up into variants of enums.
-#[derive(Debug, Clone)]
-pub enum Literal {
-    Ident(LitIdent),
-    None(LitNone),
-    Unit(LitUnit),
-    Integer(LitInt),
-    Float(LitFloat),
-    String(LitString),
-    Bool(LitBool),
-    List(LitList),
-    Object(LitObject),
-}
 
 #[derive(Debug, Clone)]
 pub struct LitIdent(pub String, pub Span);
