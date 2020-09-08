@@ -23,11 +23,11 @@ impl NodeCompiler<Assignment> for Compiler {
                 self.compile_node(rhs)?;
 
                 match op {
-                    AssignmentOperator::Assignment => self.assembler.store_local(slot, span),
-                    AssignmentOperator::MulAssignment => self.assembler.mul_assign_local(slot, span),
-                    AssignmentOperator::DivAssignment => self.assembler.div_assign_local(slot, span),
-                    AssignmentOperator::AddAssignment => self.assembler.add_assign_local(slot, span),
-                    AssignmentOperator::SubAssignment => self.assembler.sub_assign_local(slot, span),
+                    AssignmentOperator::Assignment => self.assembler.store_local(slot, span.clone()),
+                    AssignmentOperator::MulAssignment => self.assembler.mul_assign_local(slot, span.clone()),
+                    AssignmentOperator::DivAssignment => self.assembler.div_assign_local(slot, span.clone()),
+                    AssignmentOperator::AddAssignment => self.assembler.add_assign_local(slot, span.clone()),
+                    AssignmentOperator::SubAssignment => self.assembler.sub_assign_local(slot, span.clone()),
                 }
             }
             _ => return Err(CompilerError::InvalidAssignmentTarget),

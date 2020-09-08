@@ -28,7 +28,6 @@ impl NodeCompiler<SyntaxNodeId> for Compiler {
             SyntaxNode::Break(break_node) => self.compile_node(break_node)?,
             SyntaxNode::Continue(continue_node) => self.compile_node(continue_node)?,
             SyntaxNode::Block(block) => self.compile_node(block)?,
-            SyntaxNode::Discard(discard) => self.compile_node(discard)?,
         }
 
         Ok(())

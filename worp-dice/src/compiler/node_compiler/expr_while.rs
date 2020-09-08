@@ -15,26 +15,15 @@ impl NodeCompiler<WhileLoop> for Compiler {
         let loop_end = self.assembler.jump_if_false(span.clone());
 
         if let Some(SyntaxNode::Block(block)) = self.syntax_tree.get(body) {
-            let Block(items, _span) = block.clone();
+            let Block(items, trailing_expression, _span) = block.clone();
 
-            // NOTE: Loops should always end in a discard.  The stack should be left unaltered after each iteration.
-            // This means some detection should be done to enforce that the loop ends in some operation that leaves the stack
-            // in its original state.
-
-            if let Some(node) = items.last() {
-                if !matches!(self.syntax_tree.get(*node),
-                      Some(SyntaxNode::Discard(_))
-                    | Some(SyntaxNode::VariableDeclaration(_))
-                    | Some(SyntaxNode::Break(_))
-                    | Some(SyntaxNode::Continue(_))
-                    | None)
-                {
-                    return Err(CompilerError::InvalidLoopEnding);
-                }
+            if trailing_expression.is_some() {
+                return Err(CompilerError::InvalidLoopEnding);
             }
 
             for expression in items.iter() {
                 self.compile_node(*expression)?;
+                self.assembler.pop(span.clone());
             }
         } else {
             return Err(CompilerError::InternalCompilerError(String::from(
@@ -43,10 +32,9 @@ impl NodeCompiler<WhileLoop> for Compiler {
         }
 
         self.assembler.jump_back(loop_start, span.clone());
-        self.assembler.pop(span.clone());
+        self.assembler.patch_jump(loop_end);
 
         let scope_close = self.scope_stack.pop_scope()?;
-        self.assembler.patch_jump(loop_end);
 
         for location in scope_close.exit_points.iter() {
             self.assembler.patch_jump(*location as u64);

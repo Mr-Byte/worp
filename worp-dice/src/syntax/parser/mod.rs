@@ -1,9 +1,9 @@
 use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
-    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, Discard, IfExpression, LitBool,
-    LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, Literal, SyntaxNode, SyntaxNodeId,
-    SyntaxTree, Unary, UnaryOperator, VariableDeclaration, WhileLoop,
+    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, IfExpression, LitBool, LitFloat,
+    LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, Literal, SyntaxNode, SyntaxNodeId, SyntaxTree,
+    Unary, UnaryOperator, VariableDeclaration, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -55,7 +55,7 @@ impl ParserRule {
             TokenKind::True => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::Identifier(_) => ParserRule::new(Some(Parser::variable), None, RulePrecedence::Primary),
 
-            //
+            // If expression
             TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
 
             // Objects
@@ -64,10 +64,6 @@ impl ParserRule {
 
             // Grouping
             TokenKind::LeftParen => ParserRule::new(Some(Parser::grouping), None, RulePrecedence::Primary),
-
-            // Control flow
-            // TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
-            // TokenKind::While => ParserRule::new(Some(Parser::while_expression), None, RulePrecedence::None),
 
             // Block expressions
             TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
@@ -172,46 +168,34 @@ impl Parser {
         let mut items = Vec::new();
         let mut next_token = self.lexer.peek();
         let span_start = next_token.span();
+        let mut trailing_epxression = None;
 
-        loop {
-            if next_token.kind == TokenKind::RightCurly || next_token.kind == TokenKind::EndOfInput {
+        while !matches!(next_token.kind, TokenKind::EndOfInput | TokenKind::RightCurly) {
+            let expression = match next_token.kind {
+                TokenKind::If => self.if_expression(false)?,
+                TokenKind::While => self.while_statement()?,
+                TokenKind::Let => self.variable_decl()?,
+                TokenKind::Break | TokenKind::Continue => self.control_flow()?,
+                _ => self.expression()?,
+            };
+
+            next_token = self.lexer.peek();
+
+            if matches!(next_token.kind, TokenKind::EndOfInput | TokenKind::RightCurly) {
+                trailing_epxression = Some(expression);
                 break;
             }
 
-            if next_token.kind == TokenKind::If {
-                let expression = self.if_expression(false)?;
-                items.push(expression);
+            if next_token.kind == TokenKind::Semicolon {
+                self.lexer.consume(TokenKind::Semicolon)?;
                 next_token = self.lexer.peek();
-            } else if next_token.kind == TokenKind::While {
-                let expression = self.while_statement()?;
-                items.push(expression);
-                next_token = self.lexer.peek();
-            } else if next_token.kind == TokenKind::Let {
-                let expression = self.variable_decl()?;
-                items.push(expression);
-                next_token = self.lexer.peek();
-            } else if next_token.kind == TokenKind::Break || next_token.kind == TokenKind::Continue {
-                let expression = self.control_flow()?;
-                items.push(expression);
-                next_token = self.lexer.peek();
-            } else {
-                let expression = self.expression()?;
-
-                items.push(expression);
-                next_token = self.lexer.peek();
-
-                if next_token.kind == TokenKind::Semicolon {
-                    let semi_token = self.lexer.consume(TokenKind::Semicolon)?;
-                    let discard = SyntaxNode::Discard(Discard(semi_token.span()));
-                    items.push(self.arena.alloc(discard));
-
-                    next_token = self.lexer.peek();
-                }
             }
+
+            items.push(expression);
         }
 
         let span_end = next_token.span();
-        let node = SyntaxNode::Block(Block(items, span_start + span_end));
+        let node = SyntaxNode::Block(Block(items, trailing_epxression, span_start + span_end));
 
         Ok(self.arena.alloc(node))
     }
@@ -286,8 +270,6 @@ impl Parser {
             TokenKind::Continue => SyntaxNode::Continue(Continue(token.span())),
             _ => return Err(SyntaxError::UnexpectedToken(token)),
         };
-
-        self.lexer.consume(TokenKind::Semicolon)?;
 
         Ok(self.arena.alloc(node))
     }
@@ -374,9 +356,6 @@ impl Parser {
         self.lexer.consume(TokenKind::Assign)?;
         let expression = self.expression()?;
         let span_end = self.lexer.current().span();
-
-        self.lexer.consume(TokenKind::Semicolon)?;
-
         let node =
             SyntaxNode::VariableDeclaration(VariableDeclaration(name, is_mutable, expression, span_start + span_end));
 
@@ -534,8 +513,8 @@ mod test {
         let syntax_tree = Parser::new("5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -553,8 +532,8 @@ mod test {
         let syntax_tree = Parser::new("-5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -572,8 +551,8 @@ mod test {
         let syntax_tree = Parser::new("5 - 5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -591,8 +570,8 @@ mod test {
         let syntax_tree = Parser::new("5 - -5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -610,8 +589,8 @@ mod test {
         let syntax_tree = Parser::new("5 - 5 * 5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -629,8 +608,8 @@ mod test {
         let syntax_tree = Parser::new("5 * 5 - 5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -648,8 +627,8 @@ mod test {
         let syntax_tree = Parser::new("5 * (5 - 5)").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -667,8 +646,8 @@ mod test {
         let syntax_tree = Parser::new("d8").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -686,8 +665,8 @@ mod test {
         let syntax_tree = Parser::new("6d8").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(
                 node,
@@ -705,8 +684,8 @@ mod test {
         let syntax_tree = Parser::new("object { x: 50, y: 30 }").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(node, Some(SyntaxNode::Literal(Literal::Object(_)))));
         } else {
@@ -721,8 +700,8 @@ mod test {
         let syntax_tree = Parser::new("[x, y, 1, 1*2, object {}]").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(block, _)) = root {
-            let node = syntax_tree.get(*block.first().unwrap());
+        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+            let node = syntax_tree.get(*block);
 
             assert!(matches!(node, Some(SyntaxNode::Literal(Literal::List(_)))));
         } else {

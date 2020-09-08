@@ -11,7 +11,6 @@ impl NodeCompiler<VariableDeclaration> for Compiler {
 
         self.compile_node(value)?;
         self.assembler.store_local(slot, span.clone());
-        self.assembler.pop(span);
 
         Ok(())
     }

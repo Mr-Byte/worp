@@ -7,7 +7,6 @@ mod expr_binary_op;
 mod expr_block;
 mod expr_break;
 mod expr_continue;
-mod expr_discard;
 mod expr_if;
 mod expr_unary_op;
 mod expr_variable_decl;

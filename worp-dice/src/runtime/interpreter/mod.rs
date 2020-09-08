@@ -201,6 +201,8 @@ impl Runtime {
 
         // TODO: Make it an error for the stack to be empty at the end of execution.
         // Also assert that the stack hasn't underflowed into the call frame.
+        println!("{:?}", self.stack);
+
         Ok(self.stack.pop())
     }
 }
