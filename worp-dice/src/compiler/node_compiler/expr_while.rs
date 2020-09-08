@@ -5,14 +5,14 @@ use crate::{
     CompilerError,
 };
 
-impl NodeCompiler<WhileLoop> for Compiler {
-    fn compile_node(&mut self, WhileLoop(condition, body, span): WhileLoop) -> Result<(), CompilerError> {
-        if let Some(SyntaxNode::Block(block)) = self.syntax_tree.get(body) {
+impl NodeCompiler<&WhileLoop> for Compiler {
+    fn compile_node(&mut self, WhileLoop(condition, body, span): &WhileLoop) -> Result<(), CompilerError> {
+        if let Some(SyntaxNode::Block(block)) = self.syntax_tree.get(*body) {
             let Block(items, trailing_expression, _span) = block.clone();
             let loop_start = self.assembler.current_position();
 
             self.scope_stack.push_scope(ScopeKind::Loop, Some(loop_start as usize));
-            self.compile_node(condition)?;
+            self.compile_node(*condition)?;
             let loop_end = self.assembler.jump_if_false(span.clone());
 
             for expression in items.iter() {
@@ -35,7 +35,7 @@ impl NodeCompiler<WhileLoop> for Compiler {
                 self.assembler.patch_jump(*location as u64);
             }
 
-            self.assembler.push_unit(span);
+            self.assembler.push_unit(span.clone());
         } else {
             return Err(CompilerError::InternalCompilerError(String::from(
                 "While loop bodies should only ever contain blocks.",

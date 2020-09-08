@@ -1,8 +1,8 @@
 use super::NodeCompiler;
 use crate::{compiler::Compiler, syntax::Literal, CompilerError};
 
-impl NodeCompiler<Literal> for Compiler {
-    fn compile_node(&mut self, node: Literal) -> Result<(), CompilerError> {
+impl NodeCompiler<&Literal> for Compiler {
+    fn compile_node(&mut self, node: &Literal) -> Result<(), CompilerError> {
         match node {
             Literal::Ident(identifer) => self.compile_node(identifer)?,
             Literal::None(none) => self.compile_node(none)?,

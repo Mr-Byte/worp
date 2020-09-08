@@ -13,7 +13,7 @@ impl NodeCompiler<SyntaxNodeId> for Compiler {
             .cloned()
             .expect("Node should never be empty.");
 
-        match node {
+        match &node {
             SyntaxNode::Literal(literal) => self.compile_node(literal)?,
             SyntaxNode::SafeAccess(_) => todo!(),
             SyntaxNode::FieldAccess(_) => todo!(),
@@ -22,12 +22,12 @@ impl NodeCompiler<SyntaxNodeId> for Compiler {
             SyntaxNode::Unary(unary) => self.compile_node(unary)?,
             SyntaxNode::Binary(binary) => self.compile_node(binary)?,
             SyntaxNode::VariableDeclaration(variable) => self.compile_node(variable)?,
-            SyntaxNode::IfExpression(conditional) => self.compile_node(&conditional)?,
+            SyntaxNode::IfExpression(conditional) => self.compile_node(conditional)?,
             SyntaxNode::WhileLoop(while_loop) => self.compile_node(while_loop)?,
             SyntaxNode::ForLoop(_) => todo!(),
             SyntaxNode::Break(break_node) => self.compile_node(break_node)?,
             SyntaxNode::Continue(continue_node) => self.compile_node(continue_node)?,
-            SyntaxNode::Block(block) => self.compile_node(&block)?,
+            SyntaxNode::Block(block) => self.compile_node(block)?,
         }
 
         Ok(())

@@ -14,7 +14,6 @@ pub enum ScopeKind {
     Function,
     Block,
     Loop,
-    If,
 }
 
 impl ScopeKind {
@@ -23,7 +22,7 @@ impl ScopeKind {
     }
 
     fn is_block(self) -> bool {
-        matches!(self, ScopeKind::Block | ScopeKind::Loop | ScopeKind::If)
+        matches!(self, ScopeKind::Block | ScopeKind::Loop)
     }
 }
 
