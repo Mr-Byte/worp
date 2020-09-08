@@ -77,7 +77,7 @@ impl Runtime {
 
                 Instruction::BUILD_LIST => {
                     let count = cursor.read_u8() as usize;
-                    let items = self.stack.pop_count(count).to_vec();
+                    let items = self.stack.pop_count(count);
 
                     self.stack.push(Value::List(items.into()));
                 }
@@ -199,10 +199,6 @@ impl Runtime {
             }
         }
 
-        // TODO: Make it an error for the stack to be empty at the end of execution.
-        // Also assert that the stack hasn't underflowed into the call frame.
-        println!("{:?}", self.stack);
-
         Ok(self.stack.pop())
     }
 }
@@ -229,10 +225,17 @@ impl Stack {
         value
     }
 
-    fn pop_count(&mut self, count: usize) -> &mut [Value] {
-        let items = &mut self.values[self.stack_ptr - count..self.stack_ptr];
+    fn pop_count(&mut self, count: usize) -> Vec<Value> {
+        let mut result = Vec::with_capacity(count);
+        let items_to_pop = &mut self.values[self.stack_ptr - count..self.stack_ptr];
         self.stack_ptr -= count;
-        items
+
+        for item in items_to_pop {
+            let item = std::mem::replace(item, Value::NONE);
+            result.push(item);
+        }
+
+        result
     }
 
     fn reserve_slots(&mut self, count: usize) {
@@ -240,7 +243,9 @@ impl Stack {
     }
 
     fn release_slots(&mut self, count: usize) {
-        self.stack_ptr -= count;
+        for _ in 0..count {
+            self.pop();
+        }
     }
 
     fn slots(&mut self, slots: Range<usize>) -> &mut [Value] {
