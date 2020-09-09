@@ -60,6 +60,7 @@ impl Compiler {
 
         let compilation_unit = match self.kind {
             CompilationKind::Script => CompilationUnit::Script(Script::new(self.assembler.generate(), call_frame)),
+            CompilationKind::Function => CompilationUnit::Function,
             _ => todo!(),
         };
 

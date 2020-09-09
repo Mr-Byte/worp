@@ -1,9 +1,9 @@
 use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
-    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, IfExpression, LitBool, LitFloat,
-    LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, SyntaxNode, SyntaxNodeId, SyntaxTree, Unary,
-    UnaryOperator, VariableDeclaration, WhileLoop,
+    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, FnDecl, IfExpression, LitBool,
+    LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, SyntaxNode, SyntaxNodeId, SyntaxTree,
+    Unary, UnaryOperator, VarDecl, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -175,6 +175,7 @@ impl Parser {
                 TokenKind::If => self.if_expression(false)?,
                 TokenKind::While => self.while_statement()?,
                 TokenKind::Let => self.variable_decl()?,
+                TokenKind::Function => self.function_decl()?,
                 TokenKind::Break | TokenKind::Continue => self.control_flow()?,
                 _ => self.expression()?,
             };
@@ -354,10 +355,42 @@ impl Parser {
         };
 
         self.lexer.consume(TokenKind::Assign)?;
-        let expression = self.expression()?;
+        let expr = self.expression()?;
         let span_end = self.lexer.current().span();
-        let node =
-            SyntaxNode::VariableDeclaration(VariableDeclaration(name, is_mutable, expression, span_start + span_end));
+        let node = SyntaxNode::VarDecl(VarDecl {
+            name,
+            is_mutable,
+            expr,
+            span: span_start + span_end,
+        });
+
+        Ok(self.arena.alloc(node))
+    }
+
+    fn function_decl(&mut self) -> SyntaxNodeResult {
+        let span_start = self.lexer.consume(TokenKind::Function)?.span();
+
+        let token = self.lexer.next();
+        let name = if let TokenKind::Identifier(name) = token.kind {
+            name
+        } else {
+            return Err(SyntaxError::UnexpectedToken(token));
+        };
+
+        self.lexer.consume(TokenKind::LeftParen)?;
+
+        // TODO: Consume args.
+
+        self.lexer.consume(TokenKind::RightParen)?;
+
+        let body = self.block_expression(false)?;
+        let span_end = self.lexer.current().span();
+        let node = SyntaxNode::FnDecl(FnDecl {
+            name,
+            args: Vec::new(),
+            body,
+            span: span_start + span_end,
+        });
 
         Ok(self.arena.alloc(node))
     }

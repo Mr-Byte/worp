@@ -1,5 +1,7 @@
 use crate::CompilerError;
 
+mod decl_fn;
+mod decl_var;
 mod expr_assignment;
 mod expr_binary_op;
 mod expr_block;
@@ -7,7 +9,6 @@ mod expr_break;
 mod expr_continue;
 mod expr_if;
 mod expr_unary_op;
-mod expr_variable_decl;
 mod expr_while;
 mod literal_bool;
 mod literal_float;

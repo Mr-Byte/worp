@@ -57,7 +57,8 @@ pub enum SyntaxNode {
     Assignment(Assignment),
 
     // Declarations
-    VariableDeclaration(VariableDeclaration),
+    VarDecl(VarDecl),
+    FnDecl(FnDecl),
 
     // Control flow
     IfExpression(IfExpression),
@@ -154,7 +155,20 @@ pub enum AssignmentOperator {
 }
 
 #[derive(Debug, Clone)]
-pub struct VariableDeclaration(pub String, pub bool, pub SyntaxNodeId, pub Span);
+pub struct VarDecl {
+    pub name: String,
+    pub is_mutable: bool,
+    pub expr: SyntaxNodeId,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone)]
+pub struct FnDecl {
+    pub name: String,
+    pub args: Vec<String>,
+    pub body: SyntaxNodeId,
+    pub span: Span,
+}
 
 #[derive(Debug, Clone)]
 pub struct IfExpression(pub SyntaxNodeId, pub SyntaxNodeId, pub Option<SyntaxNodeId>, pub Span);
