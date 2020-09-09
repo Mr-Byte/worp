@@ -1,13 +1,17 @@
-use super::instruction::Instruction;
+use cursor::BytecodeCursor;
+
+use super::{callframe::CallFrame, instruction::Instruction};
 use crate::runtime::core::{Span, Value};
-use bytes::Buf as _;
-use std::{collections::HashMap, fmt::Display, io::Cursor, rc::Rc};
+use std::{collections::HashMap, fmt::Display, rc::Rc};
+
+mod cursor;
 
 #[derive(Debug)]
 struct BytecodeInner {
     constants: Box<[Value]>,
+    data: Box<[u8]>,
+    call_frame: CallFrame,
     source_map: HashMap<u64, Span>,
-    data: Rc<[u8]>,
 }
 
 #[derive(Debug, Clone)]
@@ -16,10 +20,16 @@ pub struct Bytecode {
 }
 
 impl Bytecode {
-    pub fn new(constants: Box<[Value]>, source_map: HashMap<u64, Span>, data: Rc<[u8]>) -> Self {
+    pub fn new(
+        data: Box<[u8]>,
+        call_frame: CallFrame,
+        constants: Box<[Value]>,
+        source_map: HashMap<u64, Span>,
+    ) -> Self {
         Self {
             inner: Rc::new(BytecodeInner {
                 constants,
+                call_frame,
                 source_map,
                 data,
             }),
@@ -35,10 +45,12 @@ impl Bytecode {
         &self.inner.constants
     }
 
-    pub fn cursor(&self) -> BytecodeCursor {
-        BytecodeCursor {
-            cursor: Cursor::new(self.inner.data.clone()),
-        }
+    pub fn cursor(&self) -> BytecodeCursor<'_> {
+        BytecodeCursor::new(&*self.inner.data)
+    }
+
+    pub fn call_frame(&self) -> CallFrame {
+        self.inner.call_frame
     }
 }
 
@@ -68,44 +80,5 @@ impl Display for Bytecode {
             writeln!(f)?;
         }
         Ok(())
-    }
-}
-
-pub struct BytecodeCursor {
-    cursor: Cursor<Rc<[u8]>>,
-}
-
-impl BytecodeCursor {
-    #[inline]
-    pub fn set_position(&mut self, position: u64) {
-        self.cursor.set_position(position)
-    }
-
-    #[inline]
-    pub fn read_instruction(&mut self) -> Option<Instruction> {
-        if self.cursor.has_remaining() {
-            Some(self.cursor.get_u8().into())
-        } else {
-            None
-        }
-    }
-
-    #[inline]
-    pub fn read_offset(&mut self) -> i16 {
-        self.cursor.get_i16()
-    }
-
-    #[inline]
-    pub fn read_u8(&mut self) -> u8 {
-        self.cursor.get_u8()
-    }
-
-    #[inline]
-    pub fn offset_position(&mut self, offset: i16) {
-        self.set_position(self.cursor.position().wrapping_add(offset as u64));
-    }
-
-    pub fn position(&self) -> u64 {
-        self.cursor.position()
     }
 }

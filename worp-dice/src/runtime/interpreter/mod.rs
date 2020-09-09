@@ -1,10 +1,10 @@
 #[macro_use]
 mod macros;
+mod stack;
 
 pub(crate) mod bytecode;
 pub(crate) mod callframe;
 pub(crate) mod instruction;
-pub(crate) mod script;
 
 use crate::{
     runtime::core::{
@@ -17,7 +17,7 @@ use crate::{
 };
 use bytecode::Bytecode;
 use instruction::Instruction;
-use script::Script;
+use stack::Stack;
 use std::ops::Range;
 
 pub struct Runtime {
@@ -33,13 +33,15 @@ impl Default for Runtime {
 }
 
 impl Runtime {
-    pub fn run_script(&mut self, mut script: Script) -> Result<Value, RuntimeError> {
-        let stack_frame = self.stack.len()..(script.call_frame().slot_count + self.stack.len());
-        let slot_count = script.call_frame().slot_count;
+    pub fn run_script(&mut self, bytecode: Bytecode) -> Result<Value, RuntimeError> {
+        let slot_count = bytecode.call_frame().slot_count;
+        let stack_frame_start = self.stack.len();
+        let stack_frame_end = stack_frame_start + slot_count;
+        let stack_frame = stack_frame_start..stack_frame_end;
 
         self.stack.reserve_slots(slot_count);
 
-        let result = self.execute_bytecode(&script.bytecode(), stack_frame);
+        let result = self.execute_bytecode(&bytecode, stack_frame);
 
         self.stack.release_slots(slot_count);
 
@@ -198,71 +200,5 @@ impl Runtime {
         }
 
         Ok(self.stack.pop())
-    }
-}
-
-const MAX_STACK_SIZE: usize = 512;
-
-struct Stack {
-    values: [Value; MAX_STACK_SIZE],
-    stack_ptr: usize,
-}
-
-// TODO: Enforce stack overflows and underflows.
-impl Stack {
-    fn push(&mut self, value: Value) {
-        self.values[self.stack_ptr] = value;
-        self.stack_ptr += 1;
-    }
-
-    fn pop(&mut self) -> Value {
-        let value = std::mem::replace(&mut self.values[self.stack_ptr - 1], Value::NONE);
-        self.stack_ptr -= 1;
-
-        value
-    }
-
-    fn pop_count(&mut self, count: usize) -> Vec<Value> {
-        let mut result = Vec::with_capacity(count);
-        let items_to_pop = &mut self.values[self.stack_ptr - count..self.stack_ptr];
-        self.stack_ptr -= count;
-
-        for item in items_to_pop {
-            let item = std::mem::replace(item, Value::NONE);
-            result.push(item);
-        }
-
-        result
-    }
-
-    fn reserve_slots(&mut self, count: usize) {
-        self.stack_ptr += count;
-    }
-
-    fn release_slots(&mut self, count: usize) {
-        for _ in 0..count {
-            self.pop();
-        }
-    }
-
-    fn slots(&mut self, slots: Range<usize>) -> &mut [Value] {
-        &mut self.values[slots]
-    }
-
-    fn len(&self) -> usize {
-        self.stack_ptr
-    }
-
-    fn top(&mut self) -> &mut Value {
-        &mut self.values[self.stack_ptr - 1]
-    }
-}
-
-impl Default for Stack {
-    fn default() -> Self {
-        Self {
-            values: [Value::NONE; MAX_STACK_SIZE],
-            stack_ptr: 0,
-        }
     }
 }

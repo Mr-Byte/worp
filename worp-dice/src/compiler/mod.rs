@@ -3,7 +3,8 @@ use self::{
     scope::{ScopeKind, ScopeStack},
 };
 use crate::{
-    runtime::interpreter::{callframe::CallFrame, script::Script},
+    runtime::interpreter::bytecode::Bytecode,
+    runtime::interpreter::callframe::CallFrame,
     syntax::{Parser, SyntaxTree},
     SyntaxError,
 };
@@ -15,15 +16,10 @@ pub mod error;
 mod scope;
 mod visitor;
 
+#[allow(dead_code)]
 #[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum CompilationKind {
     Script,
-    Module,
-    Function,
-}
-
-pub enum CompilationUnit {
-    Script(Script),
     Module,
     Function,
 }
@@ -32,7 +28,6 @@ pub struct Compiler {
     syntax_tree: SyntaxTree,
     assembler: Assembler,
     scope_stack: ScopeStack,
-    kind: CompilationKind,
 }
 
 impl Compiler {
@@ -45,26 +40,19 @@ impl Compiler {
 
         Self {
             syntax_tree,
-            kind,
             assembler: Assembler::default(),
             scope_stack: ScopeStack::new(scope_kind),
         }
     }
 
-    pub fn compile(mut self) -> Result<CompilationUnit, CompilerError> {
+    pub fn compile(mut self) -> Result<Bytecode, CompilerError> {
         self.visit(self.syntax_tree.root())?;
 
         let call_frame = CallFrame {
             slot_count: self.scope_stack.slot_count,
         };
 
-        let compilation_unit = match self.kind {
-            CompilationKind::Script => CompilationUnit::Script(Script::new(self.assembler.generate(), call_frame)),
-            CompilationKind::Function => CompilationUnit::Function,
-            _ => todo!(),
-        };
-
-        Ok(compilation_unit)
+        Ok(self.assembler.generate(call_frame))
     }
 
     pub fn try_from_str(input: &str, kind: CompilationKind) -> Result<Self, SyntaxError> {

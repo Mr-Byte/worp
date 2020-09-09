@@ -379,15 +379,24 @@ impl Parser {
 
         self.lexer.consume(TokenKind::LeftParen)?;
 
-        // TODO: Consume args.
+        let mut args = Vec::new();
+        while self.lexer.peek().kind != TokenKind::RightParen {
+            let (_, arg_name) = self.lexer.consume_ident()?;
 
-        self.lexer.consume(TokenKind::RightParen)?;
+            if self.lexer.peek().kind == TokenKind::Comma {
+                self.lexer.next();
+            } else if self.lexer.peek().kind != TokenKind::RightCurly {
+                return Err(SyntaxError::UnexpectedToken(self.lexer.next()));
+            }
+
+            args.push(arg_name);
+        }
 
         let body = self.block_expression(false)?;
         let span_end = self.lexer.current().span();
         let node = SyntaxNode::FnDecl(FnDecl {
             name,
-            args: Vec::new(),
+            args,
             body,
             span: span_start + span_end,
         });

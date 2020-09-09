@@ -41,6 +41,16 @@ impl Lexer {
         }
     }
 
+    pub fn consume_ident(&mut self) -> Result<(Token, String), SyntaxError> {
+        let next = self.next();
+        if let TokenKind::Identifier(ref ident) = next.kind {
+            let ident = ident.clone();
+            Ok((next, ident))
+        } else {
+            Err(SyntaxError::UnexpectedToken(next))
+        }
+    }
+
     pub fn consume_one_of(&mut self, kinds: &[TokenKind]) -> Result<Token, SyntaxError> {
         let next = self.next();
         if kinds.contains(&next.kind) {

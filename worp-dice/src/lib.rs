@@ -1,4 +1,4 @@
-use compiler::{CompilationKind, CompilationUnit, Compiler};
+use compiler::{CompilationKind, Compiler};
 use runtime::interpreter::Runtime;
 
 #[macro_use]
@@ -21,19 +21,13 @@ pub struct Dice {
 
 impl Dice {
     pub fn run_script(&mut self, input: &str) -> Result<Value, DiceError> {
-        if let CompilationUnit::Script(script) = Compiler::try_from_str(input, CompilationKind::Script)?.compile()? {
-            self.runtime.run_script(script).map_err(From::from)
-        } else {
-            unreachable!()
-        }
+        let bytecode = Compiler::try_from_str(input, CompilationKind::Script)?.compile()?;
+        self.runtime.run_script(bytecode).map_err(From::from)
     }
 
     pub fn disassemble_script(&self, input: &str) -> Result<String, DiceError> {
-        if let CompilationUnit::Script(script) = Compiler::try_from_str(input, CompilationKind::Script)?.compile()? {
-            Ok(script.to_string())
-        } else {
-            unreachable!()
-        }
+        let bytecode = Compiler::try_from_str(input, CompilationKind::Script)?.compile()?;
+        Ok(bytecode.to_string())
     }
 }
 
