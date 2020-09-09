@@ -36,14 +36,22 @@ impl Stack {
         result
     }
 
-    pub fn reserve_slots(&mut self, count: usize) {
+    pub fn reserve_slots(&mut self, count: usize) -> Range<usize> {
+        let start = self.stack_ptr;
+
         self.stack_ptr += count;
+        assert!(self.stack_ptr < MAX_STACK_SIZE);
+
+        start..self.stack_ptr
     }
 
     pub fn release_slots(&mut self, count: usize) {
         for _ in 0..count {
             self.pop();
         }
+
+        // NOTE: If the stack ptr is greater than the stack size, the stack ptr underflowed.
+        assert!(self.stack_ptr < MAX_STACK_SIZE)
     }
 
     pub fn slots(&mut self, slots: Range<usize>) -> &mut [Value] {

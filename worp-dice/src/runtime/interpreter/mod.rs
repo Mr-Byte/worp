@@ -3,7 +3,6 @@ mod macros;
 mod stack;
 
 pub(crate) mod bytecode;
-pub(crate) mod callframe;
 pub(crate) mod instruction;
 
 use crate::{
@@ -34,16 +33,9 @@ impl Default for Runtime {
 
 impl Runtime {
     pub fn run_script(&mut self, bytecode: Bytecode) -> Result<Value, RuntimeError> {
-        let slot_count = bytecode.call_frame().slot_count;
-        let stack_frame_start = self.stack.len();
-        let stack_frame_end = stack_frame_start + slot_count;
-        let stack_frame = stack_frame_start..stack_frame_end;
-
-        self.stack.reserve_slots(slot_count);
-
+        let stack_frame = self.stack.reserve_slots(bytecode.slot_count());
         let result = self.execute_bytecode(&bytecode, stack_frame);
-
-        self.stack.release_slots(slot_count);
+        self.stack.release_slots(bytecode.slot_count());
 
         Ok(result?)
     }

@@ -1,6 +1,6 @@
 use cursor::BytecodeCursor;
 
-use super::{callframe::CallFrame, instruction::Instruction};
+use super::instruction::Instruction;
 use crate::runtime::core::{Span, Value};
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
@@ -8,9 +8,9 @@ mod cursor;
 
 #[derive(Debug)]
 struct BytecodeInner {
+    slot_count: usize,
     constants: Box<[Value]>,
     data: Box<[u8]>,
-    call_frame: CallFrame,
     source_map: HashMap<u64, Span>,
 }
 
@@ -20,16 +20,11 @@ pub struct Bytecode {
 }
 
 impl Bytecode {
-    pub fn new(
-        data: Box<[u8]>,
-        call_frame: CallFrame,
-        constants: Box<[Value]>,
-        source_map: HashMap<u64, Span>,
-    ) -> Self {
+    pub fn new(data: Box<[u8]>, slot_count: usize, constants: Box<[Value]>, source_map: HashMap<u64, Span>) -> Self {
         Self {
             inner: Rc::new(BytecodeInner {
                 constants,
-                call_frame,
+                slot_count,
                 source_map,
                 data,
             }),
@@ -49,8 +44,8 @@ impl Bytecode {
         BytecodeCursor::new(&*self.inner.data)
     }
 
-    pub fn call_frame(&self) -> CallFrame {
-        self.inner.call_frame
+    pub fn slot_count(&self) -> usize {
+        self.inner.slot_count
     }
 }
 

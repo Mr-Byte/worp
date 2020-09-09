@@ -4,7 +4,6 @@ use self::{
 };
 use crate::{
     runtime::interpreter::bytecode::Bytecode,
-    runtime::interpreter::callframe::CallFrame,
     syntax::{Parser, SyntaxTree},
     SyntaxError,
 };
@@ -48,11 +47,7 @@ impl Compiler {
     pub fn compile(mut self) -> Result<Bytecode, CompilerError> {
         self.visit(self.syntax_tree.root())?;
 
-        let call_frame = CallFrame {
-            slot_count: self.scope_stack.slot_count,
-        };
-
-        Ok(self.assembler.generate(call_frame))
+        Ok(self.assembler.generate(self.scope_stack.slot_count))
     }
 
     pub fn try_from_str(input: &str, kind: CompilationKind) -> Result<Self, SyntaxError> {

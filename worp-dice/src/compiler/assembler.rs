@@ -1,6 +1,5 @@
 use crate::runtime::{
     core::{Span, Value},
-    interpreter::callframe::CallFrame,
     interpreter::{bytecode::Bytecode, instruction::Instruction},
 };
 use bytes::BufMut as _;
@@ -14,10 +13,10 @@ pub struct Assembler {
 }
 
 impl Assembler {
-    pub fn generate(self, call_frame: CallFrame) -> Bytecode {
+    pub fn generate(self, slot_count: usize) -> Bytecode {
         Bytecode::new(
             self.data.into(),
-            call_frame,
+            slot_count,
             self.constants.into_boxed_slice(),
             self.source_map,
         )
