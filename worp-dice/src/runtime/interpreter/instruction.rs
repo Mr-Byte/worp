@@ -72,6 +72,9 @@ impl Instruction {
 
         pub const JUMP;
         pub const JUMP_IF_FALSE;
+
+        pub const CALL;
+        pub const RETURN;
     }
 
     pub const fn value(self) -> u8 {
@@ -87,7 +90,7 @@ impl From<u8> for Instruction {
 
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:02X} |", self.0)?;
+        write!(f, "{:02X} | ", self.0)?;
 
         match *self {
             Instruction::PUSH_NONE => write!(f, "PUSH_NONE"),
@@ -126,6 +129,8 @@ impl Display for Instruction {
             Instruction::LOGICAL_OR => write!(f, "LOGICAL_OR"),
             Instruction::JUMP => write!(f, "JUMP"),
             Instruction::JUMP_IF_FALSE => write!(f, "JUMP_IF_FALSE"),
+            Instruction::CALL => write!(f, "CALL"),
+            Instruction::RETURN => write!(f, "RETURN"),
             _ => write!(f, "UNKNOWN"),
         }
     }

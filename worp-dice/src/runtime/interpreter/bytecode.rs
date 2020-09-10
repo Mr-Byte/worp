@@ -66,7 +66,8 @@ impl Display for Bytecode {
                 | Instruction::DIV_ASSIGN_LOCAL
                 | Instruction::ADD_ASSIGN_LOCAL
                 | Instruction::SUB_ASSIGN_LOCAL
-                | Instruction::BUILD_LIST => write!(f, "{}", cursor.read_u8())?,
+                | Instruction::BUILD_LIST
+                | Instruction::CALL => write!(f, "{}", cursor.read_u8())?,
                 _ => (),
             }
 

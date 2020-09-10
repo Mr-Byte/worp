@@ -369,11 +369,11 @@ impl Parser {
 
     fn function_decl(&mut self) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::Function)?.span();
-        let token = self.lexer.next();
-        let name = if let TokenKind::Identifier(name) = token.kind {
-            name
+        let name_token = self.lexer.next();
+        let name = if let TokenKind::Identifier(ref name) = name_token.kind {
+            name.clone()
         } else {
-            return Err(SyntaxError::UnexpectedToken(token));
+            return Err(SyntaxError::UnexpectedToken(name_token));
         };
 
         self.lexer.consume(TokenKind::LeftParen)?;
@@ -389,6 +389,10 @@ impl Parser {
             } else if self.lexer.peek().kind != TokenKind::RightParen {
                 return Err(SyntaxError::UnexpectedToken(self.lexer.next()));
             }
+        }
+
+        if args.len() > (u8::MAX as usize) {
+            return Err(SyntaxError::TooManyArguments(name.clone(), name_token.span()));
         }
 
         self.lexer.consume(TokenKind::RightParen)?;
