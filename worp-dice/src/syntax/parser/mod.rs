@@ -369,7 +369,6 @@ impl Parser {
 
     fn function_decl(&mut self) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::Function)?.span();
-
         let token = self.lexer.next();
         let name = if let TokenKind::Identifier(name) = token.kind {
             name
@@ -380,17 +379,19 @@ impl Parser {
         self.lexer.consume(TokenKind::LeftParen)?;
 
         let mut args = Vec::new();
+
         while self.lexer.peek().kind != TokenKind::RightParen {
             let (_, arg_name) = self.lexer.consume_ident()?;
+            args.push(arg_name);
 
             if self.lexer.peek().kind == TokenKind::Comma {
                 self.lexer.next();
-            } else if self.lexer.peek().kind != TokenKind::RightCurly {
+            } else if self.lexer.peek().kind != TokenKind::RightParen {
                 return Err(SyntaxError::UnexpectedToken(self.lexer.next()));
             }
-
-            args.push(arg_name);
         }
+
+        self.lexer.consume(TokenKind::RightParen)?;
 
         let body = self.block_expression(false)?;
         let span_end = self.lexer.current().span();

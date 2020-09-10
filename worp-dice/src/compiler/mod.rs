@@ -5,7 +5,7 @@ use self::{
 use crate::{
     runtime::interpreter::bytecode::Bytecode,
     syntax::{Parser, SyntaxTree},
-    SyntaxError,
+    Symbol,
 };
 use error::CompilerError;
 use visitor::NodeVisitor as _;
@@ -30,18 +30,29 @@ pub struct Compiler {
 }
 
 impl Compiler {
-    fn new(syntax_tree: SyntaxTree, kind: CompilationKind) -> Self {
+    fn try_new(
+        syntax_tree: SyntaxTree,
+        kind: CompilationKind,
+        args: &[impl AsRef<str>],
+    ) -> Result<Self, CompilerError> {
         let scope_kind = match kind {
             CompilationKind::Module => ScopeKind::Module,
             CompilationKind::Script => ScopeKind::Script,
             CompilationKind::Function => ScopeKind::Function,
         };
+        let mut scope_stack = ScopeStack::new(scope_kind);
 
-        Self {
+        for arg in args {
+            scope_stack.add_local(Symbol::new(arg.as_ref()), false)?;
+        }
+
+        let result = Self {
             syntax_tree,
             assembler: Assembler::default(),
-            scope_stack: ScopeStack::new(scope_kind),
-        }
+            scope_stack,
+        };
+
+        Ok(result)
     }
 
     pub fn compile(mut self) -> Result<Bytecode, CompilerError> {
@@ -50,9 +61,9 @@ impl Compiler {
         Ok(self.assembler.generate(self.scope_stack.slot_count))
     }
 
-    pub fn try_from_str(input: &str, kind: CompilationKind) -> Result<Self, SyntaxError> {
+    pub fn try_from_str(input: &str, kind: CompilationKind) -> Result<Self, CompilerError> {
         let syntax_tree = Parser::new(input).parse()?;
-        let compiler = Self::new(syntax_tree, kind);
+        let compiler = Self::try_new(syntax_tree, kind, &[] as &[&str])?;
 
         Ok(compiler)
     }

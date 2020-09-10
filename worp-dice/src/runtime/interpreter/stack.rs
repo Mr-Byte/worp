@@ -58,10 +58,6 @@ impl Stack {
         &mut self.values[slots]
     }
 
-    pub fn len(&self) -> usize {
-        self.stack_ptr
-    }
-
     pub fn top(&mut self) -> &mut Value {
         &mut self.values[self.stack_ptr - 1]
     }

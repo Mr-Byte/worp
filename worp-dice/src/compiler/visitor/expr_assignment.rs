@@ -1,8 +1,7 @@
 use super::NodeVisitor;
 use crate::{
     compiler::Compiler,
-    syntax::LitIdent,
-    syntax::{Assignment, AssignmentOperator, SyntaxNode},
+    syntax::{Assignment, AssignmentOperator, LitIdent, SyntaxNode},
     CompilerError, Symbol,
 };
 

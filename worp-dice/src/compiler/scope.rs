@@ -159,7 +159,7 @@ impl ScopeStack {
 
     /// Push the bytecode location of an exit point to the inner most loop's scope, to later be patched.
     pub fn add_loop_exit_point(&mut self, exit_point: usize) -> Result<(), CompilerError> {
-        let scope = self.first_of_kind_mut(ScopeKind::Loop).ok_or_else(|| todo!())?;
+        let scope = self.first_of_kind_mut(ScopeKind::Loop).expect("Add error here.");
 
         scope.exit_points.push(exit_point);
 
@@ -168,7 +168,7 @@ impl ScopeStack {
 
     /// Get the entry point of the first scope to match the specified kind.
     pub fn entry_point(&mut self, kind: ScopeKind) -> Result<usize, CompilerError> {
-        let scope = self.first_of_kind(kind).ok_or_else(|| todo!())?;
+        let scope = self.first_of_kind(kind).expect("Add error here.");
 
         scope
             .entry_point

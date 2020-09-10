@@ -3,6 +3,7 @@
 use crate::runtime::{
     core::{TypeInstance, Value},
     error::RuntimeError,
+    interpreter::bytecode::Bytecode,
 };
 use std::{
     fmt::{Debug, Display},
@@ -18,6 +19,7 @@ enum FuncVariant {
     Func0(Func0),
     Func1(Func1),
     Func2(Func2),
+    FnDecl(FnDecl),
 }
 
 #[derive(Clone, PartialEq)]
@@ -35,6 +37,10 @@ impl Func {
     pub fn new_func2(func: impl Fn(Value, Value) -> Result<Value, RuntimeError> + 'static) -> Self {
         Self(FuncVariant::Func2(Func2(Rc::new(func))))
     }
+
+    pub fn new_fn(name: String, arity: usize, bytecode: Bytecode) -> Self {
+        Self(FuncVariant::FnDecl(FnDecl::new(name, arity, bytecode)))
+    }
 }
 
 impl TypeInstance for Func {
@@ -43,6 +49,7 @@ impl TypeInstance for Func {
             FuncVariant::Func0(func0) => func0.call(args),
             FuncVariant::Func1(func1) => func1.call(args),
             FuncVariant::Func2(func2) => func2.call(args),
+            _ => todo!(),
         }
     }
 }
@@ -53,16 +60,18 @@ impl Debug for Func {
             FuncVariant::Func0(_) => write!(f, "Function/0"),
             FuncVariant::Func1(_) => write!(f, "Function/1"),
             FuncVariant::Func2(_) => write!(f, "Function/2"),
+            _ => todo!(),
         }
     }
 }
 
 impl Display for Func {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.0 {
+        match &self.0 {
             FuncVariant::Func0(_) => write!(f, "[Function/0]"),
             FuncVariant::Func1(_) => write!(f, "[Function/1]"),
             FuncVariant::Func2(_) => write!(f, "[Function/2]"),
+            FuncVariant::FnDecl(decl) => write!(f, "[{}/{}]", decl.name, decl.arity),
         }
     }
 }
@@ -136,5 +145,25 @@ impl PartialEq for Func2 {
             &*self.0 as *const Func2Object as *const u8,
             &*other.0 as *const Func2Object as *const u8,
         )
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct FnDecl {
+    arity: usize,
+    name: String,
+    bytecode: Bytecode,
+}
+
+impl FnDecl {
+    fn new(name: String, arity: usize, bytecode: Bytecode) -> Self {
+        Self { arity, bytecode, name }
+    }
+}
+
+// TODO: Create a way to more easily determine a unique function instance.
+impl PartialEq for FnDecl {
+    fn eq(&self, other: &Self) -> bool {
+        self.arity == other.arity && self.name == other.name
     }
 }
