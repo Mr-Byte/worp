@@ -4,11 +4,12 @@ use self::{
 };
 use crate::{
     runtime::interpreter::bytecode::Bytecode,
+    syntax::SyntaxNode,
     syntax::{Parser, SyntaxTree},
     Symbol,
 };
 use error::CompilerError;
-use visitor::NodeVisitor as _;
+use visitor::{BlockKind, NodeVisitor as _};
 
 mod assembler;
 pub mod error;
@@ -20,7 +21,6 @@ mod visitor;
 pub enum CompilationKind {
     Script,
     Module,
-    Function,
 }
 
 pub struct Compiler {
@@ -30,41 +30,53 @@ pub struct Compiler {
 }
 
 impl Compiler {
-    fn try_new(
-        syntax_tree: SyntaxTree,
-        kind: CompilationKind,
-        args: &[impl AsRef<str>],
-    ) -> Result<Self, CompilerError> {
+    fn new(syntax_tree: SyntaxTree, kind: CompilationKind) -> Self {
         let scope_kind = match kind {
             CompilationKind::Module => ScopeKind::Module,
             CompilationKind::Script => ScopeKind::Script,
-            CompilationKind::Function => ScopeKind::Function,
         };
-        let mut scope_stack = ScopeStack::new(scope_kind);
+        let scope_stack = ScopeStack::new(scope_kind);
 
-        for arg in args {
-            scope_stack.add_local(Symbol::new(arg.as_ref()), false)?;
-        }
-
-        let result = Self {
+        Self {
             syntax_tree,
             assembler: Assembler::default(),
             scope_stack,
+        }
+    }
+
+    pub fn compile_str(input: &str, kind: CompilationKind) -> Result<Bytecode, CompilerError> {
+        let syntax_tree = Parser::new(input).parse()?;
+        let mut compiler = Self::new(syntax_tree, kind);
+
+        compiler.visit(compiler.syntax_tree.root())?;
+
+        Ok(compiler.assembler.generate(compiler.scope_stack.slot_count))
+    }
+
+    pub(self) fn compile_fn(syntax_tree: SyntaxTree, args: &[impl AsRef<str>]) -> Result<Bytecode, CompilerError> {
+        let scope_stack = ScopeStack::new(ScopeKind::Function);
+        let mut compiler = Self {
+            syntax_tree,
+            scope_stack,
+            assembler: Assembler::default(),
         };
 
-        Ok(result)
-    }
+        for arg in args {
+            compiler.scope_stack.add_local(Symbol::new(arg.as_ref()), false)?;
+        }
 
-    pub fn compile(mut self) -> Result<Bytecode, CompilerError> {
-        self.visit(self.syntax_tree.root())?;
+        let root = compiler
+            .syntax_tree
+            .get(compiler.syntax_tree.root())
+            .expect("Node should not be empty");
 
-        Ok(self.assembler.generate(self.scope_stack.slot_count))
-    }
+        if let SyntaxNode::Block(body) = root {
+            let body = body.clone();
+            compiler.visit((&body, BlockKind::Function))?;
+        } else {
+            unreachable!("Function body must be a block.")
+        }
 
-    pub fn try_from_str(input: &str, kind: CompilationKind) -> Result<Self, CompilerError> {
-        let syntax_tree = Parser::new(input).parse()?;
-        let compiler = Self::try_new(syntax_tree, kind, &[] as &[&str])?;
-
-        Ok(compiler)
+        Ok(compiler.assembler.generate(compiler.scope_stack.slot_count))
     }
 }

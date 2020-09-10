@@ -67,6 +67,7 @@ pub enum SyntaxNode {
     Block(Block),
     Break(Break),
     Continue(Continue),
+    FunctionCall(FunctionCall),
 }
 
 #[derive(Debug, Clone)]
@@ -110,7 +111,11 @@ pub struct SafeAccess(pub SyntaxNodeId, pub String, pub Span);
 pub struct FieldAccess(pub SyntaxNodeId, pub String, pub Span);
 
 #[derive(Debug, Clone)]
-pub struct FunctionCall(pub SyntaxNodeId, pub Vec<SyntaxNodeId>, pub Span);
+pub struct FunctionCall {
+    pub target: SyntaxNodeId,
+    pub args: Vec<SyntaxNodeId>,
+    pub span: Span,
+}
 
 #[derive(Debug, Clone)]
 pub struct Index(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
@@ -180,7 +185,11 @@ pub struct WhileLoop(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
 pub struct ForLoop(pub String, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
 
 #[derive(Debug, Clone)]
-pub struct Block(pub Vec<SyntaxNodeId>, pub Option<SyntaxNodeId>, pub Span);
+pub struct Block {
+    pub expressions: Vec<SyntaxNodeId>,
+    pub trailing_expression: Option<SyntaxNodeId>,
+    pub span: Span,
+}
 
 #[derive(Debug, Clone)]
 pub struct Break(pub Span);

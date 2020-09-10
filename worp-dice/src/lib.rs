@@ -21,12 +21,12 @@ pub struct Dice {
 
 impl Dice {
     pub fn run_script(&mut self, input: &str) -> Result<Value, DiceError> {
-        let bytecode = Compiler::try_from_str(input, CompilationKind::Script)?.compile()?;
+        let bytecode = Compiler::compile_str(input, CompilationKind::Script)?;
         self.runtime.run_script(bytecode).map_err(From::from)
     }
 
     pub fn disassemble_script(&self, input: &str) -> Result<String, DiceError> {
-        let bytecode = Compiler::try_from_str(input, CompilationKind::Script)?.compile()?;
+        let bytecode = Compiler::compile_str(input, CompilationKind::Script)?;
         Ok(bytecode.to_string())
     }
 }

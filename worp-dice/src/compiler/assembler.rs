@@ -232,4 +232,15 @@ impl Assembler {
         self.data.put_u8(Instruction::SUB_ASSIGN_LOCAL.value());
         self.data.put_u8(slot);
     }
+
+    pub fn call(&mut self, arg_count: u8, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::CALL.value());
+        self.data.put_u8(arg_count);
+    }
+
+    pub fn ret(&mut self, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::RETURN.value());
+    }
 }

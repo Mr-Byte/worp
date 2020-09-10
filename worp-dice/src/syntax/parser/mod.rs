@@ -1,9 +1,9 @@
 use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
-    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, FnDecl, IfExpression, LitBool,
-    LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, SyntaxNode, SyntaxNodeId, SyntaxTree,
-    Unary, UnaryOperator, VarDecl, WhileLoop,
+    Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, FnDecl, FunctionCall, IfExpression,
+    LitBool, LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, SyntaxNode, SyntaxNodeId,
+    SyntaxTree, Unary, UnaryOperator, VarDecl, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -63,7 +63,9 @@ impl ParserRule {
             TokenKind::LeftSquare => ParserRule::new(Some(Parser::list), None, RulePrecedence::Object),
 
             // Grouping
-            TokenKind::LeftParen => ParserRule::new(Some(Parser::grouping), None, RulePrecedence::Primary),
+            TokenKind::LeftParen => {
+                ParserRule::new(Some(Parser::grouping), Some(Parser::fn_call), RulePrecedence::Call)
+            }
 
             // Block expressions
             TokenKind::LeftCurly => ParserRule::new(Some(Parser::block_expression), None, RulePrecedence::None),
@@ -165,10 +167,10 @@ impl Parser {
     }
 
     fn expression_sequence(&mut self) -> SyntaxNodeResult {
-        let mut items = Vec::new();
+        let mut expressions = Vec::new();
         let mut next_token = self.lexer.peek();
         let span_start = next_token.span();
-        let mut trailing_epxression = None;
+        let mut trailing_expression = None;
 
         while !matches!(next_token.kind, TokenKind::EndOfInput | TokenKind::RightCurly) {
             let expression = match next_token.kind {
@@ -183,7 +185,7 @@ impl Parser {
             next_token = self.lexer.peek();
 
             if matches!(next_token.kind, TokenKind::EndOfInput | TokenKind::RightCurly) {
-                trailing_epxression = Some(expression);
+                trailing_expression = Some(expression);
                 break;
             }
 
@@ -192,11 +194,15 @@ impl Parser {
                 next_token = self.lexer.peek();
             }
 
-            items.push(expression);
+            expressions.push(expression);
         }
 
         let span_end = next_token.span();
-        let node = SyntaxNode::Block(Block(items, trailing_epxression, span_start + span_end));
+        let node = SyntaxNode::Block(Block {
+            expressions,
+            trailing_expression,
+            span: span_start + span_end,
+        });
 
         Ok(self.arena.alloc(node))
     }
@@ -473,6 +479,32 @@ impl Parser {
         }
     }
 
+    fn fn_call(&mut self, lhs: SyntaxNodeId, span_start: Span) -> SyntaxNodeResult {
+        self.lexer.consume(TokenKind::LeftParen)?;
+
+        let mut args = Vec::new();
+
+        while self.lexer.peek().kind != TokenKind::RightParen {
+            let value = self.parse_precedence(RulePrecedence::Assignment)?;
+            args.push(value);
+
+            if self.lexer.peek().kind == TokenKind::Comma {
+                self.lexer.next();
+            } else if self.lexer.peek().kind != TokenKind::RightParen {
+                return Err(SyntaxError::UnexpectedToken(self.lexer.next()));
+            }
+        }
+
+        let span_end = self.lexer.consume(TokenKind::RightParen)?.span();
+        let node = SyntaxNode::FunctionCall(FunctionCall {
+            target: lhs,
+            args,
+            span: span_start + span_end,
+        });
+
+        Ok(self.arena.alloc(node))
+    }
+
     fn object(&mut self, _: bool) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::Object)?.span();
         self.lexer.consume(TokenKind::LeftCurly)?;
@@ -555,7 +587,11 @@ mod test {
         let syntax_tree = Parser::new("5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(node, Some(SyntaxNode::LitInt(LitInt(5, _)))));
@@ -571,7 +607,11 @@ mod test {
         let syntax_tree = Parser::new("-5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(
@@ -590,7 +630,11 @@ mod test {
         let syntax_tree = Parser::new("5 - 5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(
@@ -609,7 +653,11 @@ mod test {
         let syntax_tree = Parser::new("5 - -5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(
@@ -628,7 +676,11 @@ mod test {
         let syntax_tree = Parser::new("5 - 5 * 5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(
@@ -647,7 +699,11 @@ mod test {
         let syntax_tree = Parser::new("5 * 5 - 5").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(
@@ -666,7 +722,11 @@ mod test {
         let syntax_tree = Parser::new("5 * (5 - 5)").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(
@@ -685,7 +745,11 @@ mod test {
         let syntax_tree = Parser::new("d8").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(
@@ -704,7 +768,11 @@ mod test {
         let syntax_tree = Parser::new("6d8").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(
@@ -723,7 +791,11 @@ mod test {
         let syntax_tree = Parser::new("object { x: 50, y: 30 }").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(node, Some(SyntaxNode::LitObject(_))));
@@ -739,7 +811,11 @@ mod test {
         let syntax_tree = Parser::new("[x, y, 1, 1*2, object {}]").parse()?;
         let root = syntax_tree.get(syntax_tree.root()).unwrap();
 
-        if let SyntaxNode::Block(Block(_, Some(block), _)) = root {
+        if let SyntaxNode::Block(Block {
+            trailing_expression: Some(block),
+            ..
+        }) = root
+        {
             let node = syntax_tree.get(*block);
 
             assert!(matches!(node, Some(SyntaxNode::LitList(_))));

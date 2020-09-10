@@ -7,6 +7,7 @@ mod expr_binary_op;
 mod expr_block;
 mod expr_break;
 mod expr_continue;
+mod expr_fn_call;
 mod expr_if;
 mod expr_unary_op;
 mod expr_while;
@@ -19,6 +20,8 @@ mod literal_string;
 mod literal_unit;
 mod literal_variable;
 mod syntax_node;
+
+pub use expr_block::BlockKind;
 
 pub(super) trait NodeVisitor<T> {
     fn visit(&mut self, node: T) -> Result<(), CompilerError>;
