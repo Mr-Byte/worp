@@ -41,6 +41,22 @@ impl Func {
     pub fn new_fn(name: String, arity: usize, bytecode: Bytecode) -> Self {
         Self(FuncVariant::FnDecl(FnDecl::new(name, arity, bytecode)))
     }
+
+    pub fn bytecode(&self) -> Option<Bytecode> {
+        if let FuncVariant::FnDecl(FnDecl { bytecode, .. }) = &self.0 {
+            Some(bytecode.clone())
+        } else {
+            None
+        }
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        if let FuncVariant::FnDecl(FnDecl { name, .. }) = &self.0 {
+            Some(name.as_ref())
+        } else {
+            None
+        }
+    }
 }
 
 impl TypeInstance for Func {

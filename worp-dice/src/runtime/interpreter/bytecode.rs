@@ -51,6 +51,9 @@ impl Bytecode {
 
 impl Display for Bytecode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Code")?;
+        writeln!(f, "--------")?;
+
         let mut cursor = self.cursor();
         let mut position = 0;
 
@@ -75,6 +78,19 @@ impl Display for Bytecode {
 
             writeln!(f)?;
         }
+
+        writeln!(f)?;
+
+        for const_value in self.constants() {
+            if let Value::Func(func) = const_value {
+                if let Some(bytecode) = func.bytecode() {
+                    writeln!(f, "Function: {:?}", func.name())?;
+                    writeln!(f, "--------")?;
+                    bytecode.fmt(f)?;
+                }
+            }
+        }
+
         Ok(())
     }
 }

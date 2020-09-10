@@ -25,6 +25,7 @@ impl NodeVisitor<(&Block, BlockKind)> for Compiler {
         }
 
         // NOTE: If in context of a function, implicitly return the top item on the stack.
+        // If the previous instruction was a return, this will never execute.
         if let BlockKind::Function = kind {
             self.assembler.ret(block.span.clone())
         }
