@@ -61,6 +61,11 @@ impl Stack {
     pub fn top(&mut self) -> &mut Value {
         &mut self.values[self.stack_ptr - 1]
     }
+
+    // NOTE: Returns the value offset from the top of the stack.
+    pub fn get(&mut self, offset: usize) -> &mut Value {
+        &mut self.values[self.stack_ptr - offset]
+    }
 }
 
 impl Default for Stack {

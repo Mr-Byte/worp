@@ -72,10 +72,11 @@ impl TypeInstance for Func {
 
 impl Debug for Func {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.0 {
+        match &self.0 {
             FuncVariant::Func0(_) => write!(f, "Function/0"),
             FuncVariant::Func1(_) => write!(f, "Function/1"),
             FuncVariant::Func2(_) => write!(f, "Function/2"),
+            FuncVariant::FnDecl(func) => write!(f, "{:?}", func),
             _ => todo!(),
         }
     }

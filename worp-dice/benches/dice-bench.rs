@@ -23,6 +23,15 @@ fn criterion_benchmark(criterion: &mut Criterion) {
         })
     });
 
+    group.bench_function("loop - inside function", |bencher| {
+        bencher.iter(|| {
+            dice.run_script(black_box(
+                "fn stuff(x) { let mut n = 0; while n < x { n += 1; } n } stuff(1000000)",
+            ))
+            .unwrap()
+        })
+    });
+
     group.finish();
 }
 

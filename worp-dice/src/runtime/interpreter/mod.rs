@@ -187,6 +187,28 @@ impl Runtime {
                     self.stack.push(result);
                 }
 
+                Instruction::CALL => {
+                    let arg_count = cursor.read_u8() as usize;
+                    let callee = self.stack.get(arg_count + 1).clone();
+
+                    if let Value::Func(callee) = callee {
+                        if let Some(bytecode) = callee.bytecode() {
+                            let slots = bytecode.slot_count();
+                            let stack_frame = self.stack.reserve_slots(slots - arg_count);
+                            let stack_frame = (stack_frame.start - arg_count)..stack_frame.end;
+                            let result = self.execute_bytecode(&bytecode, stack_frame)?;
+
+                            self.stack.pop();
+                            self.stack.pop();
+                            self.stack.push(result);
+                        }
+                    }
+                }
+
+                Instruction::RETURN => {
+                    break;
+                }
+
                 unknown => return Err(RuntimeError::UnknownInstruction(unknown.value())),
             }
         }
