@@ -225,13 +225,13 @@ impl Runtime {
     fn execute_fn(&mut self, bytecode: &Bytecode, arg_count: usize) -> Result<(), RuntimeError> {
         let slots = bytecode.slot_count();
         let reserved = slots - arg_count;
-        //NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
+        // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
         let stack_frame = self.stack.reserve_slots(reserved);
         let stack_frame = (stack_frame.start - arg_count - 1)..stack_frame.end;
         let result = self.execute_bytecode(&bytecode, stack_frame)?;
 
-        self.stack.release_slots(reserved);
-        self.stack.pop_count(arg_count + 1);
+        // NOTE: Release the number of reserved slots plus thee number of arguments plus a slot for the function itself.
+        self.stack.release_slots(reserved + arg_count + 1);
         self.stack.push(result);
 
         Ok(())
