@@ -53,13 +53,19 @@ impl Compiler {
         Ok(compiler.assembler.generate(compiler.scope_stack.slot_count))
     }
 
-    pub(self) fn compile_fn(syntax_tree: SyntaxTree, args: &[impl AsRef<str>]) -> Result<Bytecode, CompilerError> {
+    pub(self) fn compile_fn(
+        syntax_tree: SyntaxTree,
+        name: Symbol,
+        args: &[impl AsRef<str>],
+    ) -> Result<Bytecode, CompilerError> {
         let scope_stack = ScopeStack::new(ScopeKind::Function);
         let mut compiler = Self {
             syntax_tree,
             scope_stack,
             assembler: Assembler::default(),
         };
+
+        compiler.scope_stack.add_local(name, false)?;
 
         for arg in args {
             compiler.scope_stack.add_local(Symbol::new(arg.as_ref()), false)?;

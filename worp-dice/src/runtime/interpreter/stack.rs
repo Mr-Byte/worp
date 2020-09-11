@@ -2,9 +2,8 @@ use std::ops::Range;
 
 use crate::Value;
 
-const MAX_STACK_SIZE: usize = 9;
+const MAX_STACK_SIZE: usize = 512;
 
-#[derive(Debug)]
 pub struct Stack {
     values: [Value; MAX_STACK_SIZE],
     stack_ptr: usize,

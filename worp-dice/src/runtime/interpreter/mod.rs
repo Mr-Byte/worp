@@ -216,7 +216,7 @@ impl Runtime {
         let reserved = slots - arg_count;
         //NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
         let stack_frame = self.stack.reserve_slots(reserved);
-        let stack_frame = (stack_frame.start - arg_count)..stack_frame.end;
+        let stack_frame = (stack_frame.start - arg_count - 1)..stack_frame.end;
         let result = self.execute_bytecode(&bytecode, stack_frame)?;
 
         self.stack.release_slots(reserved);
