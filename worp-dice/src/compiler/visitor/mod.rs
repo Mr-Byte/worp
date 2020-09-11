@@ -9,6 +9,7 @@ mod expr_break;
 mod expr_continue;
 mod expr_fn_call;
 mod expr_if;
+mod expr_return;
 mod expr_unary_op;
 mod expr_while;
 mod literal_bool;

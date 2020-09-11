@@ -2,8 +2,8 @@ use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
     Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, FnDecl, FunctionCall, IfExpression,
-    LitBool, LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, SyntaxNode, SyntaxNodeId,
-    SyntaxTree, Unary, UnaryOperator, VarDecl, WhileLoop,
+    LitBool, LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, Return, SyntaxNode,
+    SyntaxNodeId, SyntaxTree, Unary, UnaryOperator, VarDecl, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -178,7 +178,7 @@ impl Parser {
                 TokenKind::While => self.while_statement()?,
                 TokenKind::Let => self.variable_decl()?,
                 TokenKind::Function => self.function_decl()?,
-                TokenKind::Break | TokenKind::Continue => self.control_flow()?,
+                TokenKind::Return | TokenKind::Break | TokenKind::Continue => self.control_flow()?,
                 _ => self.expression()?,
             };
 
@@ -275,6 +275,19 @@ impl Parser {
         let node = match token.kind {
             TokenKind::Break => SyntaxNode::Break(Break(token.span())),
             TokenKind::Continue => SyntaxNode::Continue(Continue(token.span())),
+            TokenKind::Return => {
+                let result = if self.lexer.peek().kind != TokenKind::Semicolon {
+                    Some(self.expression()?)
+                } else {
+                    None
+                };
+                let span_end = self.lexer.current().span();
+
+                SyntaxNode::Return(Return {
+                    result,
+                    span: token.span() + span_end,
+                })
+            }
             _ => return Err(SyntaxError::UnexpectedToken(token)),
         };
 

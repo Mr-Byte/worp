@@ -66,6 +66,10 @@ impl Stack {
     pub fn get(&mut self, offset: usize) -> &mut Value {
         &mut self.values[self.stack_ptr - offset]
     }
+
+    pub fn len(&self) -> usize {
+        self.stack_ptr
+    }
 }
 
 impl Default for Stack {

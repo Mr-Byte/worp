@@ -66,6 +66,7 @@ pub enum SyntaxNode {
     ForLoop(ForLoop),
     Block(Block),
     Break(Break),
+    Return(Return),
     Continue(Continue),
     FunctionCall(FunctionCall),
 }
@@ -196,3 +197,9 @@ pub struct Break(pub Span);
 
 #[derive(Debug, Clone)]
 pub struct Continue(pub Span);
+
+#[derive(Debug, Clone)]
+pub struct Return {
+    pub result: Option<SyntaxNodeId>,
+    pub span: Span,
+}

@@ -35,6 +35,7 @@ impl Runtime {
     }
 
     fn execute_bytecode(&mut self, bytecode: &Bytecode, stack_frame: Range<usize>) -> Result<Value, RuntimeError> {
+        let initial_stack_depth = self.stack.len();
         let mut cursor = bytecode.cursor();
 
         while let Some(instruction) = cursor.read_instruction() {
@@ -206,6 +207,16 @@ impl Runtime {
                 unknown => return Err(RuntimeError::UnknownInstruction(unknown.value())),
             }
         }
+
+        // NOTE: subtract 1 to compensate for the last item of the stack not yet being popped.
+        let final_stack_depth = self.stack.len() - 1;
+
+        assert!(
+            initial_stack_depth == final_stack_depth,
+            "Stack was left in a bad state. Initial depth {}, final depth {}",
+            initial_stack_depth,
+            final_stack_depth
+        );
 
         Ok(self.stack.pop())
     }

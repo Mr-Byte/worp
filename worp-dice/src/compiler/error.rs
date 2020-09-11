@@ -19,6 +19,9 @@ pub enum CompilerError {
     #[error("Loops cannot end with an expression. Try adding ; to the last statement.")]
     InvalidLoopEnding,
 
+    #[error("The return keyword can only be used inside functions.")]
+    InvalidReturn,
+
     #[error("Internal Compiler Error: {0}")]
     InternalCompilerError(String),
 }

@@ -38,6 +38,7 @@ impl NodeVisitor<SyntaxNodeId> for Compiler {
             SyntaxNode::Continue(continue_node) => self.visit(continue_node)?,
             SyntaxNode::Block(block) => self.visit((block, BlockKind::Block))?,
             SyntaxNode::FunctionCall(fn_call) => self.visit(fn_call)?,
+            SyntaxNode::Return(return_expr) => self.visit(return_expr)?,
         }
 
         Ok(())
