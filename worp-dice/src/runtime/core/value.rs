@@ -6,6 +6,7 @@ use crate::runtime::{
 use std::{fmt::Display, ops::Deref, rc::Rc};
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub enum Value {
     None(lib::None),
     Unit(lib::Unit),
