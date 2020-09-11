@@ -83,10 +83,13 @@ impl Display for Bytecode {
 
         for const_value in self.constants() {
             if let Value::Func(func) = const_value {
-                if let Some(bytecode) = func.bytecode() {
-                    writeln!(f, "Function: {:?}", func.name())?;
-                    writeln!(f, "--------")?;
-                    bytecode.fmt(f)?;
+                match func.target() {
+                    crate::runtime::lib::FnType::FnScript(fn_script) => {
+                        writeln!(f, "Function: {:?}", fn_script.name)?;
+                        writeln!(f, "--------")?;
+                        fn_script.bytecode.fmt(f)?;
+                    }
+                    _ => todo!(),
                 }
             }
         }

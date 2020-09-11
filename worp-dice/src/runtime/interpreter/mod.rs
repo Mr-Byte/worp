@@ -189,22 +189,19 @@ impl Runtime {
 
                 Instruction::CALL => {
                     let arg_count = cursor.read_u8() as usize;
-                    let callee = self.stack.get(arg_count + 1).clone();
+                    let target = self.stack.get(arg_count + 1).clone();
 
-                    if let Value::Func(callee) = callee {
-                        if let Some(bytecode) = callee.bytecode() {
-                            let slots = bytecode.slot_count();
-                            let reserved = slots - arg_count;
-                            //NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
-                            let stack_frame = self.stack.reserve_slots(reserved);
-                            let stack_frame = (stack_frame.start - arg_count)..stack_frame.end;
-                            let result = self.execute_bytecode(&bytecode, stack_frame)?;
-
-                            // NOTE: Release more slots than reserved, so that all the arguments are also popped from the stack.
-                            self.stack.release_slots(slots);
-                            self.stack.pop();
-                            self.stack.push(result);
+                    if let Value::Func(func) = &target {
+                        match func.target() {
+                            super::lib::FnType::FnScript(fn_script) => {
+                                // TODO: Make this a RuntimeError
+                                assert!(arg_count == fn_script.arity, "Function argument count is incorrect.");
+                                self.execute_fn(&fn_script.bytecode, arg_count)?;
+                            }
+                            _ => todo!(),
                         }
+                    } else {
+                        todo!("Return not-a-function error.")
                     }
                 }
 
@@ -217,5 +214,20 @@ impl Runtime {
         }
 
         Ok(self.stack.pop())
+    }
+
+    fn execute_fn(&mut self, bytecode: &Bytecode, arg_count: usize) -> Result<(), RuntimeError> {
+        let slots = bytecode.slot_count();
+        let reserved = slots - arg_count;
+        //NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
+        let stack_frame = self.stack.reserve_slots(reserved);
+        let stack_frame = (stack_frame.start - arg_count)..stack_frame.end;
+        let result = self.execute_bytecode(&bytecode, stack_frame)?;
+
+        self.stack.release_slots(reserved);
+        self.stack.pop_count(arg_count + 1);
+        self.stack.push(result);
+
+        Ok(())
     }
 }

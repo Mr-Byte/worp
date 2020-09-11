@@ -7,6 +7,7 @@ use crate::runtime::{
 };
 use std::{
     fmt::{Debug, Display},
+    ops::Deref,
     rc::Rc,
 };
 
@@ -15,56 +16,55 @@ decl_type! {
 }
 
 #[derive(Clone, PartialEq)]
-enum FuncVariant {
+pub enum FnType {
     Func0(Func0),
     Func1(Func1),
     Func2(Func2),
-    FnDecl(FnDecl),
+    FnNative,
+    FnScript(FnScript),
 }
 
 #[derive(Clone, PartialEq)]
-pub struct Func(FuncVariant);
+pub struct Func {
+    target: FnType,
+}
 
 impl Func {
     pub fn new_func0(func: impl Fn() -> Result<Value, RuntimeError> + 'static) -> Self {
-        Self(FuncVariant::Func0(Func0(Rc::new(func))))
+        Self {
+            target: FnType::Func0(Func0(Rc::new(func))),
+        }
     }
 
     pub fn new_func1(func: impl Fn(Value) -> Result<Value, RuntimeError> + 'static) -> Self {
-        Self(FuncVariant::Func1(Func1(Rc::new(func))))
+        Self {
+            target: FnType::Func1(Func1(Rc::new(func))),
+        }
     }
 
     pub fn new_func2(func: impl Fn(Value, Value) -> Result<Value, RuntimeError> + 'static) -> Self {
-        Self(FuncVariant::Func2(Func2(Rc::new(func))))
+        Self {
+            target: FnType::Func2(Func2(Rc::new(func))),
+        }
     }
 
     pub fn new_fn(name: String, arity: usize, bytecode: Bytecode) -> Self {
-        Self(FuncVariant::FnDecl(FnDecl::new(name, arity, bytecode)))
-    }
-
-    pub fn bytecode(&self) -> Option<Bytecode> {
-        if let FuncVariant::FnDecl(FnDecl { bytecode, .. }) = &self.0 {
-            Some(bytecode.clone())
-        } else {
-            None
+        Self {
+            target: FnType::FnScript(FnScript::new(name, arity, bytecode)),
         }
     }
 
-    pub fn name(&self) -> Option<&str> {
-        if let FuncVariant::FnDecl(FnDecl { name, .. }) = &self.0 {
-            Some(name.as_ref())
-        } else {
-            None
-        }
+    pub fn target(&self) -> &FnType {
+        &self.target
     }
 }
 
 impl TypeInstance for Func {
     fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
-        match &self.0 {
-            FuncVariant::Func0(func0) => func0.call(args),
-            FuncVariant::Func1(func1) => func1.call(args),
-            FuncVariant::Func2(func2) => func2.call(args),
+        match &self.target {
+            FnType::Func0(func0) => func0.call(args),
+            FnType::Func1(func1) => func1.call(args),
+            FnType::Func2(func2) => func2.call(args),
             _ => todo!(),
         }
     }
@@ -72,11 +72,11 @@ impl TypeInstance for Func {
 
 impl Debug for Func {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.0 {
-            FuncVariant::Func0(_) => write!(f, "Function/0"),
-            FuncVariant::Func1(_) => write!(f, "Function/1"),
-            FuncVariant::Func2(_) => write!(f, "Function/2"),
-            FuncVariant::FnDecl(decl) => write!(f, "{}/{}", decl.name, decl.arity),
+        match &self.target {
+            FnType::Func0(_) => write!(f, "Function/0"),
+            FnType::Func1(_) => write!(f, "Function/1"),
+            FnType::Func2(_) => write!(f, "Function/2"),
+            FnType::FnScript(decl) => write!(f, "{}/{}", decl.name, decl.arity),
             _ => todo!(),
         }
     }
@@ -84,11 +84,12 @@ impl Debug for Func {
 
 impl Display for Func {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.0 {
-            FuncVariant::Func0(_) => write!(f, "[Function/0]"),
-            FuncVariant::Func1(_) => write!(f, "[Function/1]"),
-            FuncVariant::Func2(_) => write!(f, "[Function/2]"),
-            FuncVariant::FnDecl(decl) => write!(f, "[{}/{}]", decl.name, decl.arity),
+        match &self.target {
+            FnType::Func0(_) => write!(f, "[Function/0]"),
+            FnType::Func1(_) => write!(f, "[Function/1]"),
+            FnType::Func2(_) => write!(f, "[Function/2]"),
+            FnType::FnScript(decl) => write!(f, "[{}/{}]", decl.name, decl.arity),
+            _ => todo!(),
         }
     }
 }
@@ -96,7 +97,7 @@ impl Display for Func {
 type Func0Object = dyn Fn() -> Result<Value, RuntimeError>;
 
 #[derive(Clone)]
-struct Func0(Rc<Func0Object>);
+pub struct Func0(Rc<Func0Object>);
 
 impl Func0 {
     fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
@@ -120,7 +121,7 @@ impl PartialEq for Func0 {
 type Func1Object = dyn Fn(Value) -> Result<Value, RuntimeError>;
 
 #[derive(Clone)]
-struct Func1(Rc<Func1Object>);
+pub struct Func1(Rc<Func1Object>);
 
 impl Func1 {
     fn call(&self, args: &[Value]) -> Result<Value, RuntimeError> {
@@ -166,20 +167,35 @@ impl PartialEq for Func2 {
 }
 
 #[derive(Clone, Debug)]
-pub struct FnDecl {
-    arity: usize,
-    name: String,
-    bytecode: Bytecode,
+pub struct FnScript {
+    inner: Rc<FnScriptInner>,
 }
 
-impl FnDecl {
+impl Deref for FnScript {
+    type Target = FnScriptInner;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.inner
+    }
+}
+
+#[derive(Debug)]
+pub struct FnScriptInner {
+    pub arity: usize,
+    pub name: String,
+    pub bytecode: Bytecode,
+}
+
+impl FnScript {
     fn new(name: String, arity: usize, bytecode: Bytecode) -> Self {
-        Self { arity, bytecode, name }
+        Self {
+            inner: Rc::new(FnScriptInner { arity, bytecode, name }),
+        }
     }
 }
 
 // TODO: Create a way to more easily determine a unique function instance.
-impl PartialEq for FnDecl {
+impl PartialEq for FnScript {
     fn eq(&self, other: &Self) -> bool {
         self.arity == other.arity && self.name == other.name
     }

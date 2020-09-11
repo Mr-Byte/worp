@@ -41,7 +41,7 @@ impl Stack {
         let start = self.stack_ptr;
 
         self.stack_ptr += count;
-        assert!(self.stack_ptr < MAX_STACK_SIZE);
+        assert!(self.stack_ptr < MAX_STACK_SIZE, "Stack Overflowed");
 
         start..self.stack_ptr
     }
@@ -52,7 +52,7 @@ impl Stack {
         }
 
         // NOTE: If the stack ptr is greater than the stack size, the stack ptr underflowed.
-        assert!(self.stack_ptr < MAX_STACK_SIZE)
+        assert!(self.stack_ptr < MAX_STACK_SIZE, "Stack Underflowed")
     }
 
     pub fn slots(&mut self, slots: Range<usize>) -> &mut [Value] {
