@@ -76,7 +76,7 @@ impl Debug for Func {
             FuncVariant::Func0(_) => write!(f, "Function/0"),
             FuncVariant::Func1(_) => write!(f, "Function/1"),
             FuncVariant::Func2(_) => write!(f, "Function/2"),
-            FuncVariant::FnDecl(func) => write!(f, "{:?}", func),
+            FuncVariant::FnDecl(decl) => write!(f, "{}/{}", decl.name, decl.arity),
             _ => todo!(),
         }
     }
