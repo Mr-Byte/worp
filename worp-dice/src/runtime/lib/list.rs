@@ -2,7 +2,7 @@ use crate::runtime::{
     core::{TypeInstance, Value, ValueKey},
     error::RuntimeError,
 };
-use std::{fmt::Display, iter, ops::Deref, rc::Rc};
+use std::{fmt::Display, ops::Deref, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct List(Rc<Vec<Value>>);
@@ -57,26 +57,26 @@ impl From<Vec<Value>> for List {
 decl_type! {
     impl TypeList for List as "List";
 
-    fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<List>()?;
-        let output: List = if let Some(list) = rhs.value::<List>() {
-            lhs.iter().chain(list.iter()).cloned().collect::<Vec<_>>().into()
-        } else {
-            lhs.iter().chain(iter::once(&rhs)).cloned().collect::<Vec<_>>().into()
-        };
+    // fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+    //     let lhs = lhs.try_value::<List>()?;
+    //     let output: List = if let Some(list) = rhs.value::<List>() {
+    //         lhs.iter().chain(list.iter()).cloned().collect::<Vec<_>>().into()
+    //     } else {
+    //         lhs.iter().chain(iter::once(&rhs)).cloned().collect::<Vec<_>>().into()
+    //     };
 
-        Ok(Value::List(output))
-    }
+    //     Ok(Value::List(output))
+    // }
 
-    fn length(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<List>()?;
+    // fn length(this: Value) -> Result<Value, RuntimeError> {
+    //     let this = this.try_value::<List>()?;
 
-        Ok(Value::Int(this.len() as i64))
-    }
+    //     Ok(Value::Int(this.len() as i64))
+    // }
 
-    fn is_empty(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<List>()?;
+    // fn is_empty(this: Value) -> Result<Value, RuntimeError> {
+    //     let this = this.try_value::<List>()?;
 
-        Ok(Value::Bool(this.is_empty() as bool))
-    }
+    //     Ok(Value::Bool(this.is_empty() as bool))
+    // }
 }

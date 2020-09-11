@@ -5,19 +5,13 @@ mod stack;
 pub(crate) mod bytecode;
 pub(crate) mod instruction;
 
-use crate::{
-    runtime::core::{
-        symbol::common::operators::{
-            OP_ADD, OP_DIV, OP_EQ, OP_GT, OP_GTE, OP_LT, OP_LTE, OP_MUL, OP_NEG, OP_NEQ, OP_NOT, OP_REM, OP_SUB,
-        },
-        Value, ValueKey,
-    },
-    RuntimeError,
-};
+use crate::{runtime::core::Value, RuntimeError};
 use bytecode::Bytecode;
 use instruction::Instruction;
 use stack::Stack;
 use std::ops::Range;
+
+use super::lib::FnType;
 
 pub struct Runtime {
     stack: Stack,
@@ -77,11 +71,11 @@ impl Runtime {
                 Instruction::NEG => match self.stack.top() {
                     Value::Int(value) => *value = -*value,
                     Value::Float(value) => *value = -*value,
-                    value => *value = value.get(&ValueKey::Symbol(OP_NEG))?.call(&[value.clone()])?,
+                    _ => todo!(),
                 },
                 Instruction::NOT => match self.stack.top() {
                     Value::Bool(value) => *value = !*value,
-                    value => *value = value.get(&ValueKey::Symbol(OP_NOT))?.call(&[value.clone()])?,
+                    _ => todo!(),
                 },
 
                 Instruction::MUL => arithmetic_op!(self.stack, OP_MUL),
@@ -138,7 +132,7 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs *= rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs *= rhs,
-                        (lhs, rhs) => *lhs = lhs.get(&ValueKey::Symbol(OP_MUL))?.call(&[lhs.clone(), rhs])?,
+                        _ => todo!(),
                     }
 
                     let result = frame[slot].clone();
@@ -152,7 +146,7 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs /= rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs /= rhs,
-                        (lhs, rhs) => *lhs = lhs.get(&ValueKey::Symbol(OP_DIV))?.call(&[lhs.clone(), rhs])?,
+                        _ => todo!(),
                     }
 
                     let result = frame[slot].clone();
@@ -166,7 +160,7 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs += rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs += rhs,
-                        (lhs, rhs) => *lhs = lhs.get(&ValueKey::Symbol(OP_ADD))?.call(&[lhs.clone(), rhs])?,
+                        _ => todo!(),
                     }
 
                     let result = frame[slot].clone();
@@ -180,7 +174,7 @@ impl Runtime {
                     match (&mut frame[slot], value) {
                         (Value::Int(lhs), Value::Int(rhs)) => *lhs -= rhs,
                         (Value::Float(lhs), Value::Float(rhs)) => *lhs -= rhs,
-                        (lhs, rhs) => *lhs = lhs.get(&ValueKey::Symbol(OP_SUB))?.call(&[lhs.clone(), rhs])?,
+                        _ => todo!(),
                     }
 
                     let result = frame[slot].clone();
@@ -193,7 +187,7 @@ impl Runtime {
 
                     if let Value::Func(func) = &target {
                         match func.target() {
-                            super::lib::FnType::FnScript(fn_script) => {
+                            FnType::FnScript(fn_script) => {
                                 // TODO: Make this a RuntimeError
                                 assert!(arg_count == fn_script.arity, "Function argument count is incorrect.");
                                 self.execute_fn(&fn_script.bytecode, arg_count)?;
@@ -216,6 +210,7 @@ impl Runtime {
         Ok(self.stack.pop())
     }
 
+    #[inline]
     fn execute_fn(&mut self, bytecode: &Bytecode, arg_count: usize) -> Result<(), RuntimeError> {
         let slots = bytecode.slot_count();
         let reserved = slots - arg_count;

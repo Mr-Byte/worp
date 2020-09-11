@@ -1,10 +1,9 @@
-use super::{error::RuntimeError, lib::Func};
+use super::error::RuntimeError;
 use std::{
     any::Any,
     fmt::{Debug, Display},
     rc::Rc,
 };
-use symbol::common::methods::FN_TO_STRING;
 
 mod key;
 mod reflection;
@@ -18,9 +17,9 @@ pub use span::Span;
 pub use symbol::Symbol;
 pub use value::Value;
 
-thread_local! {
-    static TO_STRING: Value = Value::Func(Func::new_func1(to_string));
-}
+// thread_local! {
+//     static TO_STRING: Value = Value::Func(Func::new_func1(to_string));
+// }
 
 fn to_string(object: Value) -> Result<Value, RuntimeError> {
     let string = object.to_string();
@@ -44,8 +43,6 @@ pub trait TypeInstance: TypeInstanceBase {
     fn get(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
         if let Some(member) = self.instance_type().members().get(key) {
             Ok(member.clone())
-        } else if key == &ValueKey::Symbol(FN_TO_STRING) {
-            Ok(TO_STRING.with(Clone::clone))
         } else {
             self.get_instance_member(key)
         }
@@ -58,11 +55,6 @@ pub trait TypeInstance: TypeInstanceBase {
     /// Set the property by key on the object.
     fn set(&self, _key: &ValueKey, _value: Value) -> Result<(), RuntimeError> {
         Err(RuntimeError::NotAnObject(self.instance_type().name().clone()))
-    }
-
-    /// Attempt to xall the object as a function.
-    fn call(&self, _args: &[Value]) -> Result<Value, RuntimeError> {
-        Err(RuntimeError::NotAFunction(self.instance_type().name().clone()))
     }
 }
 

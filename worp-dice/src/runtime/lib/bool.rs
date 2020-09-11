@@ -17,62 +17,6 @@ decl_type! {
             Err(RuntimeError::InvalidFunctionArgs(1, args.len()))
         }
     }
-
-    fn op_not(value: Value) -> Result<Value, RuntimeError> {
-        let value = value.try_value::<bool>()?;
-
-        Ok(Value::Bool(!value))
-    }
-
-    fn op_eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<bool>()?;
-        let rhs = rhs.value::<bool>();
-        let result = match rhs {
-            Some(rhs) => lhs == rhs,
-            None => false,
-        };
-
-        Ok(Value::Bool(result))
-    }
-
-    fn op_neq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<bool>()?;
-        let rhs = rhs.value::<bool>();
-        let result = match rhs {
-            Some(rhs) => lhs != rhs,
-            None => true,
-        };
-
-        Ok(Value::Bool(result))
-    }
-
-    fn op_gt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<bool>()?;
-        let rhs = rhs.try_value::<bool>()?;
-
-        Ok(Value::Bool(lhs > rhs))
-    }
-
-    fn op_gte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<bool>()?;
-        let rhs = rhs.try_value::<bool>()?;
-
-        Ok(Value::Bool(lhs >= rhs))
-    }
-
-    fn op_lt(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<bool>()?;
-        let rhs = rhs.try_value::<bool>()?;
-
-        Ok(Value::Bool(lhs < rhs))
-    }
-
-    fn op_lte(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<bool>()?;
-        let rhs = rhs.try_value::<bool>()?;
-
-        Ok(Value::Bool(lhs <= rhs))
-    }
 }
 
 impl TypeInstance for bool {}

@@ -1,7 +1,4 @@
-use crate::runtime::{
-    core::{TypeInstance, Value},
-    error::RuntimeError,
-};
+use crate::runtime::core::TypeInstance;
 use std::fmt::Display;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -18,17 +15,17 @@ impl Display for Unit {
 decl_type! {
     impl TypeUnit for Unit as "Unit";
 
-    fn op_eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        lhs.try_value::<Unit>()?;
-        let rhs = rhs.value::<Unit>();
+    // fn op_eq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+    //     lhs.try_value::<Unit>()?;
+    //     let rhs = rhs.value::<Unit>();
 
-        Ok(Value::Bool(rhs.is_some()))
-    }
+    //     Ok(Value::Bool(rhs.is_some()))
+    // }
 
-    fn op_neq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        lhs.try_value::<Unit>()?;
-        let rhs = rhs.value::<Unit>();
+    // fn op_neq(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+    //     lhs.try_value::<Unit>()?;
+    //     let rhs = rhs.value::<Unit>();
 
-        Ok(Value::Bool(rhs.is_none()))
-    }
+    //     Ok(Value::Bool(rhs.is_none()))
+    // }
 }

@@ -40,7 +40,7 @@ macro_rules! arithmetic_op {
         match ($stack.pop(), $stack.top()) {
             (Value::Int(lhs), Value::Int(rhs)) => *rhs = op!($op, lhs, *rhs),
             (Value::Float(lhs), Value::Float(rhs)) => *rhs = op!($op, lhs, *rhs),
-            (lhs, rhs) => *rhs = lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs.clone()])?,
+            _ => todo!(),
         }
     };
 }
@@ -58,7 +58,7 @@ macro_rules! comparison_op {
             (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
             (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
             (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
-            (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol(OP_EQ))?.call(&[lhs, rhs])?),
+            _ => todo!(),
         }
     };
 
@@ -73,7 +73,7 @@ macro_rules! comparison_op {
             (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
             (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
             (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
-            (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol(OP_NEQ))?.call(&[lhs, rhs])?),
+            _ => todo!(),
         }
     };
 
@@ -82,7 +82,7 @@ macro_rules! comparison_op {
             (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
             (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
             (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!($op, lhs, rhs))),
-            (lhs, rhs) => $stack.push(lhs.get(&ValueKey::Symbol($op))?.call(&[lhs, rhs])?),
+            _ => todo!(),
         }
     };
 }

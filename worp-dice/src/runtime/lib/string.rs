@@ -18,22 +18,22 @@ decl_type! {
         }
     }
 
-    fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-        let lhs = lhs.try_value::<String>()?;
-        let result = format!("{}{}", lhs, &*rhs);
+    // fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
+    //     let lhs = lhs.try_value::<String>()?;
+    //     let result = format!("{}{}", lhs, &*rhs);
 
-        Ok(Value::String(result))
-    }
+    //     Ok(Value::String(result))
+    // }
 
-    fn length(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<String>()?;
+    // fn length(this: Value) -> Result<Value, RuntimeError> {
+    //     let this = this.try_value::<String>()?;
 
-        Ok(Value::Int(this.len() as i64))
-    }
+    //     Ok(Value::Int(this.len() as i64))
+    // }
 
-    fn is_empty(this: Value) -> Result<Value, RuntimeError> {
-        let this = this.try_value::<String>()?;
+    // fn is_empty(this: Value) -> Result<Value, RuntimeError> {
+    //     let this = this.try_value::<String>()?;
 
-        Ok(Value::Bool(this.is_empty() as bool))
-    }
+    //     Ok(Value::Bool(this.is_empty() as bool))
+    // }
 }
