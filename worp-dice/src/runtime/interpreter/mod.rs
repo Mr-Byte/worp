@@ -5,7 +5,10 @@ mod stack;
 pub(crate) mod bytecode;
 pub(crate) mod instruction;
 
-use crate::{runtime::core::Value, RuntimeError};
+use crate::{
+    runtime::{core::Value, interpreter::bytecode::BytecodeCursor},
+    RuntimeError,
+};
 use bytecode::Bytecode;
 use instruction::Instruction;
 use stack::Stack;
@@ -183,21 +186,7 @@ impl Runtime {
                 }
 
                 Instruction::CALL => {
-                    let arg_count = cursor.read_u8() as usize;
-                    let target = self.stack.get(arg_count + 1).clone();
-
-                    if let Value::Func(func) = &target {
-                        match func.target() {
-                            FnType::FnScript(fn_script) => {
-                                // TODO: Make this a RuntimeError
-                                assert!(arg_count == fn_script.arity, "Function argument count is incorrect.");
-                                self.execute_fn(&fn_script.bytecode, arg_count)?;
-                            }
-                            _ => todo!(),
-                        }
-                    } else {
-                        todo!("Return not-a-function error.")
-                    }
+                    self.call_fn(&mut cursor)?;
                 }
 
                 Instruction::RETURN => {
@@ -221,18 +210,33 @@ impl Runtime {
         Ok(self.stack.pop())
     }
 
-    #[inline]
-    fn execute_fn(&mut self, bytecode: &Bytecode, arg_count: usize) -> Result<(), RuntimeError> {
-        let slots = bytecode.slot_count();
-        let reserved = slots - arg_count;
-        // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
-        let stack_frame = self.stack.reserve_slots(reserved);
-        let stack_frame = (stack_frame.start - arg_count - 1)..stack_frame.end;
-        let result = self.execute_bytecode(&bytecode, stack_frame)?;
+    fn call_fn(&mut self, cursor: &mut BytecodeCursor<'_>) -> Result<(), RuntimeError> {
+        let arg_count = cursor.read_u8() as usize;
+        let target = self.stack.get(arg_count + 1).clone();
 
-        // NOTE: Release the number of reserved slots plus thee number of arguments plus a slot for the function itself.
-        self.stack.release_slots(reserved + arg_count + 1);
-        self.stack.push(result);
+        if let Value::Func(func) = &target {
+            match func.target() {
+                FnType::FnScript(fn_script) => {
+                    // TODO: Make this a RuntimeError
+                    assert!(arg_count == fn_script.arity, "Function argument count is incorrect.");
+
+                    let bytecode = &fn_script.bytecode;
+                    let slots = bytecode.slot_count();
+                    let reserved = slots - arg_count;
+                    // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
+                    let stack_frame = self.stack.reserve_slots(reserved);
+                    let stack_frame = (stack_frame.start - arg_count - 1)..stack_frame.end;
+                    let result = self.execute_bytecode(bytecode, stack_frame)?;
+
+                    // NOTE: Release the number of reserved slots plus thee number of arguments plus a slot for the function itself.
+                    self.stack.release_slots(reserved + arg_count + 1);
+                    self.stack.push(result);
+                }
+                _ => todo!(),
+            }
+        } else {
+            todo!("Return not-a-function error.")
+        }
 
         Ok(())
     }

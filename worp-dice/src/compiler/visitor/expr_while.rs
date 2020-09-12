@@ -12,6 +12,8 @@ impl NodeVisitor<&WhileLoop> for Compiler {
             let loop_start = self.assembler.current_position();
 
             self.scope_stack.push_scope(ScopeKind::Loop, Some(loop_start as usize));
+            // TODO: Scan for any function or class declarations and create local slots, before visiting all children.
+
             self.visit(*condition)?;
             let loop_end = self.assembler.jump_if_false(span.clone());
 

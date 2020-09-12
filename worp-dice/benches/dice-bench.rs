@@ -11,14 +11,14 @@ fn criterion_benchmark(criterion: &mut Criterion) {
 
     group.bench_function("loop - in place addition", |bencher| {
         bencher.iter(|| {
-            dice.run_script(black_box("let mut x = 0; while x < 1000000 { x += 1; }"))
+            dice.run_script(black_box("let mut x = 0; while x < 1000 { x += 1; }"))
                 .unwrap()
         })
     });
 
     group.bench_function("loop - addition with assignment", |bencher| {
         bencher.iter(|| {
-            dice.run_script(black_box("let mut x = 0; while x < 1000000 { x = x + 1; }"))
+            dice.run_script(black_box("let mut x = 0; while x < 1000 { x = x + 1; }"))
                 .unwrap()
         })
     });
@@ -26,7 +26,7 @@ fn criterion_benchmark(criterion: &mut Criterion) {
     group.bench_function("loop - function call", |bencher| {
         bencher.iter(|| {
             dice.run_script(black_box(
-                "fn one() { 1 } let mut n = 0; while n < 1000000 { n += one(); }",
+                "fn one() { 1 } let mut n = 0; while n < 1000 { n += one(); }",
             ))
             .unwrap()
         })

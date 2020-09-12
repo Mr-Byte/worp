@@ -1,10 +1,10 @@
-use cursor::BytecodeCursor;
+mod cursor;
 
 use super::instruction::Instruction;
 use crate::runtime::core::{Span, Value};
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
-mod cursor;
+pub use cursor::BytecodeCursor;
 
 #[derive(Debug)]
 struct BytecodeInner {

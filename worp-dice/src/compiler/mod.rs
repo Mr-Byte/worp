@@ -4,8 +4,7 @@ use self::{
 };
 use crate::{
     runtime::interpreter::bytecode::Bytecode,
-    syntax::SyntaxNode,
-    syntax::{Parser, SyntaxTree},
+    syntax::{Parser, SyntaxNode, SyntaxTree},
     Symbol,
 };
 use error::CompilerError;

@@ -1,4 +1,3 @@
-use slice_fill::SliceExt;
 use std::ops::Range;
 
 use crate::Value;
@@ -47,7 +46,10 @@ impl Stack {
     }
 
     pub fn release_slots(&mut self, count: usize) {
-        SliceExt::fill(&mut self.values[self.stack_ptr - count..self.stack_ptr], Value::NONE);
+        for value in &mut self.values[self.stack_ptr - count..self.stack_ptr] {
+            *value = Value::NONE;
+        }
+
         self.stack_ptr -= count;
 
         // NOTE: If the stack ptr is greater than the stack size, the stack ptr underflowed.

@@ -46,6 +46,9 @@ impl Instruction {
         pub const LOAD_LOCAL;
         pub const STORE_LOCAL;
 
+        pub const LOAD_UPVALUE;
+        pub const STORE_UPVALUE;
+
         pub const NEG;
         pub const NOT;
 
@@ -74,6 +77,7 @@ impl Instruction {
         pub const JUMP_IF_FALSE;
 
         pub const CALL;
+        pub const CLOSURE;
         pub const RETURN;
     }
 
@@ -108,6 +112,9 @@ impl Display for Instruction {
             Instruction::BUILD_OBJECT => write!(f, "BUILD_OBJECT"),
             Instruction::LOAD_LOCAL => write!(f, "LOAD_LOCAL"),
             Instruction::STORE_LOCAL => write!(f, "STORE_LOCAL"),
+            Instruction::LOAD_UPVALUE => write!(f, "LOAD_UPVALUE"),
+            Instruction::STORE_UPVALUE => write!(f, "STORE_UPVALUE"),
+            // TODO: Do I keep these? Do I need UPVALUE versions?
             Instruction::MUL_ASSIGN_LOCAL => write!(f, "MUL_ASSIGN_LOCAL"),
             Instruction::DIV_ASSIGN_LOCAL => write!(f, "DIV_ASSIGN_LOCAL"),
             Instruction::ADD_ASSIGN_LOCAL => write!(f, "ADD_ASSIGN_LOCAL"),
