@@ -70,7 +70,10 @@ impl Display for Bytecode {
                 | Instruction::ADD_ASSIGN_LOCAL
                 | Instruction::SUB_ASSIGN_LOCAL
                 | Instruction::BUILD_LIST
-                | Instruction::CALL => write!(f, "{}", cursor.read_u8())?,
+                | Instruction::CALL
+                | Instruction::CLOSURE
+                | Instruction::LOAD_UPVALUE
+                | Instruction::STORE_UPVALUE => write!(f, "{}", cursor.read_u8())?,
                 _ => (),
             }
 
