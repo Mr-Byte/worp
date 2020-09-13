@@ -37,7 +37,7 @@ macro_rules! op {
 #[macro_export]
 macro_rules! arithmetic_op {
     ($stack:expr, $op:ident) => {
-        match ($stack.pop(), $stack.top()) {
+        match ($stack.pop(), $stack.peek(0)) {
             (Value::Int(lhs), Value::Int(rhs)) => *rhs = op!($op, lhs, *rhs),
             (Value::Float(lhs), Value::Float(rhs)) => *rhs = op!($op, lhs, *rhs),
             _ => todo!(),

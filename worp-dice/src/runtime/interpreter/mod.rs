@@ -61,7 +61,7 @@ impl Runtime {
                     self.stack.pop();
                 }
                 Instruction::DUP => {
-                    let value = self.stack.top().clone();
+                    let value = self.stack.peek(0).clone();
                     self.stack.push(value);
                 }
 
@@ -72,12 +72,12 @@ impl Runtime {
                     self.stack.push(Value::List(items.into()));
                 }
 
-                Instruction::NEG => match self.stack.top() {
+                Instruction::NEG => match self.stack.peek(0) {
                     Value::Int(value) => *value = -*value,
                     Value::Float(value) => *value = -*value,
                     _ => todo!(),
                 },
-                Instruction::NOT => match self.stack.top() {
+                Instruction::NOT => match self.stack.peek(0) {
                     Value::Bool(value) => *value = !*value,
                     _ => todo!(),
                 },
@@ -212,7 +212,7 @@ impl Runtime {
 
     fn call_fn(&mut self, cursor: &mut BytecodeCursor<'_>) -> Result<(), RuntimeError> {
         let arg_count = cursor.read_u8() as usize;
-        let target = self.stack.get(arg_count + 1).clone();
+        let target = self.stack.peek(arg_count).clone();
 
         if let Value::Func(func) = &target {
             match func.target() {

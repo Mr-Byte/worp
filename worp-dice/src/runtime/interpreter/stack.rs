@@ -11,16 +11,16 @@ pub struct Stack {
 
 // TODO: Enforce stack overflows and underflows.
 impl Stack {
+    #[inline]
     pub fn push(&mut self, value: Value) {
         self.values[self.stack_ptr] = value;
         self.stack_ptr += 1;
     }
 
+    #[inline]
     pub fn pop(&mut self) -> Value {
-        let value = std::mem::replace(&mut self.values[self.stack_ptr - 1], Value::NONE);
         self.stack_ptr -= 1;
-
-        value
+        std::mem::replace(&mut self.values[self.stack_ptr], Value::NONE)
     }
 
     pub fn pop_count(&mut self, count: usize) -> Vec<Value> {
@@ -56,19 +56,19 @@ impl Stack {
         assert!(self.stack_ptr < MAX_STACK_SIZE, "Stack Underflowed")
     }
 
+    #[inline]
     pub fn slots(&mut self, slots: Range<usize>) -> &mut [Value] {
         &mut self.values[slots]
     }
 
-    pub fn top(&mut self) -> &mut Value {
-        &mut self.values[self.stack_ptr - 1]
-    }
-
     // NOTE: Returns the value offset from the top of the stack.
-    pub fn get(&mut self, offset: usize) -> &mut Value {
-        &mut self.values[self.stack_ptr - offset]
+    #[inline]
+    pub fn peek(&mut self, offset: usize) -> &mut Value {
+        // TODO: Can this be made faster?
+        &mut self.values[self.stack_ptr - offset - 1]
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.stack_ptr
     }
