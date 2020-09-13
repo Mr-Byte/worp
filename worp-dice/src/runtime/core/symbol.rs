@@ -25,36 +25,6 @@ impl From<&str> for Symbol {
     }
 }
 
-pub mod common {
-    use super::*;
-
-    pub mod operators {
-        use super::*;
-
-        pub const OP_NEG: Symbol = Symbol::new_static("#op_neg");
-        pub const OP_MUL: Symbol = Symbol::new_static("#op_mul");
-        pub const OP_DIV: Symbol = Symbol::new_static("#op_div");
-        pub const OP_REM: Symbol = Symbol::new_static("#op_rem");
-        pub const OP_ADD: Symbol = Symbol::new_static("#op_add");
-        pub const OP_SUB: Symbol = Symbol::new_static("#op_sub");
-
-        pub const OP_GT: Symbol = Symbol::new_static("#op_gt");
-        pub const OP_LT: Symbol = Symbol::new_static("#op_lt");
-        pub const OP_GTE: Symbol = Symbol::new_static("#op_gte");
-        pub const OP_LTE: Symbol = Symbol::new_static("#op_lte");
-        pub const OP_EQ: Symbol = Symbol::new_static("#op_eq");
-        pub const OP_NEQ: Symbol = Symbol::new_static("#op_ne");
-
-        pub const OP_NOT: Symbol = Symbol::new_static("#op_not");
-    }
-
-    pub mod methods {
-        use super::*;
-
-        pub const FN_TO_STRING: Symbol = Symbol::new_static("to_string");
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;

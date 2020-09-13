@@ -66,11 +66,18 @@ define_instructions! {
     pub const BUILD_LIST;
     pub const BUILD_OBJECT;
 
+    // NOTE: Dice only supports immutable globals defined by the runtime.
+    pub const LOAD_GLOBAL;
+
     pub const LOAD_LOCAL;
     pub const STORE_LOCAL;
 
     pub const LOAD_UPVALUE;
     pub const STORE_UPVALUE;
+    pub const CLOSE_UPVALUE;
+
+    pub const LOAD_FIELD;
+    pub const STORE_FIELD;
 
     pub const NEG;
     pub const NOT;
@@ -81,6 +88,8 @@ define_instructions! {
     pub const ADD;
     pub const SUB;
 
+    // TODO: Should these be removed or retooled?
+    // Idea for retooling is to do in-place modification of the LHS on the stack.
     pub const MUL_ASSIGN_LOCAL;
     pub const DIV_ASSIGN_LOCAL;
     pub const ADD_ASSIGN_LOCAL;

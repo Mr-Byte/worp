@@ -3,8 +3,9 @@ use crate::{CompilerError, Symbol};
 #[derive(Clone)]
 pub struct ScopeVariable {
     pub name: Symbol,
-    pub is_mutable: bool,
     pub slot: usize,
+    pub is_mutable: bool,
+    pub is_captured: bool,
 }
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -35,6 +36,13 @@ pub struct ScopeContext {
     pub exit_points: Vec<usize>,
     pub variables: Vec<ScopeVariable>,
     slot_count: usize,
+}
+
+impl ScopeContext {
+    /// Get a list of captured variables. Used while closing any upvalues from the scope.
+    pub fn captured_variables(&self) -> impl Iterator<Item = &ScopeVariable> {
+        self.variables.iter().filter(|variable| variable.is_captured)
+    }
 }
 
 impl Default for ScopeContext {
@@ -127,7 +135,12 @@ impl ScopeStack {
 
         let slot_count = self.stack.iter().map(|scope| scope.slot_count).sum::<usize>();
         let slot = slot_count - 1;
-        let local = ScopeVariable { name, is_mutable, slot };
+        let local = ScopeVariable {
+            name,
+            is_mutable,
+            slot,
+            is_captured: false,
+        };
 
         self.top_mut()?.variables.push(local);
 

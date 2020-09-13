@@ -15,6 +15,7 @@ decl_type! {
 pub enum FnType {
     FnNative,
     FnScript(FnScript),
+    FnClosure,
 }
 
 #[derive(Clone, PartialEq)]
