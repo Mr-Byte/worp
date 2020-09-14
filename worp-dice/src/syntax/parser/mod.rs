@@ -411,7 +411,7 @@ impl Parser {
         }
 
         if args.len() > (u8::MAX as usize) {
-            return Err(SyntaxError::TooManyArguments(name.clone(), name_token.span()));
+            return Err(SyntaxError::TooManyArguments(name, name_token.span()));
         }
 
         self.lexer.consume(TokenKind::RightParen)?;
