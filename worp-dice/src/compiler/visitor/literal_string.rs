@@ -4,7 +4,8 @@ use super::NodeVisitor;
 
 impl NodeVisitor<&LitString> for Compiler {
     fn visit(&mut self, LitString(value, span): &LitString) -> Result<(), CompilerError> {
-        self.assembler.push_const(Value::String(value.clone()), span.clone());
+        self.current_assembler()
+            .push_const(Value::String(value.clone()), span.clone());
 
         Ok(())
     }

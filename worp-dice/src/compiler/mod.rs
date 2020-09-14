@@ -24,8 +24,8 @@ pub enum CompilationKind {
 
 pub struct Compiler {
     syntax_tree: SyntaxTree,
-    assembler: Assembler,
     scope_stack: ScopeStack,
+    assembler_stack: Vec<Assembler>,
 }
 
 impl Compiler {
@@ -38,8 +38,8 @@ impl Compiler {
 
         Self {
             syntax_tree,
-            assembler: Assembler::default(),
             scope_stack,
+            assembler_stack: vec![Assembler::default()],
         }
     }
 
@@ -49,39 +49,50 @@ impl Compiler {
 
         compiler.visit(compiler.syntax_tree.root())?;
 
-        Ok(compiler.assembler.generate(compiler.scope_stack.slot_count))
+        Ok(compiler.pop_assembler().generate(compiler.scope_stack.slot_count))
     }
 
     pub(self) fn compile_fn(
+        &mut self,
         syntax_tree: SyntaxTree,
         name: Symbol,
         args: &[impl AsRef<str>],
     ) -> Result<Bytecode, CompilerError> {
-        let scope_stack = ScopeStack::new(ScopeKind::Function);
-        let mut compiler = Self {
-            syntax_tree,
-            scope_stack,
-            assembler: Assembler::default(),
-        };
-
-        compiler.scope_stack.add_local(name, false)?;
+        self.push_assembler();
+        self.scope_stack.push_scope(ScopeKind::Function, None);
+        self.scope_stack.add_local(name, false)?;
 
         for arg in args {
-            compiler.scope_stack.add_local(Symbol::new(arg.as_ref()), false)?;
+            self.scope_stack.add_local(Symbol::new(arg.as_ref()), false)?;
         }
 
-        let root = compiler
-            .syntax_tree
-            .get(compiler.syntax_tree.root())
-            .expect("Node should not be empty");
+        let root = syntax_tree.get(syntax_tree.root()).expect("Node should not be empty");
 
         if let SyntaxNode::Block(body) = root {
             let body = body.clone();
-            compiler.visit((&body, BlockKind::Function))?;
+            self.visit((&body, BlockKind::Function))?;
         } else {
             unreachable!("Function body must be a block.")
         }
 
-        Ok(compiler.assembler.generate(compiler.scope_stack.slot_count))
+        self.scope_stack.pop_scope()?;
+
+        Ok(self.pop_assembler().generate(self.scope_stack.slot_count))
+    }
+
+    pub(self) fn current_assembler(&mut self) -> &mut Assembler {
+        self.assembler_stack
+            .last_mut()
+            .expect("Assembler stack should not be empty.")
+    }
+
+    pub(self) fn pop_assembler(&mut self) -> Assembler {
+        self.assembler_stack
+            .pop()
+            .expect("Assembler stack should not be empty.")
+    }
+
+    pub(self) fn push_assembler(&mut self) {
+        self.assembler_stack.push(Assembler::default())
     }
 }

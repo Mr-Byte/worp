@@ -4,7 +4,7 @@ use super::NodeVisitor;
 
 impl NodeVisitor<&LitNone> for Compiler {
     fn visit(&mut self, LitNone(span): &LitNone) -> Result<(), CompilerError> {
-        self.assembler.push_none(span.clone());
+        self.current_assembler().push_none(span.clone());
 
         Ok(())
     }

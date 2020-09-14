@@ -7,7 +7,7 @@ impl NodeVisitor<&LitIdent> for Compiler {
         let name = Symbol::new(name);
         let slot = self.scope_stack.local(name)?.slot as u8;
 
-        self.assembler.load_local(slot, span.clone());
+        self.current_assembler().load_local(slot, span.clone());
 
         Ok(())
     }

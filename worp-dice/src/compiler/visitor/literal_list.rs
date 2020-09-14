@@ -8,7 +8,7 @@ impl NodeVisitor<&LitList> for Compiler {
             self.visit(*item)?;
         }
 
-        self.assembler.build_list(value.len() as u8, span.clone());
+        self.current_assembler().build_list(value.len() as u8, span.clone());
 
         Ok(())
     }

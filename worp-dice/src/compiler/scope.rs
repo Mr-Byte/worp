@@ -133,7 +133,17 @@ impl ScopeStack {
     pub fn add_local(&mut self, name: Symbol, is_mutable: bool) -> Result<usize, CompilerError> {
         self.top_mut()?.slot_count += 1;
 
-        let slot_count = self.stack.iter().map(|scope| scope.slot_count).sum::<usize>();
+        // TODO: Start at the top and work down until the first terminal scope is encountered.
+        let mut slot_count = 0;
+
+        for scope in self.stack.iter().rev() {
+            slot_count += scope.slot_count;
+
+            if scope.kind.is_terminal() {
+                break;
+            }
+        }
+
         let slot = slot_count - 1;
         let local = ScopeVariable {
             name,

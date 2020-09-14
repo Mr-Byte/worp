@@ -18,18 +18,18 @@ impl NodeVisitor<(&Block, BlockKind)> for Compiler {
 
         for expression in block.expressions.iter() {
             self.visit(*expression)?;
-            self.assembler.pop(block.span.clone());
+            self.current_assembler().pop(block.span.clone());
         }
 
         match block.trailing_expression {
             Some(trailing_expression) => self.visit(trailing_expression)?,
-            None => self.assembler.push_unit(block.span.clone()),
+            None => self.current_assembler().push_unit(block.span.clone()),
         }
 
         // NOTE: If in context of a function, implicitly return the top item on the stack.
         // If the previous instruction was a return, this will never execute.
         if let BlockKind::Function = kind {
-            self.assembler.ret(block.span.clone())
+            self.current_assembler().ret(block.span.clone())
         }
 
         self.scope_stack.pop_scope()?;

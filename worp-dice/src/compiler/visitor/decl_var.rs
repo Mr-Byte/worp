@@ -7,7 +7,7 @@ impl NodeVisitor<&VarDecl> for Compiler {
         let slot = self.scope_stack.add_local(name, var_decl.is_mutable)? as u8;
 
         self.visit(var_decl.expr)?;
-        self.assembler.store_local(slot, var_decl.span.clone());
+        self.current_assembler().store_local(slot, var_decl.span.clone());
 
         Ok(())
     }

@@ -12,7 +12,7 @@ impl NodeVisitor<&Continue> for Compiler {
         }
 
         let loop_start = self.scope_stack.entry_point(ScopeKind::Loop)?;
-        self.assembler.jump_back(loop_start as u64, span.clone());
+        self.current_assembler().jump_back(loop_start as u64, span.clone());
 
         Ok(())
     }

@@ -22,11 +22,11 @@ impl NodeVisitor<&Assignment> for Compiler {
                 self.visit(*rhs)?;
 
                 match op {
-                    AssignmentOperator::Assignment => self.assembler.store_local(slot, span.clone()),
-                    AssignmentOperator::MulAssignment => self.assembler.mul_assign_local(slot, span.clone()),
-                    AssignmentOperator::DivAssignment => self.assembler.div_assign_local(slot, span.clone()),
-                    AssignmentOperator::AddAssignment => self.assembler.add_assign_local(slot, span.clone()),
-                    AssignmentOperator::SubAssignment => self.assembler.sub_assign_local(slot, span.clone()),
+                    AssignmentOperator::Assignment => self.current_assembler().store_local(slot, span.clone()),
+                    AssignmentOperator::MulAssignment => self.current_assembler().mul_assign_local(slot, span.clone()),
+                    AssignmentOperator::DivAssignment => self.current_assembler().div_assign_local(slot, span.clone()),
+                    AssignmentOperator::AddAssignment => self.current_assembler().add_assign_local(slot, span.clone()),
+                    AssignmentOperator::SubAssignment => self.current_assembler().sub_assign_local(slot, span.clone()),
                 }
             }
             _ => return Err(CompilerError::InvalidAssignmentTarget),
