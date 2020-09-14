@@ -12,8 +12,8 @@ pub enum RuntimeError {
     Aborted(#[from] Box<dyn Error>),
     #[error("Runtime Error: The target type {0} is not an object.")]
     NotAnObject(Symbol),
-    #[error("Runtime Error: The target type {0} is not a function.")]
-    NotAFunction(Symbol),
+    #[error("Runtime Error: The target type is not a function.")]
+    NotAFunction,
     #[error("Runtime Error: Functions require a self parameter to be called as a method.")]
     NoSelfParameterProvided,
     #[error("Runtime Error: {0} has no instructor.")]

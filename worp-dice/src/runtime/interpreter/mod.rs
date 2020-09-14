@@ -188,12 +188,13 @@ impl Runtime {
                 Instruction::CLOSURE => {
                     let const_pos = cursor.read_u8() as usize;
 
-                    if let Value::FnScript(ref fn_script) = bytecode.constants()[const_pos] {
-                        let closure = Value::FnClosure(FnClosure::new(fn_script.clone()));
+                    match bytecode.constants()[const_pos] {
+                        Value::FnScript(ref fn_script) => {
+                            let closure = Value::FnClosure(FnClosure::new(fn_script.clone()));
 
-                        self.stack.push(closure);
-                    } else {
-                        todo!("not-a-function-error");
+                            self.stack.push(closure);
+                        }
+                        _ => return Err(RuntimeError::NotAFunction),
                     }
                 }
                 Instruction::CALL => {
@@ -225,24 +226,27 @@ impl Runtime {
         let arg_count = cursor.read_u8() as usize;
         let target = self.stack.peek(arg_count).clone();
 
-        if let Value::FnClosure(closure) = &target {
-            let fn_script = &closure.fn_script;
-            // TODO: Make this a RuntimeError
-            assert!(arg_count == fn_script.arity, "Function argument count is incorrect.");
+        match &target {
+            Value::FnClosure(closure) => {
+                let fn_script = &closure.fn_script;
+                // TODO: Make this a RuntimeError
+                if arg_count != fn_script.arity {
+                    return Err(RuntimeError::InvalidFunctionArgs(fn_script.arity, arg_count));
+                }
 
-            let bytecode = &fn_script.bytecode;
-            let slots = bytecode.slot_count();
-            let reserved = slots - arg_count;
-            // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
-            let stack_frame = self.stack.reserve_slots(reserved);
-            let stack_frame = (stack_frame.start - arg_count - 1)..stack_frame.end;
-            let result = self.execute_bytecode(bytecode, stack_frame)?;
+                let bytecode = &fn_script.bytecode;
+                let slots = bytecode.slot_count();
+                let reserved = slots - arg_count;
+                // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
+                let stack_frame = self.stack.reserve_slots(reserved);
+                let stack_frame = (stack_frame.start - arg_count - 1)..stack_frame.end;
+                let result = self.execute_bytecode(bytecode, stack_frame)?;
 
-            // NOTE: Release the number of reserved slots plus thee number of arguments plus a slot for the function itself.
-            self.stack.release_slots(reserved + arg_count + 1);
-            self.stack.push(result);
-        } else {
-            todo!("Return not-a-function error.")
+                // NOTE: Release the number of reserved slots plus thee number of arguments plus a slot for the function itself.
+                self.stack.release_slots(reserved + arg_count + 1);
+                self.stack.push(result);
+            }
+            _ => return Err(RuntimeError::NotAFunction),
         }
 
         Ok(())
