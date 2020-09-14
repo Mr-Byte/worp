@@ -64,18 +64,19 @@ impl Assembler {
     }
 
     pub fn push_const(&mut self, value: Value, span: Span) {
-        let position = if let Some(position) = self.constants.iter().position(|current| *current == value) {
-            position
-        } else {
-            self.constants.push(value);
-            self.constants.len() - 1
-        };
-
         self.source_map.insert(self.data.len() as u64, span.clone());
         self.data.put_u8(Instruction::PUSH_CONST.value());
 
         self.source_map.insert(self.data.len() as u64, span);
-        self.data.put_u8(position as u8);
+        let const_pos = self.make_constant(value);
+        self.data.put_u8(const_pos);
+    }
+
+    pub fn closure(&mut self, value: Value, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::CLOSURE.value());
+        let fn_pos = self.make_constant(value);
+        self.data.put_u8(fn_pos);
     }
 
     pub fn pop(&mut self, span: Span) {
@@ -242,5 +243,19 @@ impl Assembler {
     pub fn ret(&mut self, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::RETURN.value());
+    }
+
+    fn make_constant(&mut self, value: Value) -> u8 {
+        let position = if let Some(position) = self.constants.iter().position(|current| *current == value) {
+            position
+        } else {
+            self.constants.push(value);
+            self.constants.len() - 1
+        };
+
+        // TODO: Make this an error.
+        assert!(position <= 255, "Too many constants.");
+
+        position as u8
     }
 }

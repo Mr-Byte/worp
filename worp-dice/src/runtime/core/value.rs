@@ -1,7 +1,9 @@
+use lib::{FnClosure, FnScript};
+
 use super::{Symbol, TypeInstance};
 use crate::runtime::{
     error::RuntimeError,
-    lib::{self, Func, List},
+    lib::{self, List},
 };
 use std::{fmt::Display, ops::Deref, rc::Rc};
 
@@ -13,7 +15,8 @@ pub enum Value {
     Bool(bool),
     Int(i64),
     Float(f64),
-    Func(Func),
+    FnClosure(FnClosure),
+    FnScript(FnScript),
     List(List),
     String(String),
     Object(Rc<dyn TypeInstance>),
@@ -48,7 +51,8 @@ impl PartialEq for Value {
             (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
             (Value::Int(lhs), Value::Int(rhs)) => lhs == rhs,
             (Value::Float(lhs), Value::Float(rhs)) => lhs == rhs,
-            (Value::Func(lhs), Value::Func(rhs)) => lhs == rhs,
+            (Value::FnClosure(lhs), Value::FnClosure(rhs)) => lhs == rhs,
+            (Value::FnScript(lhs), Value::FnScript(rhs)) => lhs == rhs,
             (Value::List(lhs), Value::List(rhs)) => lhs == rhs,
             (Value::String(lhs), Value::String(rhs)) => lhs == rhs,
             (Value::Object(lhs), Value::Object(rhs)) => lhs == rhs,
@@ -65,7 +69,8 @@ impl Display for Value {
             Value::Bool(bool) => bool.fmt(fmt),
             Value::Int(int) => int.fmt(fmt),
             Value::Float(float) => float.fmt(fmt),
-            Value::Func(func) => func.fmt(fmt),
+            Value::FnClosure(func) => func.fmt(fmt),
+            Value::FnScript(func) => func.fmt(fmt),
             Value::List(list) => list.fmt(fmt),
             Value::String(string) => string.fmt(fmt),
             Value::Object(object) => object.fmt(fmt),
@@ -85,7 +90,8 @@ impl Deref for Value {
             Value::Float(ref obj) => &*obj,
             Value::List(ref obj) => obj,
             Value::String(ref obj) => obj,
-            Value::Func(ref obj) => obj,
+            Value::FnClosure(ref obj) => obj,
+            Value::FnScript(ref obj) => obj,
             Value::Object(ref obj) => &**obj,
         }
     }

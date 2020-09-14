@@ -54,38 +54,3 @@ impl Display for Func {
         }
     }
 }
-
-#[derive(Clone, Debug)]
-pub struct FnScript {
-    inner: Rc<FnScriptInner>,
-}
-
-impl Deref for FnScript {
-    type Target = FnScriptInner;
-
-    fn deref(&self) -> &Self::Target {
-        &*self.inner
-    }
-}
-
-#[derive(Debug)]
-pub struct FnScriptInner {
-    pub arity: usize,
-    pub name: String,
-    pub bytecode: Bytecode,
-}
-
-impl FnScript {
-    fn new(name: String, arity: usize, bytecode: Bytecode) -> Self {
-        Self {
-            inner: Rc::new(FnScriptInner { arity, bytecode, name }),
-        }
-    }
-}
-
-// TODO: Create a way to more easily determine a unique function instance.
-impl PartialEq for FnScript {
-    fn eq(&self, other: &Self) -> bool {
-        self.arity == other.arity && self.name == other.name
-    }
-}

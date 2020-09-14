@@ -24,13 +24,12 @@ impl Stack {
     }
 
     pub fn pop_count(&mut self, count: usize) -> Vec<Value> {
-        let mut result = Vec::with_capacity(count);
+        let mut result = vec![Value::NONE; count];
         let items_to_pop = &mut self.values[self.stack_ptr - count..self.stack_ptr];
         self.stack_ptr -= count;
 
-        for item in items_to_pop {
-            let item = std::mem::replace(item, Value::NONE);
-            result.push(item);
+        for index in (0..items_to_pop.len()).rev() {
+            std::mem::swap(&mut items_to_pop[index], &mut result[index])
         }
 
         result

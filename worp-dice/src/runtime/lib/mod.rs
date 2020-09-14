@@ -1,7 +1,7 @@
 mod bool;
-// mod dice;
 mod float;
-mod func;
+mod fn_closure;
+mod fn_script;
 mod int;
 mod list;
 mod none;
@@ -10,11 +10,8 @@ mod range;
 mod string;
 mod unit;
 
-// pub(crate) use dice::{die::*, set::*};
-
-pub(crate) use func::*;
-
-pub(crate) use list::*;
-pub(crate) use none::*;
-
-pub(crate) use unit::*;
+pub use fn_closure::*;
+pub use fn_script::*;
+pub use list::*;
+pub use none::*;
+pub use unit::*;

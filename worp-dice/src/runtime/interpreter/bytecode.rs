@@ -71,9 +71,9 @@ impl Display for Bytecode {
                 | Instruction::SUB_ASSIGN_LOCAL
                 | Instruction::BUILD_LIST
                 | Instruction::CALL
-                | Instruction::CLOSURE
                 | Instruction::LOAD_UPVALUE
                 | Instruction::STORE_UPVALUE => write!(f, "{}", cursor.read_u8())?,
+                Instruction::CLOSURE => write!(f, "{}", cursor.read_u8())?,
                 _ => (),
             }
 
@@ -85,15 +85,10 @@ impl Display for Bytecode {
         writeln!(f)?;
 
         for const_value in self.constants() {
-            if let Value::Func(func) = const_value {
-                match func.target() {
-                    crate::runtime::lib::FnType::FnScript(fn_script) => {
-                        writeln!(f, "Function: {:?}", fn_script.name)?;
-                        writeln!(f, "--------")?;
-                        fn_script.bytecode.fmt(f)?;
-                    }
-                    _ => todo!(),
-                }
+            if let Value::FnScript(fn_script) = const_value {
+                writeln!(f, "Function: {:?}", fn_script.name)?;
+                writeln!(f, "--------")?;
+                fn_script.bytecode.fmt(f)?;
             }
         }
 
