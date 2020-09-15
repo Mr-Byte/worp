@@ -164,14 +164,26 @@ impl ScopeStack {
     /// Find the first local variable with the specified name, starting at the top of the stack and working towards the bottom.
     /// This searches each scope in reverse order of variable declarations, so that the most recently used declaration is
     /// return first.
-    pub fn local(&self, name: Symbol) -> Result<ScopeVariable, CompilerError> {
+    pub fn local(&self, name: Symbol) -> Option<ScopeVariable> {
         self.stack
             .iter()
             .rev()
             .flat_map(|scope| scope.variables.iter().rev())
             .find(|local| local.name == name)
             .cloned()
-            .ok_or_else(|| CompilerError::UndeclaredVariable(name))
+    }
+
+    pub fn upvalue(&self, name: Symbol) -> Option<ScopeVariable> {
+        todo!("Implement upvalue resolution.")
+    }
+
+    fn outer(&self) -> impl Iterator<Item = &ScopeContext> {
+        // NOTE: Start from the top of the stack and skip every scope inside the current terminal scope.
+        self.stack
+            .iter()
+            .rev()
+            .skip_while(|scope| !scope.kind.is_terminal())
+            .skip(1)
     }
 
     pub fn top_mut(&mut self) -> Result<&mut ScopeContext, CompilerError> {
