@@ -12,8 +12,7 @@ impl NodeVisitor<&Assignment> for Compiler {
         match lhs {
             SyntaxNode::LitIdent(LitIdent(target, _)) => {
                 let target = Symbol::new(target);
-                // TODO: This should also try to resolve upvalues.
-                let local = self.scope_stack.local(target.clone()).expect("Fix this");
+                let local = self.context()?.scope_stack().local(target.clone()).expect("Fix this");
                 let slot = local.slot as u8;
 
                 if !local.is_mutable {
@@ -23,11 +22,19 @@ impl NodeVisitor<&Assignment> for Compiler {
                 self.visit(*rhs)?;
 
                 match op {
-                    AssignmentOperator::Assignment => self.current_assembler().store_local(slot, span.clone()),
-                    AssignmentOperator::MulAssignment => self.current_assembler().mul_assign_local(slot, span.clone()),
-                    AssignmentOperator::DivAssignment => self.current_assembler().div_assign_local(slot, span.clone()),
-                    AssignmentOperator::AddAssignment => self.current_assembler().add_assign_local(slot, span.clone()),
-                    AssignmentOperator::SubAssignment => self.current_assembler().sub_assign_local(slot, span.clone()),
+                    AssignmentOperator::Assignment => self.context()?.assembler().store_local(slot, span.clone()),
+                    AssignmentOperator::MulAssignment => {
+                        self.context()?.assembler().mul_assign_local(slot, span.clone())
+                    }
+                    AssignmentOperator::DivAssignment => {
+                        self.context()?.assembler().div_assign_local(slot, span.clone())
+                    }
+                    AssignmentOperator::AddAssignment => {
+                        self.context()?.assembler().add_assign_local(slot, span.clone())
+                    }
+                    AssignmentOperator::SubAssignment => {
+                        self.context()?.assembler().sub_assign_local(slot, span.clone())
+                    }
                 }
             }
             _ => return Err(CompilerError::InvalidAssignmentTarget),

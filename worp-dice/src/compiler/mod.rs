@@ -1,16 +1,14 @@
-use self::{
-    assembler::Assembler,
-    scope::{ScopeKind, ScopeStack},
-};
 use crate::{
     runtime::interpreter::bytecode::Bytecode,
     syntax::{Parser, SyntaxNode, SyntaxTree},
     Symbol,
 };
+use compiler::{CompilerContext, CompilerKind, CompilerStack};
 use error::CompilerError;
 use visitor::{BlockKind, NodeVisitor as _};
 
 mod assembler;
+mod compiler;
 pub mod error;
 mod scope;
 mod visitor;
@@ -24,22 +22,16 @@ pub enum CompilationKind {
 
 pub struct Compiler {
     syntax_tree: SyntaxTree,
-    scope_stack: ScopeStack,
-    assembler_stack: Vec<Assembler>,
+    compiler_stack: CompilerStack,
 }
 
 impl Compiler {
     fn new(syntax_tree: SyntaxTree, kind: CompilationKind) -> Self {
-        let scope_kind = match kind {
-            CompilationKind::Module => ScopeKind::Module,
-            CompilationKind::Script => ScopeKind::Script,
-        };
-        let scope_stack = ScopeStack::new(scope_kind);
+        let compiler_stack = CompilerStack::new(CompilerKind::Script);
 
         Self {
             syntax_tree,
-            scope_stack,
-            assembler_stack: vec![Assembler::default()],
+            compiler_stack,
         }
     }
 
@@ -48,8 +40,9 @@ impl Compiler {
         let mut compiler = Self::new(syntax_tree, kind);
 
         compiler.visit(compiler.syntax_tree.root())?;
+        let compiler_context = compiler.compiler_stack.pop()?;
 
-        Ok(compiler.pop_assembler().generate(compiler.scope_stack.slot_count))
+        Ok(compiler_context.finish())
     }
 
     pub(self) fn compile_fn(
@@ -58,12 +51,14 @@ impl Compiler {
         name: Symbol,
         args: &[impl AsRef<str>],
     ) -> Result<Bytecode, CompilerError> {
-        self.push_assembler();
-        self.scope_stack.push_scope(ScopeKind::Function, None);
-        self.scope_stack.add_local(name, false)?;
+        // TODO: Push a new CompilerContext onto the CompilerStack.
+        self.compiler_stack.push(CompilerKind::Function);
 
         for arg in args {
-            self.scope_stack.add_local(Symbol::new(arg.as_ref()), false)?;
+            self.compiler_stack
+                .top_mut()?
+                .scope_stack()
+                .add_local(Symbol::new(arg.as_ref()), false)?;
         }
 
         let root = syntax_tree.get(syntax_tree.root()).expect("Node should not be empty");
@@ -75,24 +70,12 @@ impl Compiler {
             unreachable!("Function body must be a block.")
         }
 
-        self.scope_stack.pop_scope()?;
+        let compiler_context = self.compiler_stack.pop()?;
 
-        Ok(self.pop_assembler().generate(self.scope_stack.slot_count))
+        Ok(compiler_context.finish())
     }
 
-    pub(self) fn current_assembler(&mut self) -> &mut Assembler {
-        self.assembler_stack
-            .last_mut()
-            .expect("Assembler stack should not be empty.")
-    }
-
-    pub(self) fn pop_assembler(&mut self) -> Assembler {
-        self.assembler_stack
-            .pop()
-            .expect("Assembler stack should not be empty.")
-    }
-
-    pub(self) fn push_assembler(&mut self) {
-        self.assembler_stack.push(Assembler::default())
+    pub(self) fn context(&mut self) -> Result<&mut CompilerContext, CompilerError> {
+        self.compiler_stack.top_mut()
     }
 }

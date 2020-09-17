@@ -4,7 +4,10 @@ use super::NodeVisitor;
 
 impl NodeVisitor<&LitBool> for Compiler {
     fn visit(&mut self, LitBool(value, span): &LitBool) -> Result<(), CompilerError> {
-        self.current_assembler().push_bool(*value, span.clone());
+        self.compiler_stack
+            .top_mut()?
+            .assembler()
+            .push_bool(*value, span.clone());
 
         Ok(())
     }

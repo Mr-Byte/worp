@@ -7,12 +7,14 @@ use crate::{
 
 impl NodeVisitor<&Break> for Compiler {
     fn visit(&mut self, Break(span): &Break) -> Result<(), crate::CompilerError> {
-        if !self.scope_stack.in_context_of(ScopeKind::Loop) {
+        let context = self.context()?;
+
+        if !context.scope_stack().in_context_of(ScopeKind::Loop) {
             return Err(CompilerError::InvalidBreak);
         }
 
-        let patch_location = self.current_assembler().jump(span.clone());
-        self.scope_stack.add_loop_exit_point(patch_location as usize)?;
+        let patch_location = context.assembler().jump(span.clone());
+        context.scope_stack().add_loop_exit_point(patch_location as usize)?;
 
         Ok(())
     }
