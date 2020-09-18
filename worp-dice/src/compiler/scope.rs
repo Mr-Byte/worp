@@ -101,11 +101,11 @@ impl ScopeStack {
         Ok(slot)
     }
 
-    pub fn local(&self, name: Symbol) -> Option<&ScopeVariable> {
+    pub fn local(&mut self, name: Symbol) -> Option<&mut ScopeVariable> {
         self.stack
-            .iter()
+            .iter_mut()
             .rev()
-            .flat_map(|scope| scope.variables.iter().rev())
+            .flat_map(|scope| scope.variables.iter_mut().rev())
             .find(|var| var.name == name)
     }
 

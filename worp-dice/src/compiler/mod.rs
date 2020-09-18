@@ -11,6 +11,7 @@ mod assembler;
 mod compiler;
 pub mod error;
 mod scope;
+mod upvalue;
 mod visitor;
 
 #[allow(dead_code)]
@@ -48,7 +49,6 @@ impl Compiler {
     pub(self) fn compile_fn(
         &mut self,
         syntax_tree: SyntaxTree,
-        name: Symbol,
         args: &[impl AsRef<str>],
     ) -> Result<Bytecode, CompilerError> {
         // TODO: Push a new CompilerContext onto the CompilerStack.

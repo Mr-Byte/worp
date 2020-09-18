@@ -1,6 +1,5 @@
+use super::{assembler::Assembler, scope::ScopeKind, scope::ScopeStack, upvalue::UpvalueDescriptor};
 use crate::{runtime::interpreter::bytecode::Bytecode, CompilerError};
-
-use super::{assembler::Assembler, scope::ScopeKind, scope::ScopeStack};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum CompilerKind {
@@ -12,6 +11,7 @@ pub enum CompilerKind {
 pub struct CompilerContext {
     kind: CompilerKind,
     assembler: Assembler,
+    upvalues: Vec<UpvalueDescriptor>,
     scope_stack: ScopeStack,
 }
 
@@ -20,6 +20,7 @@ impl CompilerContext {
         Self {
             assembler: Assembler::default(),
             scope_stack: ScopeStack::new(ScopeKind::Block),
+            upvalues: Vec::new(),
             kind,
         }
     }
@@ -30,6 +31,22 @@ impl CompilerContext {
 
     pub fn scope_stack(&mut self) -> &mut ScopeStack {
         &mut self.scope_stack
+    }
+
+    pub fn upvalues(&mut self) -> &mut Vec<UpvalueDescriptor> {
+        &mut self.upvalues
+    }
+
+    pub fn add_upvalue(&mut self, descriptor: UpvalueDescriptor) -> usize {
+        let index = match self.upvalues.iter().position(|upvalue| *upvalue == descriptor) {
+            Some(position) => position,
+            None => {
+                self.upvalues.push(descriptor);
+                self.upvalues.len() - 1
+            }
+        };
+
+        index
     }
 
     pub fn kind(&self) -> CompilerKind {
@@ -67,5 +84,14 @@ impl CompilerStack {
         self.stack
             .last_mut()
             .ok_or_else(|| CompilerError::InternalCompilerError(String::from("Compiler stack cannot be empty.")))
+    }
+
+    pub fn offset_with_parent(
+        &mut self,
+        offset: usize,
+    ) -> (Option<&mut CompilerContext>, Option<&mut CompilerContext>) {
+        let mut iter = self.stack.iter_mut();
+
+        (iter.nth_back(offset), iter.nth_back(0))
     }
 }
