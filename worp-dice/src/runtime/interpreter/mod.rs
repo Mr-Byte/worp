@@ -31,7 +31,7 @@ impl Default for Runtime {
 impl Runtime {
     pub fn run_script(&mut self, bytecode: Bytecode) -> Result<Value, RuntimeError> {
         let stack_frame = self.stack.reserve_slots(bytecode.slot_count());
-        let result = self.execute_bytecode(&bytecode, stack_frame, &mut []);
+        let result = self.execute_bytecode(&bytecode, stack_frame, None);
         self.stack.release_slots(bytecode.slot_count());
 
         Ok(result?)
@@ -41,7 +41,7 @@ impl Runtime {
         &mut self,
         bytecode: &Bytecode,
         stack_frame: Range<usize>,
-        upvalues: &mut [Upvalue],
+        mut closure: Option<FnClosure>,
     ) -> Result<Value, RuntimeError> {
         let initial_stack_depth = self.stack.len();
         let mut cursor = bytecode.cursor();
@@ -134,28 +134,36 @@ impl Runtime {
                     self.stack.push(result);
                 }
                 Instruction::LOAD_UPVALUE => {
-                    let upvalue_slot = cursor.read_u8() as usize;
-                    let upvalue = &mut upvalues[upvalue_slot];
-                    let value = match upvalue.state() {
-                        UpvalueState::Open(slot) => self.stack.slot(*slot).clone(),
-                        _ => todo!(),
-                    };
+                    if let Some(closure) = closure.as_mut() {
+                        let upvalue_slot = cursor.read_u8() as usize;
+                        let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
+                        let value = match upvalue.state() {
+                            UpvalueState::Open(slot) => self.stack.slot(*slot).clone(),
+                            _ => todo!(),
+                        };
 
-                    self.stack.push(value);
+                        self.stack.push(value);
+                    } else {
+                        unreachable!("LOAD_UPVALUE used in non-closure context.")
+                    }
                 }
                 Instruction::STORE_UPVALUE => {
-                    let upvalue_slot = cursor.read_u8() as usize;
-                    let upvalue = &mut upvalues[upvalue_slot];
-                    let result = match upvalue.state() {
-                        UpvalueState::Open(slot) => {
-                            let value = self.stack.pop();
-                            *self.stack.slot(*slot) = value.clone();
-                            value
-                        }
-                        _ => todo!(),
-                    };
+                    if let Some(closure) = closure.as_mut() {
+                        let upvalue_slot = cursor.read_u8() as usize;
+                        let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
+                        let result = match upvalue.state() {
+                            UpvalueState::Open(slot) => {
+                                let value = self.stack.pop();
+                                *self.stack.slot(*slot) = value.clone();
+                                value
+                            }
+                            _ => todo!(),
+                        };
 
-                    self.stack.push(result)
+                        self.stack.push(result)
+                    } else {
+                        unreachable!("STORE_UPVALUE used in non-closure context.")
+                    }
                 }
                 Instruction::MUL_ASSIGN_LOCAL => {
                     let slot = cursor.read_u8() as usize;
@@ -227,7 +235,7 @@ impl Runtime {
                                 let index = cursor.read_u8() as usize;
 
                                 if is_parent_local {
-                                    upvalues.push(Upvalue::new_open(stack_frame.start + index))
+                                    upvalues.push(Upvalue::new_open(stack_frame.start + index));
                                 } else {
                                     todo!();
                                 }
@@ -240,6 +248,7 @@ impl Runtime {
                         _ => return Err(RuntimeError::NotAFunction),
                     }
                 }
+
                 Instruction::CALL => {
                     self.call_fn(&mut cursor)?;
                 }
@@ -285,10 +294,10 @@ impl Runtime {
                 let reserved = slots - arg_count;
                 // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
                 let stack_frame = self.stack.reserve_slots(reserved);
-                let stack_frame = (stack_frame.start - arg_count - 1)..stack_frame.end;
-                let result = self.execute_bytecode(&bytecode, stack_frame, &mut closure.borrow_mut().upvalues)?;
+                let stack_frame = (stack_frame.start - arg_count)..stack_frame.end;
+                let result = self.execute_bytecode(&bytecode, stack_frame, Some(closure.clone()))?;
 
-                // NOTE: Release the number of reserved slots plus thee number of arguments plus a slot for the function itself.
+                // NOTE: Release the number of reserved slots plus the number of arguments plus a slot for the function itself.
                 self.stack.release_slots(reserved + arg_count + 1);
                 self.stack.push(result);
             }

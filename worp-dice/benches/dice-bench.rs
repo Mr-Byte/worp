@@ -36,10 +36,25 @@ fn loop_function_call(criterion: &mut Criterion) {
     });
 }
 
+fn closure_called_by_another_function_in_parent_scope(criterion: &mut Criterion) {
+    let mut dice = Dice::default();
+
+    criterion.bench_function("closure-called-by-closure-in-same-parent", |bencher| {
+        bencher.iter(|| {
+            dice.run_script(black_box(
+                "fn test() { let x = 42; fn foo() { x } fn bar(f) { f() } bar(foo) } test()",
+            ))
+            .unwrap()
+        })
+    });
+}
+
 criterion_group!(
     loops,
     loop_in_place_addition,
     loop_addition_with_assignment,
     loop_function_call
 );
-criterion_main!(loops);
+
+criterion_group!(closures, closure_called_by_another_function_in_parent_scope);
+criterion_main!(loops, closures);

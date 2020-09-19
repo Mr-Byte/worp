@@ -1,16 +1,21 @@
-use std::{cell::Ref, cell::RefCell, cell::RefMut, fmt::Display, rc::Rc};
+use std::{cell::Ref, cell::RefCell, cell::RefMut, fmt::Debug, fmt::Display, rc::Rc};
 
 use crate::runtime::core::{TypeInstance, Upvalue};
 
 use super::FnScript;
 
-#[derive(Debug)]
 pub struct FnClosureInner {
     pub fn_script: FnScript,
     pub upvalues: Box<[Upvalue]>,
 }
 
-#[derive(Clone, Debug)]
+impl Debug for FnClosureInner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{ {}/{} }}", self.fn_script.name, self.fn_script.arity)
+    }
+}
+
+#[derive(Clone)]
 pub struct FnClosure {
     inner: Rc<RefCell<FnClosureInner>>,
 }
@@ -28,6 +33,12 @@ impl FnClosure {
 
     pub fn borrow_mut(&self) -> RefMut<'_, FnClosureInner> {
         self.inner.borrow_mut()
+    }
+}
+
+impl Debug for FnClosure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.inner.borrow())
     }
 }
 
