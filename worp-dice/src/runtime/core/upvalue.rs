@@ -7,3 +7,6 @@ pub enum UpvalueState {
     Open(usize),
     Closed(Rc<RefCell<Value>>),
 }
+
+#[derive(Debug)]
+pub struct Upvalue(UpvalueState);

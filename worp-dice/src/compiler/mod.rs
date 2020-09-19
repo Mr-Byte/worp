@@ -50,7 +50,7 @@ impl Compiler {
         &mut self,
         syntax_tree: SyntaxTree,
         args: &[impl AsRef<str>],
-    ) -> Result<Bytecode, CompilerError> {
+    ) -> Result<CompilerContext, CompilerError> {
         // TODO: Push a new CompilerContext onto the CompilerStack.
         self.compiler_stack.push(CompilerKind::Function);
 
@@ -72,7 +72,7 @@ impl Compiler {
 
         let compiler_context = self.compiler_stack.pop()?;
 
-        Ok(compiler_context.finish())
+        Ok(compiler_context)
     }
 
     pub(self) fn context(&mut self) -> Result<&mut CompilerContext, CompilerError> {

@@ -9,6 +9,7 @@ pub use cursor::BytecodeCursor;
 #[derive(Debug)]
 struct BytecodeInner {
     slot_count: usize,
+    upvalue_count: usize,
     constants: Box<[Value]>,
     data: Box<[u8]>,
     source_map: HashMap<u64, Span>,
@@ -20,11 +21,18 @@ pub struct Bytecode {
 }
 
 impl Bytecode {
-    pub fn new(data: Box<[u8]>, slot_count: usize, constants: Box<[Value]>, source_map: HashMap<u64, Span>) -> Self {
+    pub fn new(
+        data: Box<[u8]>,
+        slot_count: usize,
+        upvalue_count: usize,
+        constants: Box<[Value]>,
+        source_map: HashMap<u64, Span>,
+    ) -> Self {
         Self {
             inner: Rc::new(BytecodeInner {
                 constants,
                 slot_count,
+                upvalue_count,
                 source_map,
                 data,
             }),
@@ -46,6 +54,10 @@ impl Bytecode {
 
     pub fn slot_count(&self) -> usize {
         self.inner.slot_count
+    }
+
+    pub fn upvalue_count(&self) -> usize {
+        self.inner.upvalue_count
     }
 }
 
@@ -73,7 +85,27 @@ impl Display for Bytecode {
                 | Instruction::CALL
                 | Instruction::LOAD_UPVALUE
                 | Instruction::STORE_UPVALUE => write!(f, "{}", cursor.read_u8())?,
-                Instruction::CLOSURE => write!(f, "{}", cursor.read_u8())?,
+                Instruction::CLOSURE => {
+                    let const_index = cursor.read_u8() as usize;
+                    let function = &self.constants()[const_index];
+
+                    if let Value::FnScript(fn_script) = function {
+                        write!(f, "{:<8} |", const_index)?;
+
+                        for _ in 0..fn_script.bytecode.upvalue_count() {
+                            let kind = if cursor.read_u8() == 1 {
+                                "parent_local"
+                            } else {
+                                "upvalue"
+                            };
+                            let index = cursor.read_u8() as usize;
+
+                            write!(f, " ({} {})", kind, index)?;
+                        }
+                    } else {
+                        write!(f, "NOT A FUNCTION!")?
+                    }
+                }
                 _ => (),
             }
 

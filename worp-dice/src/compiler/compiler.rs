@@ -53,9 +53,10 @@ impl CompilerContext {
         self.kind
     }
 
-    pub fn finish(self) -> Bytecode {
+    pub fn finish(mut self) -> Bytecode {
         let slot_count = self.scope_stack.slot_count;
-        self.assembler.generate(slot_count)
+        let upvalue_count = self.upvalues().len();
+        self.assembler.generate(slot_count, upvalue_count)
     }
 }
 
@@ -86,12 +87,8 @@ impl CompilerStack {
             .ok_or_else(|| CompilerError::InternalCompilerError(String::from("Compiler stack cannot be empty.")))
     }
 
-    pub fn offset_with_parent(
-        &mut self,
-        offset: usize,
-    ) -> (Option<&mut CompilerContext>, Option<&mut CompilerContext>) {
-        let mut iter = self.stack.iter_mut();
-
-        (iter.nth_back(offset), iter.nth_back(0))
+    pub fn offset(&mut self, offset: usize) -> Option<&mut CompilerContext> {
+        let index = self.stack.len() - offset - 1;
+        self.stack.get_mut(index)
     }
 }

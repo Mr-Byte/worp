@@ -2,21 +2,34 @@ use crate::Symbol;
 
 use super::Compiler;
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum UpvalueDescriptor {
     ParentLocal { slot: usize, is_mutable: bool },
-    Outer { upvalue_index: usize },
+    Outer { upvalue_index: usize, is_mutable: bool },
+}
+
+impl UpvalueDescriptor {
+    pub fn is_mutable(&self) -> bool {
+        matches!(self,
+            UpvalueDescriptor::ParentLocal { is_mutable, .. } | UpvalueDescriptor::Outer { is_mutable, .. } if *is_mutable
+        )
+    }
+
+    pub fn description(&self) -> (bool, usize) {
+        match self {
+            UpvalueDescriptor::ParentLocal { slot, .. } => (true, *slot),
+            UpvalueDescriptor::Outer { upvalue_index, .. } => (false, *upvalue_index),
+        }
+    }
 }
 
 impl Compiler {
-    pub(self) fn resolve_upvalue(&mut self, name: Symbol, depth: usize) -> Option<usize> {
-        let descriptor_index = {
-            let (current, parent) = self.compiler_stack.offset_with_parent(depth);
-            let current = current?;
-            let parent = parent?;
-            let parent_local = parent.scope_stack().local(name.clone());
-
-            parent_local.map(move |parent_local| {
+    // TODO: Can this be moved to the compiler stack itself?
+    // ^ This might make some of this logic and borrowing easier.
+    pub(super) fn resolve_upvalue(&mut self, name: Symbol, depth: usize) -> Option<usize> {
+        let parent_local = self.compiler_stack.offset(depth + 1)?.scope_stack().local(name.clone());
+        let descriptor = match parent_local {
+            Some(parent_local) => {
                 parent_local.is_captured = true;
 
                 let descriptor = UpvalueDescriptor::ParentLocal {
@@ -24,19 +37,26 @@ impl Compiler {
                     is_mutable: parent_local.is_mutable,
                 };
 
-                current.add_upvalue(descriptor)
-            })
+                descriptor
+            }
+            None => {
+                let outer_index = self.resolve_upvalue(name, depth + 1)?;
+                let parent = self.compiler_stack.offset(depth + 1)?;
+                let is_mutable = match parent.upvalues()[outer_index] {
+                    UpvalueDescriptor::ParentLocal { is_mutable, .. } | UpvalueDescriptor::Outer { is_mutable, .. } => {
+                        is_mutable
+                    }
+                };
+                let descriptor = UpvalueDescriptor::Outer {
+                    upvalue_index: outer_index,
+                    is_mutable,
+                };
+
+                descriptor
+            }
         };
 
-        descriptor_index.or_else(|| {
-            let outer_index = self.resolve_upvalue(name, depth + 1)?;
-            let descriptor = UpvalueDescriptor::Outer {
-                upvalue_index: outer_index,
-            };
-
-            let (current, _) = self.compiler_stack.offset_with_parent(depth);
-            let current = current?;
-            Some(current.add_upvalue(descriptor))
-        })
+        let current = self.compiler_stack.offset(depth)?;
+        Some(current.add_upvalue(descriptor))
     }
 }

@@ -193,6 +193,12 @@ impl Runtime {
                             let closure = Value::FnClosure(FnClosure::new(fn_script.clone()));
 
                             self.stack.push(closure);
+
+                            // TODO: Actually handle upvalues.
+                            for _ in 0..fn_script.bytecode.upvalue_count() {
+                                cursor.read_u8();
+                                cursor.read_u8();
+                            }
                         }
                         _ => return Err(RuntimeError::NotAFunction),
                     }

@@ -5,6 +5,8 @@ use crate::runtime::{
 use bytes::BufMut as _;
 use std::collections::HashMap;
 
+use super::upvalue::UpvalueDescriptor;
+
 #[derive(Default)]
 pub struct Assembler {
     constants: Vec<Value>,
@@ -13,10 +15,11 @@ pub struct Assembler {
 }
 
 impl Assembler {
-    pub fn generate(self, slot_count: usize) -> Bytecode {
+    pub fn generate(self, slot_count: usize, upvalue_count: usize) -> Bytecode {
         Bytecode::new(
             self.data.into(),
             slot_count,
+            upvalue_count,
             self.constants.into_boxed_slice(),
             self.source_map,
         )
@@ -72,11 +75,19 @@ impl Assembler {
         self.data.put_u8(const_pos);
     }
 
-    pub fn closure(&mut self, value: Value, span: Span) {
+    pub fn closure(&mut self, value: Value, upvalues: &[UpvalueDescriptor], span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::CLOSURE.value());
         let fn_pos = self.make_constant(value);
         self.data.put_u8(fn_pos);
+
+        for upvalue in upvalues {
+            let (is_parent_local, index) = upvalue.description();
+
+            // TODO: Assert the number of upvalues does not exceed 255.
+            self.data.put_u8(is_parent_local as u8);
+            self.data.put_u8(index as u8);
+        }
     }
 
     pub fn pop(&mut self, span: Span) {
@@ -208,6 +219,18 @@ impl Assembler {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::LOAD_LOCAL.value());
         self.data.put_u8(slot);
+    }
+
+    pub fn store_upvalue(&mut self, index: u8, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::STORE_UPVALUE.value());
+        self.data.put_u8(index);
+    }
+
+    pub fn load_upvalue(&mut self, index: u8, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::LOAD_UPVALUE.value());
+        self.data.put_u8(index);
     }
 
     pub fn mul_assign_local(&mut self, slot: u8, span: Span) {

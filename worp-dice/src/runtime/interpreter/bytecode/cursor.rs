@@ -48,4 +48,8 @@ impl<'a> BytecodeCursor<'a> {
     pub fn position(&self) -> u64 {
         self.cursor.position()
     }
+
+    pub fn remaining(&self) -> u64 {
+        self.cursor.remaining() as u64
+    }
 }
