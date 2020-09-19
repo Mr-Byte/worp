@@ -26,13 +26,21 @@ impl NodeVisitor<(&Block, BlockKind)> for Compiler {
             None => self.context()?.assembler().push_unit(block.span.clone()),
         }
 
+        let scope = self.context()?.scope_stack().pop_scope()?;
+
+        for variable in scope.variables {
+            if variable.is_captured {
+                self.context()?
+                    .assembler()
+                    .close_upvalue(variable.slot as u8, block.span.clone());
+            }
+        }
+
         // NOTE: If in context of a function, implicitly return the top item on the stack.
         // If the previous instruction was a return, this will never execute.
         if let BlockKind::Function = kind {
             self.context()?.assembler().ret(block.span.clone())
         }
-
-        self.context()?.scope_stack().pop_scope()?;
 
         Ok(())
     }

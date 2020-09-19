@@ -233,6 +233,12 @@ impl Assembler {
         self.data.put_u8(index);
     }
 
+    pub fn close_upvalue(&mut self, index: u8, span: Span) {
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::CLOSE_UPVALUE.value());
+        self.data.put_u8(index);
+    }
+
     pub fn mul_assign_local(&mut self, slot: u8, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::MUL_ASSIGN_LOCAL.value());

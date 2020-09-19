@@ -12,18 +12,20 @@ use crate::{
 use bytecode::Bytecode;
 use instruction::Instruction;
 use stack::Stack;
-use std::ops::Range;
+use std::{collections::VecDeque, ops::Range};
 
 use super::{core::Upvalue, core::UpvalueState, lib::FnClosure};
 
 pub struct Runtime {
     stack: Stack,
+    open_upvalues: VecDeque<Upvalue>,
 }
 
 impl Default for Runtime {
     fn default() -> Self {
         Self {
             stack: Stack::default(),
+            open_upvalues: VecDeque::default(),
         }
     }
 }
@@ -141,7 +143,7 @@ impl Runtime {
                         let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
                         let value = match &*upvalue.state() {
                             UpvalueState::Open(slot) => self.stack.slot(*slot).clone(),
-                            _ => todo!(),
+                            UpvalueState::Closed(value) => value.clone(),
                         };
 
                         self.stack.push(value);
@@ -154,13 +156,16 @@ impl Runtime {
                     if let Some(closure) = closure.as_mut() {
                         let upvalue_slot = cursor.read_u8() as usize;
                         let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
-                        let result = match &*upvalue.state() {
+                        let value = self.stack.pop();
+                        let result = match &mut *upvalue.state() {
                             UpvalueState::Open(slot) => {
-                                let value = self.stack.pop();
                                 *self.stack.slot(*slot) = value.clone();
                                 value
                             }
-                            _ => todo!(),
+                            UpvalueState::Closed(closed_value) => {
+                                *closed_value = value.clone();
+                                value
+                            }
                         };
 
                         self.stack.push(result)
@@ -242,7 +247,9 @@ impl Runtime {
                                 let index = cursor.read_u8() as usize;
 
                                 if is_parent_local {
-                                    upvalues.push(Upvalue::new_open(stack_frame.start + index));
+                                    let upvalue = Upvalue::new_open(stack_frame.start + index);
+                                    self.open_upvalues.push_back(upvalue.clone());
+                                    upvalues.push(upvalue);
                                 } else if let Some(closure) = closure.as_mut() {
                                     let upvalue = closure.borrow().upvalues[index].clone();
                                     upvalues.push(upvalue);
@@ -256,6 +263,27 @@ impl Runtime {
                             self.stack.push(closure);
                         }
                         _ => return Err(RuntimeError::NotAFunction),
+                    }
+                }
+
+                Instruction::CLOSE_UPVALUE => {
+                    let offset = cursor.read_u8() as usize;
+                    let value = std::mem::replace(&mut self.stack.slots(stack_frame.clone())[offset], Value::NONE);
+                    let offset = stack_frame.start + offset;
+                    let mut found_index = None;
+
+                    for (index, upvalue) in self.open_upvalues.iter_mut().enumerate() {
+                        if let UpvalueState::Open(upvalue_offset) = &*upvalue.state() {
+                            if *upvalue_offset == offset {
+                                found_index = Some(index);
+                            }
+                        }
+                    }
+
+                    if let Some(index) = found_index {
+                        if let Some(mut upvalue) = self.open_upvalues.remove(index) {
+                            upvalue.close(value);
+                        }
                     }
                 }
 

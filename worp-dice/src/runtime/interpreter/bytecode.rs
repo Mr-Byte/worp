@@ -84,7 +84,8 @@ impl Display for Bytecode {
                 | Instruction::BUILD_LIST
                 | Instruction::CALL
                 | Instruction::LOAD_UPVALUE
-                | Instruction::STORE_UPVALUE => write!(f, "{}", cursor.read_u8())?,
+                | Instruction::STORE_UPVALUE
+                | Instruction::CLOSE_UPVALUE => write!(f, "{}", cursor.read_u8())?,
                 Instruction::CLOSURE => {
                     let const_index = cursor.read_u8() as usize;
                     let function = &self.constants()[const_index];
