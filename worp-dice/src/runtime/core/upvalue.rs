@@ -10,3 +10,13 @@ pub enum UpvalueState {
 
 #[derive(Debug)]
 pub struct Upvalue(UpvalueState);
+
+impl Upvalue {
+    pub fn new_open(slot: usize) -> Self {
+        Self(UpvalueState::Open(slot))
+    }
+
+    pub fn state(&mut self) -> &mut UpvalueState {
+        &mut self.0
+    }
+}

@@ -60,6 +60,11 @@ impl Stack {
         &mut self.values[slots]
     }
 
+    #[inline]
+    pub fn slot(&mut self, slot: usize) -> &mut Value {
+        &mut self.values[slot]
+    }
+
     // NOTE: Returns the value offset from the top of the stack.
     #[inline]
     pub fn peek(&mut self, offset: usize) -> &mut Value {

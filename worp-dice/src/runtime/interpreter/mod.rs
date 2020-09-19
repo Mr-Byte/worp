@@ -14,7 +14,7 @@ use instruction::Instruction;
 use stack::Stack;
 use std::ops::Range;
 
-use super::lib::FnClosure;
+use super::{core::Upvalue, core::UpvalueState, lib::FnClosure};
 
 pub struct Runtime {
     stack: Stack,
@@ -31,13 +31,18 @@ impl Default for Runtime {
 impl Runtime {
     pub fn run_script(&mut self, bytecode: Bytecode) -> Result<Value, RuntimeError> {
         let stack_frame = self.stack.reserve_slots(bytecode.slot_count());
-        let result = self.execute_bytecode(&bytecode, stack_frame);
+        let result = self.execute_bytecode(&bytecode, stack_frame, &mut []);
         self.stack.release_slots(bytecode.slot_count());
 
         Ok(result?)
     }
 
-    fn execute_bytecode(&mut self, bytecode: &Bytecode, stack_frame: Range<usize>) -> Result<Value, RuntimeError> {
+    fn execute_bytecode(
+        &mut self,
+        bytecode: &Bytecode,
+        stack_frame: Range<usize>,
+        upvalues: &mut [Upvalue],
+    ) -> Result<Value, RuntimeError> {
         let initial_stack_depth = self.stack.len();
         let mut cursor = bytecode.cursor();
 
@@ -128,6 +133,30 @@ impl Runtime {
                     let result = frame[slot].clone();
                     self.stack.push(result);
                 }
+                Instruction::LOAD_UPVALUE => {
+                    let upvalue_slot = cursor.read_u8() as usize;
+                    let upvalue = &mut upvalues[upvalue_slot];
+                    let value = match upvalue.state() {
+                        UpvalueState::Open(slot) => self.stack.slot(*slot).clone(),
+                        _ => todo!(),
+                    };
+
+                    self.stack.push(value);
+                }
+                Instruction::STORE_UPVALUE => {
+                    let upvalue_slot = cursor.read_u8() as usize;
+                    let upvalue = &mut upvalues[upvalue_slot];
+                    let result = match upvalue.state() {
+                        UpvalueState::Open(slot) => {
+                            let value = self.stack.pop();
+                            *self.stack.slot(*slot) = value.clone();
+                            value
+                        }
+                        _ => todo!(),
+                    };
+
+                    self.stack.push(result)
+                }
                 Instruction::MUL_ASSIGN_LOCAL => {
                     let slot = cursor.read_u8() as usize;
                     let value = self.stack.pop();
@@ -190,15 +219,23 @@ impl Runtime {
 
                     match bytecode.constants()[const_pos] {
                         Value::FnScript(ref fn_script) => {
-                            let closure = Value::FnClosure(FnClosure::new(fn_script.clone()));
+                            let upvalue_count = fn_script.bytecode.upvalue_count();
+                            let mut upvalues = Vec::with_capacity(upvalue_count);
 
-                            self.stack.push(closure);
+                            for _ in 0..upvalue_count {
+                                let is_parent_local = cursor.read_u8() == 1;
+                                let index = cursor.read_u8() as usize;
 
-                            // TODO: Actually handle upvalues.
-                            for _ in 0..fn_script.bytecode.upvalue_count() {
-                                cursor.read_u8();
-                                cursor.read_u8();
+                                if is_parent_local {
+                                    upvalues.push(Upvalue::new_open(stack_frame.start + index))
+                                } else {
+                                    todo!();
+                                }
                             }
+
+                            let closure =
+                                Value::FnClosure(FnClosure::new(fn_script.clone(), upvalues.into_boxed_slice()));
+                            self.stack.push(closure);
                         }
                         _ => return Err(RuntimeError::NotAFunction),
                     }
@@ -230,23 +267,26 @@ impl Runtime {
 
     fn call_fn(&mut self, cursor: &mut BytecodeCursor<'_>) -> Result<(), RuntimeError> {
         let arg_count = cursor.read_u8() as usize;
-        let target = self.stack.peek(arg_count).clone();
+        let mut target = self.stack.peek(arg_count).clone();
 
-        match &target {
+        match &mut target {
             Value::FnClosure(closure) => {
-                let fn_script = &closure.fn_script;
-                // TODO: Make this a RuntimeError
-                if arg_count != fn_script.arity {
-                    return Err(RuntimeError::InvalidFunctionArgs(fn_script.arity, arg_count));
-                }
+                let bytecode = {
+                    let fn_script = &closure.borrow().fn_script;
+                    // TODO: Make this a RuntimeError
+                    if arg_count != fn_script.arity {
+                        return Err(RuntimeError::InvalidFunctionArgs(fn_script.arity, arg_count));
+                    }
 
-                let bytecode = &fn_script.bytecode;
+                    fn_script.bytecode.clone()
+                };
+
                 let slots = bytecode.slot_count();
                 let reserved = slots - arg_count;
                 // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
                 let stack_frame = self.stack.reserve_slots(reserved);
                 let stack_frame = (stack_frame.start - arg_count - 1)..stack_frame.end;
-                let result = self.execute_bytecode(bytecode, stack_frame)?;
+                let result = self.execute_bytecode(&bytecode, stack_frame, &mut closure.borrow_mut().upvalues)?;
 
                 // NOTE: Release the number of reserved slots plus thee number of arguments plus a slot for the function itself.
                 self.stack.release_slots(reserved + arg_count + 1);

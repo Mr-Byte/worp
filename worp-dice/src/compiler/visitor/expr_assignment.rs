@@ -45,13 +45,12 @@ impl NodeVisitor<&Assignment> for Compiler {
                     }
 
                     if let Some(upvalue) = self.resolve_upvalue(target.clone(), 0) {
-                        let context = self.context()?;
-
-                        if !context.upvalues()[upvalue].is_mutable() {
+                        if !self.context()?.upvalues()[upvalue].is_mutable() {
                             return Err(CompilerError::ImmutableVariable(target));
                         }
 
-                        context.assembler().store_upvalue(upvalue as u8, span.clone());
+                        self.visit(*rhs)?;
+                        self.context()?.assembler().store_upvalue(upvalue as u8, span.clone());
 
                         return Ok(());
                     }
