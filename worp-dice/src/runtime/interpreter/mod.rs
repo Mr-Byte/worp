@@ -123,6 +123,7 @@ impl Runtime {
                     let value = frame[slot].clone();
                     self.stack.push(value);
                 }
+
                 Instruction::STORE_LOCAL => {
                     // TODO Bounds check the slot?
                     let slot = cursor.read_u8() as usize;
@@ -133,11 +134,12 @@ impl Runtime {
                     let result = frame[slot].clone();
                     self.stack.push(result);
                 }
+
                 Instruction::LOAD_UPVALUE => {
                     if let Some(closure) = closure.as_mut() {
                         let upvalue_slot = cursor.read_u8() as usize;
                         let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
-                        let value = match upvalue.state() {
+                        let value = match &*upvalue.state() {
                             UpvalueState::Open(slot) => self.stack.slot(*slot).clone(),
                             _ => todo!(),
                         };
@@ -147,11 +149,12 @@ impl Runtime {
                         unreachable!("LOAD_UPVALUE used in non-closure context.")
                     }
                 }
+
                 Instruction::STORE_UPVALUE => {
                     if let Some(closure) = closure.as_mut() {
                         let upvalue_slot = cursor.read_u8() as usize;
                         let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
-                        let result = match upvalue.state() {
+                        let result = match &*upvalue.state() {
                             UpvalueState::Open(slot) => {
                                 let value = self.stack.pop();
                                 *self.stack.slot(*slot) = value.clone();
@@ -165,6 +168,7 @@ impl Runtime {
                         unreachable!("STORE_UPVALUE used in non-closure context.")
                     }
                 }
+
                 Instruction::MUL_ASSIGN_LOCAL => {
                     let slot = cursor.read_u8() as usize;
                     let value = self.stack.pop();
@@ -179,6 +183,7 @@ impl Runtime {
                     let result = frame[slot].clone();
                     self.stack.push(result);
                 }
+
                 Instruction::DIV_ASSIGN_LOCAL => {
                     let slot = cursor.read_u8() as usize;
                     let value = self.stack.pop();
@@ -193,6 +198,7 @@ impl Runtime {
                     let result = frame[slot].clone();
                     self.stack.push(result);
                 }
+
                 Instruction::ADD_ASSIGN_LOCAL => {
                     let slot = cursor.read_u8() as usize;
                     let value = self.stack.pop();
@@ -207,6 +213,7 @@ impl Runtime {
                     let result = frame[slot].clone();
                     self.stack.push(result);
                 }
+
                 Instruction::SUB_ASSIGN_LOCAL => {
                     let slot = cursor.read_u8() as usize;
                     let value = self.stack.pop();
@@ -236,8 +243,11 @@ impl Runtime {
 
                                 if is_parent_local {
                                     upvalues.push(Upvalue::new_open(stack_frame.start + index));
+                                } else if let Some(closure) = closure.as_mut() {
+                                    let upvalue = closure.borrow().upvalues[index].clone();
+                                    upvalues.push(upvalue);
                                 } else {
-                                    todo!();
+                                    todo!("Return an error about no parent scope exists to close over.")
                                 }
                             }
 
@@ -278,13 +288,11 @@ impl Runtime {
         let arg_count = cursor.read_u8() as usize;
         let mut target = self.stack.peek(arg_count).clone();
 
-        println!("{:?}", target);
-
         match &mut target {
             Value::FnClosure(closure) => {
                 let bytecode = {
                     let fn_script = &closure.borrow().fn_script;
-                    // TODO: Make this a RuntimeError
+
                     if arg_count != fn_script.arity {
                         return Err(RuntimeError::InvalidFunctionArgs(fn_script.arity, arg_count));
                     }

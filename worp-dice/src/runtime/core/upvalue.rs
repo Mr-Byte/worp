@@ -1,22 +1,26 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, cell::RefMut, rc::Rc};
 
 use crate::Value;
 
 #[derive(Debug)]
 pub enum UpvalueState {
     Open(usize),
-    Closed(Rc<RefCell<Value>>),
+    Closed(Value),
 }
 
-#[derive(Debug)]
-pub struct Upvalue(UpvalueState);
+#[derive(Clone, Debug)]
+pub struct Upvalue(Rc<RefCell<UpvalueState>>);
 
 impl Upvalue {
     pub fn new_open(slot: usize) -> Self {
-        Self(UpvalueState::Open(slot))
+        Self(Rc::new(RefCell::new(UpvalueState::Open(slot))))
     }
 
-    pub fn state(&mut self) -> &mut UpvalueState {
-        &mut self.0
+    pub fn close(&mut self, value: Value) {
+        *self.0.borrow_mut() = UpvalueState::Closed(value);
+    }
+
+    pub fn state(&mut self) -> RefMut<'_, UpvalueState> {
+        self.0.borrow_mut()
     }
 }
