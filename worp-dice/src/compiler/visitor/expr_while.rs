@@ -35,6 +35,14 @@ impl NodeVisitor<&WhileLoop> for Compiler {
 
             let scope_close = self.context()?.scope_stack().pop_scope()?;
 
+            for variable in scope_close.variables {
+                if variable.is_captured {
+                    self.context()?
+                        .assembler()
+                        .close_upvalue(variable.slot as u8, block.span.clone());
+                }
+            }
+
             for location in scope_close.exit_points.iter() {
                 self.context()?.assembler().patch_jump(*location as u64);
             }

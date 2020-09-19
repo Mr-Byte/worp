@@ -49,6 +49,19 @@ fn closure_called_by_another_function_in_parent_scope(criterion: &mut Criterion)
     });
 }
 
+fn closure_called_outside_declaring_scope(criterion: &mut Criterion) {
+    let mut dice = Dice::default();
+
+    criterion.bench_function("closure-called-outside-declaring-scope", |bencher| {
+        bencher.iter(|| {
+            dice.run_script(black_box(
+                "fn test() { let mut x = 0; fn inner() { x = x + 1; x } } let s = test(); s();",
+            ))
+            .unwrap()
+        })
+    });
+}
+
 criterion_group!(
     loops,
     loop_in_place_addition,
@@ -56,5 +69,10 @@ criterion_group!(
     loop_function_call
 );
 
-criterion_group!(closures, closure_called_by_another_function_in_parent_scope);
+criterion_group!(
+    closures,
+    closure_called_by_another_function_in_parent_scope,
+    closure_called_outside_declaring_scope
+);
+
 criterion_main!(loops, closures);
