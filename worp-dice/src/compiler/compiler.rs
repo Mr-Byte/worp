@@ -88,6 +88,10 @@ impl CompilerStack {
     }
 
     pub fn offset(&mut self, offset: usize) -> Option<&mut CompilerContext> {
+        if offset >= self.stack.len() {
+            return None;
+        }
+
         // TODO: Why do recusrive functions underflow this?
         let index = self.stack.len() - offset - 1;
         self.stack.get_mut(index)

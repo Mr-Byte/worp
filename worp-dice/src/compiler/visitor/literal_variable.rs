@@ -11,17 +11,20 @@ impl NodeVisitor<&LitIdent> for Compiler {
             let context = self.context()?;
             if let Some(scope_variable) = context.scope_stack().local(name.clone()) {
                 let slot = scope_variable.slot as u8;
-
                 context.assembler().load_local(slot, span.clone());
+
                 return Ok(());
             }
         }
 
-        if let Some(upvalue) = self.resolve_upvalue(name, 0) {
+        if let Some(upvalue) = self.resolve_upvalue(name.clone(), 0) {
             let context = self.context()?;
             context.assembler().load_upvalue(upvalue as u8, span.clone());
+
+            return Ok(());
         }
 
-        Ok(())
+        // TODO: Resolve to a global variable.
+        Err(CompilerError::UndeclaredVariable(name))
     }
 }

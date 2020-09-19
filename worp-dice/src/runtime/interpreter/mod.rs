@@ -278,6 +278,8 @@ impl Runtime {
         let arg_count = cursor.read_u8() as usize;
         let mut target = self.stack.peek(arg_count).clone();
 
+        println!("{:?}", target);
+
         match &mut target {
             Value::FnClosure(closure) => {
                 let bytecode = {
