@@ -117,7 +117,7 @@ pub mod test {
         assert_next_token!(tokens, TokenKind::Assign);
         assert_next_token!(tokens, TokenKind::DiceRoll);
         assert_next_token!(tokens, TokenKind::LazyAnd);
-        assert_next_token!(tokens, TokenKind::LazyOr);
+        assert_next_token!(tokens, TokenKind::Pipe);
     }
 
     #[test]

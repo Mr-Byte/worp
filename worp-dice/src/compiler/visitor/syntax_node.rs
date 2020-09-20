@@ -21,6 +21,7 @@ impl NodeVisitor<SyntaxNodeId> for Compiler {
             SyntaxNode::LitInt(literal) => self.visit(literal)?,
             SyntaxNode::LitFloat(literal) => self.visit(literal)?,
             SyntaxNode::LitString(literal) => self.visit(literal)?,
+            SyntaxNode::LitAnonymousFn(literal) => self.visit(literal)?,
             SyntaxNode::LitObject(_) => todo!(), //self.visit(literal)?,
             SyntaxNode::LitList(literal) => self.visit(literal)?,
             SyntaxNode::SafeAccess(_) => todo!(),
@@ -39,7 +40,6 @@ impl NodeVisitor<SyntaxNodeId> for Compiler {
             SyntaxNode::Block(block) => self.visit((block, BlockKind::<&str>::Block))?,
             SyntaxNode::FunctionCall(fn_call) => self.visit(fn_call)?,
             SyntaxNode::Return(return_expr) => self.visit(return_expr)?,
-            _ => todo!(),
         }
 
         Ok(())

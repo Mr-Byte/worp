@@ -10,7 +10,12 @@ impl NodeVisitor<&FnDecl> for Compiler {
         let mut fn_context = self.compile_fn(body, &node.args)?;
         let upvalues = fn_context.upvalues().clone();
         let bytecode = fn_context.finish();
-        let value = Value::FnScript(FnScript::new(node.name.clone(), node.args.len(), bytecode));
+        let value = Value::FnScript(FnScript::new(
+            node.name.clone(),
+            node.args.len(),
+            bytecode,
+            uuid::Uuid::new_v4(),
+        ));
         let context = self.context()?;
         let slot = {
             let fn_name = Symbol::new(&node.name);

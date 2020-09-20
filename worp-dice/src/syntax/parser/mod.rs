@@ -54,7 +54,6 @@ impl ParserRule {
             TokenKind::False => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::True => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::Identifier(_) => ParserRule::new(Some(Parser::variable), None, RulePrecedence::Primary),
-            TokenKind::Pipe => ParserRule::new(Some(Parser::anonymous_fn), None, RulePrecedence::Primary),
 
             // If expression
             TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
@@ -76,7 +75,7 @@ impl ParserRule {
             TokenKind::ExclusiveRange => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Range),
             TokenKind::InclusiveRange => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Range),
             TokenKind::LazyAnd => ParserRule::new(None, Some(Parser::binary), RulePrecedence::And),
-            TokenKind::LazyOr => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Or),
+            TokenKind::Pipe => ParserRule::new(Some(Parser::anonymous_fn), Some(Parser::binary), RulePrecedence::Or),
             TokenKind::Equal => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
             TokenKind::NotEqual => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
             TokenKind::Greater => ParserRule::new(None, Some(Parser::binary), RulePrecedence::Comparison),
@@ -466,14 +465,15 @@ impl Parser {
     fn binary(&mut self, lhs: SyntaxNodeId, span_start: Span) -> SyntaxNodeResult {
         let token = self.lexer.next();
         let rule = ParserRule::for_token(&token)?;
-        let rhs = self.parse_precedence(rule.precedence.increment())?;
-
         let operator = match token.kind {
             TokenKind::Coalesce => BinaryOperator::Coalesce,
             TokenKind::ExclusiveRange => BinaryOperator::RangeExclusive,
             TokenKind::InclusiveRange => BinaryOperator::RangeInclusive,
             TokenKind::LazyAnd => BinaryOperator::LogicalAnd,
-            TokenKind::LazyOr => BinaryOperator::LogicalOr,
+            TokenKind::Pipe => {
+                self.lexer.consume(TokenKind::Pipe)?;
+                BinaryOperator::LogicalOr
+            }
             TokenKind::Equal => BinaryOperator::Equals,
             TokenKind::NotEqual => BinaryOperator::NotEquals,
             TokenKind::Greater => BinaryOperator::GreaterThan,
@@ -488,8 +488,9 @@ impl Parser {
             TokenKind::DiceRoll => BinaryOperator::DiceRoll,
             _ => unreachable!(),
         };
-
+        let rhs = self.parse_precedence(rule.precedence.increment())?;
         let node = SyntaxNode::Binary(Binary(operator, lhs, rhs, span_start + token.span()));
+
         Ok(self.arena.alloc(node))
     }
 

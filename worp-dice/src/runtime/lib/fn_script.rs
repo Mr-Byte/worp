@@ -7,6 +7,7 @@ pub struct FnScriptInner {
     pub arity: usize,
     pub name: String,
     pub bytecode: Bytecode,
+    id: uuid::Uuid,
 }
 
 #[derive(Clone, Debug)]
@@ -15,9 +16,14 @@ pub struct FnScript {
 }
 
 impl FnScript {
-    pub fn new(name: String, arity: usize, bytecode: Bytecode) -> Self {
+    pub fn new(name: String, arity: usize, bytecode: Bytecode, id: uuid::Uuid) -> Self {
         Self {
-            inner: Rc::new(FnScriptInner { arity, bytecode, name }),
+            inner: Rc::new(FnScriptInner {
+                arity,
+                bytecode,
+                name,
+                id,
+            }),
         }
     }
 }
@@ -36,10 +42,9 @@ impl Deref for FnScript {
     }
 }
 
-// TODO: Create a way to more easily determine a unique function instance.
 impl PartialEq for FnScript {
     fn eq(&self, other: &Self) -> bool {
-        self.arity == other.arity && self.name == other.name
+        self.arity == other.arity && self.id == other.id
     }
 }
 

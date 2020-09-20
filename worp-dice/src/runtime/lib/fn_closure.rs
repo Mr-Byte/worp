@@ -48,10 +48,13 @@ decl_type! {
 
 impl TypeInstance for FnClosure {}
 
-// TODO: Create a way to more easily determine a unique function instance.
 impl PartialEq for FnClosure {
     fn eq(&self, other: &Self) -> bool {
         self.borrow().fn_script == other.borrow().fn_script
+            && std::ptr::eq(
+                &*self.borrow().upvalues as *const [Upvalue] as *const u8,
+                &*other.borrow().upvalues as *const [Upvalue] as *const u8,
+            )
     }
 }
 

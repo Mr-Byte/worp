@@ -12,6 +12,7 @@ mod expr_if;
 mod expr_return;
 mod expr_unary_op;
 mod expr_while;
+mod literal_anonymous_fn;
 mod literal_bool;
 mod literal_float;
 mod literal_int;

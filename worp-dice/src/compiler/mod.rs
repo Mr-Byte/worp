@@ -1,6 +1,7 @@
 use crate::{
+    runtime::core::Span,
     runtime::interpreter::bytecode::Bytecode,
-    syntax::{Parser, SyntaxNode, SyntaxTree},
+    syntax::{Block, Parser, SyntaxNode, SyntaxTree},
 };
 use compiler::{CompilerContext, CompilerKind, CompilerStack};
 use error::CompilerError;
@@ -56,12 +57,17 @@ impl Compiler {
 
         let root = syntax_tree.get(syntax_tree.root()).expect("Node should not be empty");
 
-        if let SyntaxNode::Block(body) = root {
-            let body = body.clone();
-            self.visit((&body, BlockKind::Function(args)))?;
+        let body = if let SyntaxNode::Block(body) = root {
+            body.clone()
         } else {
-            unreachable!("Function body must be a block.")
-        }
+            Block {
+                expressions: Vec::new(),
+                trailing_expression: Some(syntax_tree.root()),
+                span: Span::new(0..0), // TODO: Make it easier to get a syntax node's span.
+            }
+        };
+
+        self.visit((&body, BlockKind::Function(args)))?;
 
         let compiler_context = self.compiler_stack.pop()?;
 

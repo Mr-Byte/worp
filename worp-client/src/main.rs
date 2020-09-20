@@ -10,10 +10,22 @@ fn main() -> Result<()> {
     let mut runtime = Dice::default();
 
     loop {
-        let mut input = String::new();
         print!("Input: ");
         std::io::stdout().flush()?;
-        std::io::stdin().read_line(&mut input)?;
+
+        let mut input = Vec::new();
+        loop {
+            let mut line = String::new();
+
+            std::io::stdin().read_line(&mut line)?;
+            writeln!(&mut input, "{}", line.trim_end().trim_end_matches('\\'))?;
+
+            if !line.trim_end().ends_with('\\') {
+                break;
+            }
+        }
+
+        let input = String::from_utf8(input)?;
 
         let start = std::time::Instant::now();
 
