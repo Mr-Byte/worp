@@ -45,6 +45,7 @@ pub enum SyntaxNode {
     LitBool(LitBool),
     LitList(LitList),
     LitObject(LitObject),
+    LitAnonymousFn(LitAnonymousFn),
 
     // Member access
     SafeAccess(SafeAccess),
@@ -69,6 +70,13 @@ pub enum SyntaxNode {
     Return(Return),
     Continue(Continue),
     FunctionCall(FunctionCall),
+}
+
+#[derive(Debug, Clone)]
+pub struct LitAnonymousFn {
+    pub args: Vec<String>,
+    pub body: SyntaxNodeId,
+    pub span: Span,
 }
 
 #[derive(Debug, Clone)]

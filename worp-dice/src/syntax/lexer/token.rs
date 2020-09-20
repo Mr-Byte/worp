@@ -51,6 +51,8 @@ pub enum TokenKind {
     Colon,
     #[token(",")]
     Comma,
+    #[token("|")]
+    Pipe,
     // Operators
     #[token("..")]
     ExclusiveRange,

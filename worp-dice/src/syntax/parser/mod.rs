@@ -2,8 +2,8 @@ use super::{
     error::SyntaxError,
     lexer::{Lexer, Token, TokenKind},
     Assignment, AssignmentOperator, Binary, BinaryOperator, Block, Break, Continue, FnDecl, FunctionCall, IfExpression,
-    LitBool, LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, Return, SyntaxNode,
-    SyntaxNodeId, SyntaxTree, Unary, UnaryOperator, VarDecl, WhileLoop,
+    LitAnonymousFn, LitBool, LitFloat, LitIdent, LitInt, LitList, LitNone, LitObject, LitString, LitUnit, Return,
+    SyntaxNode, SyntaxNodeId, SyntaxTree, Unary, UnaryOperator, VarDecl, WhileLoop,
 };
 use crate::runtime::core::Span;
 use id_arena::Arena;
@@ -54,6 +54,7 @@ impl ParserRule {
             TokenKind::False => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::True => ParserRule::new(Some(Parser::literal), None, RulePrecedence::Primary),
             TokenKind::Identifier(_) => ParserRule::new(Some(Parser::variable), None, RulePrecedence::Primary),
+            TokenKind::Pipe => ParserRule::new(Some(Parser::anonymous_fn), None, RulePrecedence::Primary),
 
             // If expression
             TokenKind::If => ParserRule::new(Some(Parser::if_expression), None, RulePrecedence::None),
@@ -177,7 +178,7 @@ impl Parser {
                 TokenKind::If => self.if_expression(false)?,
                 TokenKind::While => self.while_statement()?,
                 TokenKind::Let => self.variable_decl()?,
-                TokenKind::Function => self.function_decl()?,
+                TokenKind::Function => self.fn_decl()?,
                 TokenKind::Return | TokenKind::Break | TokenKind::Continue => self.control_flow()?,
                 _ => self.expression()?,
             };
@@ -386,7 +387,41 @@ impl Parser {
         Ok(self.arena.alloc(node))
     }
 
-    fn function_decl(&mut self) -> SyntaxNodeResult {
+    fn anonymous_fn(&mut self, _: bool) -> SyntaxNodeResult {
+        let span_start = self.lexer.consume(TokenKind::Pipe)?.span();
+
+        let mut args = Vec::new();
+
+        while self.lexer.peek().kind != TokenKind::Pipe {
+            let (_, arg_name) = self.lexer.consume_ident()?;
+            args.push(arg_name);
+
+            if self.lexer.peek().kind == TokenKind::Comma {
+                self.lexer.next();
+            } else if self.lexer.peek().kind != TokenKind::Pipe {
+                return Err(SyntaxError::UnexpectedToken(self.lexer.next()));
+            }
+        }
+
+        if args.len() > (u8::MAX as usize) {
+            todo!("Generate anonymous fn TooManyArguments")
+            // return Err(SyntaxError::TooManyArguments(name, name_token.span()));
+        }
+
+        self.lexer.consume(TokenKind::Pipe)?;
+
+        let body = self.expression()?;
+        let span_end = self.lexer.current().span();
+        let node = SyntaxNode::LitAnonymousFn(LitAnonymousFn {
+            args,
+            body,
+            span: span_start + span_end,
+        });
+
+        Ok(self.arena.alloc(node))
+    }
+
+    fn fn_decl(&mut self) -> SyntaxNodeResult {
         let span_start = self.lexer.consume(TokenKind::Function)?.span();
         let name_token = self.lexer.next();
         let name = if let TokenKind::Identifier(ref name) = name_token.kind {
