@@ -36,7 +36,7 @@ impl NodeVisitor<SyntaxNodeId> for Compiler {
             SyntaxNode::ForLoop(_) => todo!(),
             SyntaxNode::Break(break_node) => self.visit(break_node)?,
             SyntaxNode::Continue(continue_node) => self.visit(continue_node)?,
-            SyntaxNode::Block(block) => self.visit((block, BlockKind::Block))?,
+            SyntaxNode::Block(block) => self.visit((block, BlockKind::<&str>::Block))?,
             SyntaxNode::FunctionCall(fn_call) => self.visit(fn_call)?,
             SyntaxNode::Return(return_expr) => self.visit(return_expr)?,
             _ => todo!(),

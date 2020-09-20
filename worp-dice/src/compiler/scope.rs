@@ -13,11 +13,15 @@ impl ScopeVariable {
     pub fn is_mutable(&self) -> bool {
         matches!(self.state, State::Local { is_mutable, .. } if is_mutable)
     }
+
+    pub fn is_initialized(&self) -> bool {
+        matches!(self.state, State::Local { is_initialized, .. } | State::Function { is_initialized } if is_initialized)
+    }
 }
 
 #[derive(Clone)]
 pub enum State {
-    Local { is_mutable: bool },
+    Local { is_mutable: bool, is_initialized: bool },
     Function { is_initialized: bool },
 }
 

@@ -11,6 +11,8 @@ pub enum CompilerError {
     UndeclaredVariable(Symbol),
     #[error("Cannot assign to immutable variable {0}.")]
     ImmutableVariable(Symbol),
+    #[error("Variable {0} has not been initialized.")]
+    UnitiailizedVariable(Symbol),
     #[error("Invalid assignment target.")]
     InvalidAssignmentTarget,
 

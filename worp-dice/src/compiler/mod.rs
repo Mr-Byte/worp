@@ -1,11 +1,9 @@
 use crate::{
     runtime::interpreter::bytecode::Bytecode,
     syntax::{Parser, SyntaxNode, SyntaxTree},
-    Symbol,
 };
 use compiler::{CompilerContext, CompilerKind, CompilerStack};
 use error::CompilerError;
-use scope::State;
 use visitor::{BlockKind, NodeVisitor as _};
 
 mod assembler;
@@ -56,18 +54,11 @@ impl Compiler {
         // TODO: Push a new CompilerContext onto the CompilerStack.
         self.compiler_stack.push(CompilerKind::Function);
 
-        for arg in args {
-            self.compiler_stack
-                .top_mut()?
-                .scope_stack()
-                .add_local(Symbol::new(arg.as_ref()), State::Local { is_mutable: false })?;
-        }
-
         let root = syntax_tree.get(syntax_tree.root()).expect("Node should not be empty");
 
         if let SyntaxNode::Block(body) = root {
             let body = body.clone();
-            self.visit((&body, BlockKind::Function))?;
+            self.visit((&body, BlockKind::Function(args)))?;
         } else {
             unreachable!("Function body must be a block.")
         }

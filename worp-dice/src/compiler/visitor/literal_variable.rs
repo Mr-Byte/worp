@@ -10,6 +10,10 @@ impl NodeVisitor<&LitIdent> for Compiler {
         {
             let context = self.context()?;
             if let Some(scope_variable) = context.scope_stack().local(name.clone()) {
+                if !scope_variable.is_initialized() {
+                    return Err(CompilerError::UnitiailizedVariable(scope_variable.name.clone()));
+                }
+
                 let slot = scope_variable.slot as u8;
                 context.assembler().load_local(slot, span.clone());
 
