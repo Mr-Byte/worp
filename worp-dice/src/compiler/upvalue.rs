@@ -34,7 +34,7 @@ impl Compiler {
 
                 let descriptor = UpvalueDescriptor::ParentLocal {
                     slot: parent_local.slot,
-                    is_mutable: parent_local.is_mutable,
+                    is_mutable: parent_local.is_mutable(),
                 };
 
                 descriptor

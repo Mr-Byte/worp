@@ -13,9 +13,9 @@ pub enum BlockKind {
 impl NodeVisitor<(&Block, BlockKind)> for Compiler {
     fn visit(&mut self, (block, kind): (&Block, BlockKind)) -> Result<(), CompilerError> {
         self.context()?.scope_stack().push_scope(ScopeKind::Block, None);
+        self.scan_item_decls(block)?;
 
         // TODO: Scan for any function or class declarations and create local slots, before visiting all children.
-
         for expression in block.expressions.iter() {
             self.visit(*expression)?;
             self.context()?.assembler().pop(block.span.clone());

@@ -5,6 +5,8 @@ pub enum CompilerError {
     #[error(transparent)]
     SyntaxError(#[from] SyntaxError),
 
+    #[error("The item {0} has already been declared in this scope.")]
+    ItemAlreadyDeclared(Symbol),
     #[error("Encountered undeclared variable {0}.")]
     UndeclaredVariable(Symbol),
     #[error("Cannot assign to immutable variable {0}.")]

@@ -5,10 +5,12 @@ use crate::{
 };
 use compiler::{CompilerContext, CompilerKind, CompilerStack};
 use error::CompilerError;
+use scope::State;
 use visitor::{BlockKind, NodeVisitor as _};
 
 mod assembler;
 mod compiler;
+mod decl_scan;
 pub mod error;
 mod scope;
 mod upvalue;
@@ -58,7 +60,7 @@ impl Compiler {
             self.compiler_stack
                 .top_mut()?
                 .scope_stack()
-                .add_local(Symbol::new(arg.as_ref()), false)?;
+                .add_local(Symbol::new(arg.as_ref()), State::Local { is_mutable: false })?;
         }
 
         let root = syntax_tree.get(syntax_tree.root()).expect("Node should not be empty");

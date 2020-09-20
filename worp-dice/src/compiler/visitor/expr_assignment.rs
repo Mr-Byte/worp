@@ -17,7 +17,7 @@ impl NodeVisitor<&Assignment> for Compiler {
                     if let Some(local) = self.context()?.scope_stack().local(target.clone()) {
                         let slot = local.slot as u8;
 
-                        if !local.is_mutable {
+                        if !local.is_mutable() {
                             return Err(CompilerError::ImmutableVariable(target));
                         }
 

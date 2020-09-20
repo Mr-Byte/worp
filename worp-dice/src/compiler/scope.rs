@@ -4,8 +4,21 @@ use crate::{CompilerError, Symbol};
 pub struct ScopeVariable {
     pub name: Symbol,
     pub slot: usize,
-    pub is_mutable: bool,
     pub is_captured: bool,
+    // NOTE: Unlike variables, functions cannot shadow.
+    pub state: State,
+}
+
+impl ScopeVariable {
+    pub fn is_mutable(&self) -> bool {
+        matches!(self.state, State::Local { is_mutable, .. } if is_mutable)
+    }
+}
+
+#[derive(Clone)]
+pub enum State {
+    Local { is_mutable: bool },
+    Function { is_initialized: bool },
 }
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -74,7 +87,7 @@ impl ScopeStack {
         self.first_of_kind(kind).is_some()
     }
 
-    pub fn add_local(&mut self, name: Symbol, is_mutable: bool) -> Result<usize, CompilerError> {
+    pub fn add_local(&mut self, name: Symbol, state: State) -> Result<usize, CompilerError> {
         self.top_mut()?.slot_count += 1;
 
         let mut slot_count = 0;
@@ -87,9 +100,9 @@ impl ScopeStack {
         let slot = slot_count - 1;
         let local = ScopeVariable {
             name,
-            is_mutable,
             slot,
             is_captured: false,
+            state,
         };
 
         self.top_mut()?.variables.push(local);
