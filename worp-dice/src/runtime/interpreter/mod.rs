@@ -174,66 +174,6 @@ impl Runtime {
                     }
                 }
 
-                Instruction::MUL_ASSIGN_LOCAL => {
-                    let slot = cursor.read_u8() as usize;
-                    let value = self.stack.pop();
-                    let frame = self.stack.slots(stack_frame.clone());
-
-                    match (&mut frame[slot], value) {
-                        (Value::Int(lhs), Value::Int(rhs)) => *lhs *= rhs,
-                        (Value::Float(lhs), Value::Float(rhs)) => *lhs *= rhs,
-                        _ => todo!(),
-                    }
-
-                    let result = frame[slot].clone();
-                    self.stack.push(result);
-                }
-
-                Instruction::DIV_ASSIGN_LOCAL => {
-                    let slot = cursor.read_u8() as usize;
-                    let value = self.stack.pop();
-                    let frame = self.stack.slots(stack_frame.clone());
-
-                    match (&mut frame[slot], value) {
-                        (Value::Int(lhs), Value::Int(rhs)) => *lhs /= rhs,
-                        (Value::Float(lhs), Value::Float(rhs)) => *lhs /= rhs,
-                        _ => todo!(),
-                    }
-
-                    let result = frame[slot].clone();
-                    self.stack.push(result);
-                }
-
-                Instruction::ADD_ASSIGN_LOCAL => {
-                    let slot = cursor.read_u8() as usize;
-                    let value = self.stack.pop();
-                    let frame = self.stack.slots(stack_frame.clone());
-
-                    match (&mut frame[slot], value) {
-                        (Value::Int(lhs), Value::Int(rhs)) => *lhs += rhs,
-                        (Value::Float(lhs), Value::Float(rhs)) => *lhs += rhs,
-                        _ => todo!(),
-                    }
-
-                    let result = frame[slot].clone();
-                    self.stack.push(result);
-                }
-
-                Instruction::SUB_ASSIGN_LOCAL => {
-                    let slot = cursor.read_u8() as usize;
-                    let value = self.stack.pop();
-                    let frame = self.stack.slots(stack_frame.clone());
-
-                    match (&mut frame[slot], value) {
-                        (Value::Int(lhs), Value::Int(rhs)) => *lhs -= rhs,
-                        (Value::Float(lhs), Value::Float(rhs)) => *lhs -= rhs,
-                        _ => todo!(),
-                    }
-
-                    let result = frame[slot].clone();
-                    self.stack.push(result);
-                }
-
                 Instruction::CLOSURE => {
                     let const_pos = cursor.read_u8() as usize;
 

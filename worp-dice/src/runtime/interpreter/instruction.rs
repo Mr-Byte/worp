@@ -88,14 +88,6 @@ define_instructions! {
     pub const ADD;
     pub const SUB;
 
-    // TODO: Should these be removed or retooled?
-    // Idea for retooling is to do in-place modification of the LHS on the stack.
-    pub const MUL_ASSIGN_LOCAL;
-    pub const DIV_ASSIGN_LOCAL;
-    pub const ADD_ASSIGN_LOCAL;
-    pub const SUB_ASSIGN_LOCAL;
-    // TODO: &= and |= ?
-
     pub const GT;
     pub const GTE;
     pub const LT;

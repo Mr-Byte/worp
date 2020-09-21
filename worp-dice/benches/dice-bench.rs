@@ -36,6 +36,17 @@ fn loop_function_call(criterion: &mut Criterion) {
     });
 }
 
+fn loop_closure_call(criterion: &mut Criterion) {
+    let mut dice = Dice::default();
+
+    criterion.bench_function("loop-closure-call", |bencher| {
+        bencher.iter(|| {
+            dice.run_script(black_box("let mut x = 0; let f = || x += 1; while x < 1000 { f(); }"))
+                .unwrap()
+        })
+    });
+}
+
 fn closure_called_by_another_function_in_parent_scope(criterion: &mut Criterion) {
     let mut dice = Dice::default();
 
@@ -66,7 +77,8 @@ criterion_group!(
     loops,
     loop_in_place_addition,
     loop_addition_with_assignment,
-    loop_function_call
+    loop_function_call,
+    loop_closure_call
 );
 
 criterion_group!(

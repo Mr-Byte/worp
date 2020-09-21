@@ -58,6 +58,7 @@ macro_rules! comparison_op {
             (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
             (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
             (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
+            (Value::FnClosure(lhs), Value::FnClosure(rhs)) => $stack.push(Value::Bool(op!(OP_EQ, lhs, rhs))),
             _ => todo!(),
         }
     };
@@ -73,6 +74,7 @@ macro_rules! comparison_op {
             (Value::Bool(lhs), Value::Bool(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
             (Value::Int(lhs), Value::Int(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
             (Value::Float(lhs), Value::Float(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
+            (Value::FnClosure(lhs), Value::FnClosure(rhs)) => $stack.push(Value::Bool(op!(OP_NEQ, lhs, rhs))),
             _ => todo!(),
         }
     };
