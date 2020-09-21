@@ -1,5 +1,9 @@
 use super::NodeVisitor;
-use crate::{compiler::compiler::CompilerKind, compiler::Compiler, syntax::Return, CompilerError};
+use crate::{
+    compiler::{compiler::CompilerKind, Compiler},
+    syntax::Return,
+    CompilerError,
+};
 
 impl NodeVisitor<&Return> for Compiler {
     fn visit(&mut self, expr_return: &Return) -> Result<(), crate::CompilerError> {

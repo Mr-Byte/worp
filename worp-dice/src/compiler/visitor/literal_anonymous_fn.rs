@@ -1,6 +1,8 @@
 use crate::{
-    compiler::scope::State, compiler::Compiler, runtime::lib::FnScript, syntax::LitAnonymousFn, CompilerError, Symbol,
-    Value,
+    compiler::{scope::State, Compiler},
+    runtime::lib::FnScript,
+    syntax::LitAnonymousFn,
+    CompilerError, Symbol, Value,
 };
 
 use super::NodeVisitor;

@@ -14,7 +14,10 @@ use instruction::Instruction;
 use stack::Stack;
 use std::{collections::VecDeque, ops::Range};
 
-use super::{core::Upvalue, core::UpvalueState, lib::FnClosure};
+use super::{
+    core::{Upvalue, UpvalueState},
+    lib::FnClosure,
+};
 
 pub struct Runtime {
     stack: Stack,

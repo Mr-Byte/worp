@@ -1,5 +1,9 @@
 use super::NodeVisitor;
-use crate::{compiler::scope::State, compiler::Compiler, syntax::VarDecl, CompilerError, Symbol};
+use crate::{
+    compiler::{scope::State, Compiler},
+    syntax::VarDecl,
+    CompilerError, Symbol,
+};
 
 impl NodeVisitor<&VarDecl> for Compiler {
     fn visit(&mut self, var_decl: &VarDecl) -> Result<(), CompilerError> {

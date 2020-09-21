@@ -1,4 +1,8 @@
-use std::{cell::Ref, cell::RefCell, cell::RefMut, fmt::Debug, fmt::Display, rc::Rc};
+use std::{
+    cell::{Ref, RefCell, RefMut},
+    fmt::{Debug, Display},
+    rc::Rc,
+};
 
 use crate::runtime::core::{TypeInstance, Upvalue};
 

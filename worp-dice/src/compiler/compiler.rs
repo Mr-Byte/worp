@@ -1,4 +1,8 @@
-use super::{assembler::Assembler, scope::ScopeKind, scope::ScopeStack, upvalue::UpvalueDescriptor};
+use super::{
+    assembler::Assembler,
+    scope::{ScopeKind, ScopeStack},
+    upvalue::UpvalueDescriptor,
+};
 use crate::{runtime::interpreter::bytecode::Bytecode, CompilerError};
 
 #[derive(Copy, Clone, Eq, PartialEq)]

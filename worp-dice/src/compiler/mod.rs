@@ -1,6 +1,5 @@
 use crate::{
-    runtime::core::Span,
-    runtime::interpreter::bytecode::Bytecode,
+    runtime::{core::Span, interpreter::bytecode::Bytecode},
     syntax::{Block, Parser, SyntaxNode, SyntaxTree},
 };
 use compiler::{CompilerContext, CompilerKind, CompilerStack};

@@ -1,4 +1,7 @@
-use std::{cell::RefCell, cell::RefMut, rc::Rc};
+use std::{
+    cell::{RefCell, RefMut},
+    rc::Rc,
+};
 
 use crate::Value;
 
