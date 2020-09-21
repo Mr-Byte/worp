@@ -26,7 +26,7 @@ impl Compiler {
     }
 
     fn fn_decl(&mut self, fn_decl: FnDecl) -> Result<(), CompilerError> {
-        let name = Symbol::new(fn_decl.name.clone());
+        let name = Symbol::new(fn_decl.name);
 
         self.context()?
             .scope_stack()

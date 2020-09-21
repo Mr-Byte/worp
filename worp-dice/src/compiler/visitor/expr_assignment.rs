@@ -89,10 +89,10 @@ impl NodeVisitor<&Assignment> for Compiler {
                         return Ok(());
                     }
 
-                    return Err(CompilerError::UndeclaredVariable(target));
+                    Err(CompilerError::UndeclaredVariable(target))
                 }
             }
-            _ => return Err(CompilerError::InvalidAssignmentTarget),
+            _ => Err(CompilerError::InvalidAssignmentTarget),
         }
     }
 }

@@ -27,7 +27,7 @@ pub struct Compiler {
 }
 
 impl Compiler {
-    fn new(syntax_tree: SyntaxTree, kind: CompilationKind) -> Self {
+    fn new(syntax_tree: SyntaxTree, _kind: CompilationKind) -> Self {
         let compiler_stack = CompilerStack::new(CompilerKind::Script);
 
         Self {

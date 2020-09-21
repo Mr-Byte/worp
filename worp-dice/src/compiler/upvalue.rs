@@ -32,12 +32,10 @@ impl Compiler {
             Some(parent_local) => {
                 parent_local.is_captured = true;
 
-                let descriptor = UpvalueDescriptor::ParentLocal {
+                UpvalueDescriptor::ParentLocal {
                     slot: parent_local.slot,
                     is_mutable: parent_local.is_mutable(),
-                };
-
-                descriptor
+                }
             }
             None => {
                 let outer_index = self.resolve_upvalue(name, depth + 1)?;
@@ -47,12 +45,11 @@ impl Compiler {
                         is_mutable
                     }
                 };
-                let descriptor = UpvalueDescriptor::Outer {
+
+                UpvalueDescriptor::Outer {
                     upvalue_index: outer_index,
                     is_mutable,
-                };
-
-                descriptor
+                }
             }
         };
 
