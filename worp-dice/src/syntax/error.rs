@@ -8,5 +8,8 @@ pub enum SyntaxError {
     UnexpectedToken(Token),
 
     #[error("Function {0} has too many arguments (max 255).")]
-    TooManyArguments(String, Span),
+    FnTooManyArguments(String, Span),
+
+    #[error("Anonymous function has too many arguments (max 255).")]
+    AnonymousFnTooManyArguments(Span),
 }

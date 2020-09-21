@@ -28,7 +28,6 @@ impl<'args, T: AsRef<str>> NodeVisitor<(&Block, BlockKind<'args, T>)> for Compil
 
         self.scan_item_decls(block)?;
 
-        // TODO: Scan for any function or class declarations and create local slots, before visiting all children.
         for expression in block.expressions.iter() {
             self.visit(*expression)?;
             self.context()?.assembler().pop(block.span.clone());

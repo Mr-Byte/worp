@@ -31,7 +31,6 @@ pub enum ScopeKind {
     Loop,
 }
 
-// TODO: Move variables and variable resolution to scope context.
 #[derive(Clone)]
 pub struct ScopeContext {
     pub depth: usize,

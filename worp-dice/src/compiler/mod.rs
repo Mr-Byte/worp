@@ -52,7 +52,6 @@ impl Compiler {
         syntax_tree: SyntaxTree,
         args: &[impl AsRef<str>],
     ) -> Result<CompilerContext, CompilerError> {
-        // TODO: Push a new CompilerContext onto the CompilerStack.
         self.compiler_stack.push(CompilerKind::Function);
 
         let root = syntax_tree.get(syntax_tree.root()).expect("Node should not be empty");

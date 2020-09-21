@@ -194,6 +194,7 @@ impl Runtime {
                                     let upvalue = closure.borrow().upvalues[index].clone();
                                     upvalues.push(upvalue);
                                 } else {
+                                    // Is this actually unreachable?
                                     todo!("Return an error about no parent scope exists to close over.")
                                 }
                             }

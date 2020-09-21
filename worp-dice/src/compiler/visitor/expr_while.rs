@@ -14,7 +14,6 @@ impl NodeVisitor<&WhileLoop> for Compiler {
             self.context()?
                 .scope_stack()
                 .push_scope(ScopeKind::Loop, Some(loop_start as usize));
-            // TODO: Scan for any function or class declarations and create local slots, before visiting all children.
             self.scan_item_decls(&block)?;
             self.visit(*condition)?;
 

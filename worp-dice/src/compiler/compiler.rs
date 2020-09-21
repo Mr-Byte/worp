@@ -92,7 +92,6 @@ impl CompilerStack {
             return None;
         }
 
-        // TODO: Why do recusrive functions underflow this?
         let index = self.stack.len() - offset - 1;
         self.stack.get_mut(index)
     }

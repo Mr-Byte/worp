@@ -403,8 +403,9 @@ impl Parser {
         }
 
         if args.len() > (u8::MAX as usize) {
-            todo!("Generate anonymous fn TooManyArguments")
-            // return Err(SyntaxError::TooManyArguments(name, name_token.span()));
+            return Err(SyntaxError::AnonymousFnTooManyArguments(
+                span_start + self.lexer.current().span(),
+            ));
         }
 
         self.lexer.consume(TokenKind::Pipe)?;
@@ -445,7 +446,7 @@ impl Parser {
         }
 
         if args.len() > (u8::MAX as usize) {
-            return Err(SyntaxError::TooManyArguments(name, name_token.span()));
+            return Err(SyntaxError::FnTooManyArguments(name, name_token.span()));
         }
 
         self.lexer.consume(TokenKind::RightParen)?;
