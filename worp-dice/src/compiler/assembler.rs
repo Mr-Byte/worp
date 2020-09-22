@@ -1,6 +1,9 @@
-use crate::runtime::{
-    core::{Span, Value},
-    interpreter::{bytecode::Bytecode, instruction::Instruction},
+use crate::{
+    runtime::{
+        core::{Span, Value},
+        interpreter::{bytecode::Bytecode, instruction::Instruction},
+    },
+    CompilerError,
 };
 use bytes::BufMut as _;
 use std::collections::HashMap;
@@ -66,28 +69,35 @@ impl Assembler {
         self.data.put_u8(Instruction::PUSH_F1.value());
     }
 
-    pub fn push_const(&mut self, value: Value, span: Span) {
+    pub fn push_const(&mut self, value: Value, span: Span) -> Result<(), CompilerError> {
         self.source_map.insert(self.data.len() as u64, span.clone());
         self.data.put_u8(Instruction::PUSH_CONST.value());
 
         self.source_map.insert(self.data.len() as u64, span);
-        let const_pos = self.make_constant(value);
+        let const_pos = self.make_constant(value)?;
         self.data.put_u8(const_pos);
+
+        Ok(())
     }
 
-    pub fn closure(&mut self, value: Value, upvalues: &[UpvalueDescriptor], span: Span) {
+    pub fn closure(&mut self, value: Value, upvalues: &[UpvalueDescriptor], span: Span) -> Result<(), CompilerError> {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::CLOSURE.value());
-        let fn_pos = self.make_constant(value);
+        let fn_pos = self.make_constant(value)?;
         self.data.put_u8(fn_pos);
+
+        if upvalues.len() > 255 {
+            return Err(CompilerError::TooManyUpvalues);
+        }
 
         for upvalue in upvalues {
             let (is_parent_local, index) = upvalue.description();
 
-            // TODO: Assert the number of upvalues does not exceed 255.
             self.data.put_u8(is_parent_local as u8);
             self.data.put_u8(index as u8);
         }
+
+        Ok(())
     }
 
     pub fn pop(&mut self, span: Span) {
@@ -250,7 +260,7 @@ impl Assembler {
         self.data.put_u8(Instruction::RETURN.value());
     }
 
-    fn make_constant(&mut self, value: Value) -> u8 {
+    fn make_constant(&mut self, value: Value) -> Result<u8, CompilerError> {
         let position = if let Some(position) = self.constants.iter().position(|current| *current == value) {
             position
         } else {
@@ -258,9 +268,11 @@ impl Assembler {
             self.constants.len() - 1
         };
 
-        // TODO: Make this an error.
-        assert!(position <= 255, "Too many constants.");
+        // NOTE: This could be alleviated by offering a long-form PUSH_CONST.
+        if position > 255 {
+            return Err(CompilerError::TooManyConstants);
+        }
 
-        position as u8
+        Ok(position as u8)
     }
 }

@@ -22,9 +22,13 @@ pub enum CompilerError {
     InvalidContinue,
     #[error("Loops cannot end with an expression. Try adding ; to the last statement.")]
     InvalidLoopEnding,
-
     #[error("The return keyword can only be used inside functions.")]
     InvalidReturn,
+
+    #[error("Compilation unit has too many constants.")]
+    TooManyConstants,
+    #[error("Compilation unit has too many upvalues.")]
+    TooManyUpvalues,
 
     #[error("Internal Compiler Error: {0}")]
     InternalCompilerError(String),

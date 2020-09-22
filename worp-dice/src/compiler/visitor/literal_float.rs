@@ -11,7 +11,7 @@ impl NodeVisitor<&LitFloat> for Compiler {
         } else if *value == 1.0 {
             context.assembler().push_f1(span.clone());
         } else {
-            context.assembler().push_const(Value::Float(*value), span.clone());
+            context.assembler().push_const(Value::Float(*value), span.clone())?;
         }
 
         Ok(())
