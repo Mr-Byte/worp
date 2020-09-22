@@ -15,7 +15,7 @@ pub struct FnClosureInner {
 
 impl Debug for FnClosureInner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{ {}/{} }}", self.fn_script.name, self.fn_script.arity)
+        write!(f, "closure{{{}}}", self.fn_script)
     }
 }
 
@@ -64,6 +64,6 @@ impl PartialEq for FnClosure {
 
 impl Display for FnClosure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "closure{{{}}}", self.borrow().fn_script.name)
+        write!(f, "closure{{{}}}", self.borrow().fn_script)
     }
 }

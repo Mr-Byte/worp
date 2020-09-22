@@ -281,31 +281,36 @@ impl Runtime {
         let arg_count = cursor.read_u8() as usize;
         let mut target = self.stack.peek(arg_count).clone();
 
-        match &mut target {
+        let (bytecode, closure) = match &mut target {
             Value::FnClosure(closure) => {
-                let bytecode = {
-                    let fn_script = &closure.borrow().fn_script;
+                let fn_script = &closure.borrow().fn_script;
 
-                    if arg_count != fn_script.arity {
-                        return Err(RuntimeError::InvalidFunctionArgs(fn_script.arity, arg_count));
-                    }
+                if arg_count != fn_script.arity {
+                    return Err(RuntimeError::InvalidFunctionArgs(fn_script.arity, arg_count));
+                }
 
-                    fn_script.bytecode.clone()
-                };
+                (fn_script.bytecode.clone(), Some(closure.clone()))
+            }
+            Value::FnScript(fn_script) => {
+                if arg_count != fn_script.arity {
+                    return Err(RuntimeError::InvalidFunctionArgs(fn_script.arity, arg_count));
+                }
 
-                let slots = bytecode.slot_count();
-                let reserved = slots - arg_count;
-                // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
-                let stack_frame = self.stack.reserve_slots(reserved);
-                let stack_frame = (stack_frame.start - arg_count)..stack_frame.end;
-                let result = self.execute_bytecode(&bytecode, stack_frame, Some(closure.clone()))?;
-
-                // NOTE: Release the number of reserved slots plus the number of arguments plus a slot for the function itself.
-                self.stack.release_slots(reserved + arg_count + 1);
-                self.stack.push(result);
+                (fn_script.bytecode.clone(), None)
             }
             _ => return Err(RuntimeError::NotAFunction),
-        }
+        };
+
+        let slots = bytecode.slot_count();
+        let reserved = slots - arg_count;
+        // NOTE: Reserve only the slots needed to cover locals beyond the arguments already on the stack.
+        let stack_frame = self.stack.reserve_slots(reserved);
+        let stack_frame = (stack_frame.start - arg_count)..stack_frame.end;
+        let result = self.execute_bytecode(&bytecode, stack_frame, closure)?;
+
+        // NOTE: Release the number of reserved slots plus the number of arguments plus a slot for the function itself.
+        self.stack.release_slots(reserved + arg_count + 1);
+        self.stack.push(result);
 
         Ok(())
     }
