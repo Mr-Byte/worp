@@ -1,5 +1,5 @@
 use crate::{
-    runtime::{core::Span, interpreter::bytecode::Bytecode},
+    runtime::interpreter::bytecode::Bytecode,
     syntax::{Block, Parser, SyntaxNode, SyntaxTree},
 };
 use compiler_stack::{CompilerContext, CompilerKind, CompilerStack};
@@ -61,7 +61,7 @@ impl Compiler {
             Block {
                 expressions: Vec::new(),
                 trailing_expression: Some(syntax_tree.root()),
-                span: Span::new(0..0), // TODO: Make it easier to get a syntax node's span.
+                span: syntax_tree.get(syntax_tree.root()).expect("Node should exist.").span(),
             }
         };
 

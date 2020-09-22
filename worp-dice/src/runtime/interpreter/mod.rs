@@ -276,6 +276,7 @@ impl Runtime {
         Ok(())
     }
 
+    // TODO: Replace this mutually recursive call with an execution stack to prevent the thread's stack from overflowing.
     fn call_fn(&mut self, cursor: &mut BytecodeCursor<'_>) -> Result<(), RuntimeError> {
         let arg_count = cursor.read_u8() as usize;
         let mut target = self.stack.peek(arg_count).clone();

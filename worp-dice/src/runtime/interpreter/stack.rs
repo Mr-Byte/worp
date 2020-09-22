@@ -2,8 +2,8 @@ use std::ops::Range;
 
 use crate::Value;
 
-// NOTE: When sizeof(Value) = 16-bytes, this is 4MB of stack space.
-const MAX_STACK_SIZE: usize = 262_144;
+// NOTE: When sizeof(Value) = 16-bytes, this is 1MB of stack space.
+const MAX_STACK_SIZE: usize = 65_536;
 
 pub struct Stack {
     values: Box<[Value]>,

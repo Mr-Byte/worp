@@ -76,7 +76,7 @@ pub enum SyntaxNode {
 }
 
 impl SyntaxNode {
-    fn span(&self) -> Span {
+    pub fn span(&self) -> Span {
         match self {
             SyntaxNode::LitIdent(LitIdent { span, .. }) => *span,
             SyntaxNode::LitNone(LitNone { span, .. }) => *span,

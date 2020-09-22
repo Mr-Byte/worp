@@ -3,7 +3,6 @@ use crate::{compiler::Compiler, syntax::LitIdent, CompilerError, Symbol};
 use super::NodeVisitor;
 
 impl NodeVisitor<&LitIdent> for Compiler {
-    // TODO: Decompose this down into smaller functions.
     fn visit(&mut self, LitIdent { name, span }: &LitIdent) -> Result<(), CompilerError> {
         let name = Symbol::new(name);
 
