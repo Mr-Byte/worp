@@ -53,7 +53,7 @@ impl NodeVisitor<&Assignment> for Compiler {
                         return Ok(());
                     }
 
-                    if let Some(upvalue) = self.resolve_upvalue(target.clone(), 0) {
+                    if let Some(upvalue) = self.compiler_stack.resolve_upvalue(target.clone(), 0) {
                         if !self.context()?.upvalues()[upvalue].is_mutable() {
                             return Err(CompilerError::ImmutableVariable(target));
                         }

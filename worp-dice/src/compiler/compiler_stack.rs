@@ -3,7 +3,7 @@ use super::{
     scope_stack::{ScopeKind, ScopeStack},
     upvalue::UpvalueDescriptor,
 };
-use crate::{runtime::interpreter::bytecode::Bytecode, CompilerError};
+use crate::{runtime::interpreter::bytecode::Bytecode, CompilerError, Symbol};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum CompilerKind {
@@ -98,5 +98,36 @@ impl CompilerStack {
 
         let index = self.stack.len() - offset - 1;
         self.stack.get_mut(index)
+    }
+
+    pub fn resolve_upvalue(&mut self, name: Symbol, depth: usize) -> Option<usize> {
+        let parent_local = self.offset(depth + 1)?.scope_stack().local(name.clone());
+        let descriptor = match parent_local {
+            Some(parent_local) => {
+                parent_local.is_captured = true;
+
+                UpvalueDescriptor::ParentLocal {
+                    slot: parent_local.slot,
+                    is_mutable: parent_local.is_mutable(),
+                }
+            }
+            None => {
+                let outer_index = self.resolve_upvalue(name, depth + 1)?;
+                let parent = self.offset(depth + 1)?;
+                let is_mutable = match parent.upvalues()[outer_index] {
+                    UpvalueDescriptor::ParentLocal { is_mutable, .. } | UpvalueDescriptor::Outer { is_mutable, .. } => {
+                        is_mutable
+                    }
+                };
+
+                UpvalueDescriptor::Outer {
+                    upvalue_index: outer_index,
+                    is_mutable,
+                }
+            }
+        };
+
+        let current = self.offset(depth)?;
+        Some(current.add_upvalue(descriptor))
     }
 }

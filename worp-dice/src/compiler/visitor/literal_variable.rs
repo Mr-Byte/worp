@@ -21,7 +21,7 @@ impl NodeVisitor<&LitIdent> for Compiler {
             }
         }
 
-        if let Some(upvalue) = self.resolve_upvalue(name.clone(), 0) {
+        if let Some(upvalue) = self.compiler_stack.resolve_upvalue(name.clone(), 0) {
             let context = self.context()?;
             context.assembler().load_upvalue(upvalue as u8, span.clone());
 
