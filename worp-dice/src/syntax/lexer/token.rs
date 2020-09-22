@@ -17,7 +17,7 @@ impl Token {
     }
 
     pub fn span(&self) -> Span {
-        self.span.clone()
+        self.span
     }
 
     pub const fn end_of_input() -> Token {

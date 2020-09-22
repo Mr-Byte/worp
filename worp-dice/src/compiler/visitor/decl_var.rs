@@ -18,7 +18,7 @@ impl NodeVisitor<&VarDecl> for Compiler {
             },
         )? as u8;
 
-        self.context()?.assembler().store_local(slot, var_decl.span.clone());
+        self.context()?.assembler().store_local(slot, var_decl.span);
 
         Ok(())
     }

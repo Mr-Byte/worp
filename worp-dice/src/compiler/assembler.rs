@@ -70,7 +70,7 @@ impl Assembler {
     }
 
     pub fn push_const(&mut self, value: Value, span: Span) -> Result<(), CompilerError> {
-        self.source_map.insert(self.data.len() as u64, span.clone());
+        self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::PUSH_CONST.value());
 
         self.source_map.insert(self.data.len() as u64, span);

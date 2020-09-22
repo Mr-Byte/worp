@@ -11,10 +11,10 @@ impl NodeVisitor<&Binary> for Compiler {
         match op {
             BinaryOperator::LogicalAnd => {
                 self.visit(*lhs)?;
-                self.context()?.assembler().dup(span.clone());
+                self.context()?.assembler().dup(*span);
 
-                let short_circuit_jump = self.context()?.assembler().jump_if_false(span.clone());
-                self.context()?.assembler().pop(span.clone());
+                let short_circuit_jump = self.context()?.assembler().jump_if_false(*span);
+                self.context()?.assembler().pop(*span);
                 self.visit(*rhs)?;
                 self.compiler_stack
                     .top_mut()?
@@ -23,11 +23,11 @@ impl NodeVisitor<&Binary> for Compiler {
             }
             BinaryOperator::LogicalOr => {
                 self.visit(*lhs)?;
-                self.context()?.assembler().dup(span.clone());
-                self.context()?.assembler().not(span.clone());
+                self.context()?.assembler().dup(*span);
+                self.context()?.assembler().not(*span);
 
-                let short_circuit_jump = self.context()?.assembler().jump_if_false(span.clone());
-                self.context()?.assembler().pop(span.clone());
+                let short_circuit_jump = self.context()?.assembler().jump_if_false(*span);
+                self.context()?.assembler().pop(*span);
                 self.visit(*rhs)?;
                 self.compiler_stack
                     .top_mut()?
@@ -40,17 +40,17 @@ impl NodeVisitor<&Binary> for Compiler {
 
                 match op {
                     BinaryOperator::DiceRoll => todo!(),
-                    BinaryOperator::Multiply => self.context()?.assembler().mul(span.clone()),
-                    BinaryOperator::Divide => self.context()?.assembler().div(span.clone()),
-                    BinaryOperator::Remainder => self.context()?.assembler().rem(span.clone()),
-                    BinaryOperator::Add => self.context()?.assembler().add(span.clone()),
-                    BinaryOperator::Subtract => self.context()?.assembler().sub(span.clone()),
-                    BinaryOperator::GreaterThan => self.context()?.assembler().gt(span.clone()),
-                    BinaryOperator::LessThan => self.context()?.assembler().lt(span.clone()),
-                    BinaryOperator::GreaterThanEquals => self.context()?.assembler().gte(span.clone()),
-                    BinaryOperator::LessThanEquals => self.context()?.assembler().lte(span.clone()),
-                    BinaryOperator::Equals => self.context()?.assembler().eq(span.clone()),
-                    BinaryOperator::NotEquals => self.context()?.assembler().neq(span.clone()),
+                    BinaryOperator::Multiply => self.context()?.assembler().mul(*span),
+                    BinaryOperator::Divide => self.context()?.assembler().div(*span),
+                    BinaryOperator::Remainder => self.context()?.assembler().rem(*span),
+                    BinaryOperator::Add => self.context()?.assembler().add(*span),
+                    BinaryOperator::Subtract => self.context()?.assembler().sub(*span),
+                    BinaryOperator::GreaterThan => self.context()?.assembler().gt(*span),
+                    BinaryOperator::LessThan => self.context()?.assembler().lt(*span),
+                    BinaryOperator::GreaterThanEquals => self.context()?.assembler().gte(*span),
+                    BinaryOperator::LessThanEquals => self.context()?.assembler().lte(*span),
+                    BinaryOperator::Equals => self.context()?.assembler().eq(*span),
+                    BinaryOperator::NotEquals => self.context()?.assembler().neq(*span),
                     BinaryOperator::RangeInclusive => todo!(),
                     BinaryOperator::RangeExclusive => todo!(),
                     BinaryOperator::Coalesce => todo!(),

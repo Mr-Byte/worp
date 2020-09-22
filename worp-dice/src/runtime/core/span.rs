@@ -1,13 +1,17 @@
-use std::ops::{Add, Deref, Range};
+use std::ops::{Add, Range};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Span {
-    range: Range<usize>,
+    start: usize,
+    end: usize,
 }
 
 impl Span {
     pub const fn new(range: Range<usize>) -> Self {
-        Self { range }
+        Self {
+            start: range.start,
+            end: range.end,
+        }
     }
 }
 
@@ -23,10 +27,9 @@ impl From<&Range<usize>> for Span {
     }
 }
 
-impl Deref for Span {
-    type Target = Range<usize>;
-    fn deref(&self) -> &Self::Target {
-        &self.range
+impl Into<Range<usize>> for Span {
+    fn into(self) -> Range<usize> {
+        self.start..self.end
     }
 }
 
@@ -37,7 +40,7 @@ impl Add for Span {
         let start = self.start.min(rhs.start);
         let end = self.end.max(rhs.end);
 
-        Span::new(start..end)
+        Self::Output { start, end }
     }
 }
 
@@ -48,7 +51,7 @@ impl Add<&Span> for Span {
         let start = self.start.min(rhs.start);
         let end = self.end.max(rhs.end);
 
-        Span::new(start..end)
+        Self::Output { start, end }
     }
 }
 
@@ -59,6 +62,6 @@ impl Add for &Span {
         let start = self.start.min(rhs.start);
         let end = self.end.max(rhs.end);
 
-        Span::new(start..end)
+        Self::Output { start, end }
     }
 }

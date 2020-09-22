@@ -15,7 +15,7 @@ impl NodeVisitor<&LitIdent> for Compiler {
                 }
 
                 let slot = scope_variable.slot as u8;
-                context.assembler().load_local(slot, span.clone());
+                context.assembler().load_local(slot, *span);
 
                 return Ok(());
             }
@@ -23,7 +23,7 @@ impl NodeVisitor<&LitIdent> for Compiler {
 
         if let Some(upvalue) = self.compiler_stack.resolve_upvalue(name.clone(), 0) {
             let context = self.context()?;
-            context.assembler().load_upvalue(upvalue as u8, span.clone());
+            context.assembler().load_upvalue(upvalue as u8, *span);
 
             return Ok(());
         }

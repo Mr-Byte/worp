@@ -307,7 +307,7 @@ impl Parser {
         let span_start = next_token.span();
         let mut expression = if let TokenKind::Identifier(name) = next_token.kind {
             self.arena
-                .alloc(SyntaxNode::LitIdent(LitIdent(name, span_start.clone())))
+                .alloc(SyntaxNode::LitIdent(LitIdent(name, span_start)))
         } else {
             return Err(SyntaxError::UnexpectedToken(next_token));
         };

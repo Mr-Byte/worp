@@ -10,8 +10,8 @@ impl NodeVisitor<&Unary> for Compiler {
         self.visit(*expr)?;
 
         match op {
-            UnaryOperator::Negate => self.context()?.assembler().neg(span.clone()),
-            UnaryOperator::Not => self.context()?.assembler().not(span.clone()),
+            UnaryOperator::Negate => self.context()?.assembler().neg(*span),
+            UnaryOperator::Not => self.context()?.assembler().not(*span),
             UnaryOperator::DiceRoll => todo!(),
         }
 

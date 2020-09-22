@@ -34,18 +34,18 @@ impl<'args, T: AsRef<str>> NodeVisitor<(&Block, BlockKind<'args, T>)> for Compil
 
         for expression in block.expressions.iter() {
             self.visit(*expression)?;
-            self.context()?.assembler().pop(block.span.clone());
+            self.context()?.assembler().pop(block.span);
         }
 
         match block.trailing_expression {
             Some(trailing_expression) => {
                 self.visit(trailing_expression)?;
             }
-            None => self.context()?.assembler().push_unit(block.span.clone()),
+            None => self.context()?.assembler().push_unit(block.span),
         }
 
         if let BlockKind::Loop = kind {
-            self.context()?.assembler().pop(block.span.clone());
+            self.context()?.assembler().pop(block.span);
         }
 
         let scope = self.context()?.scope_stack().pop_scope()?;
@@ -54,14 +54,14 @@ impl<'args, T: AsRef<str>> NodeVisitor<(&Block, BlockKind<'args, T>)> for Compil
             if variable.is_captured {
                 self.context()?
                     .assembler()
-                    .close_upvalue(variable.slot as u8, block.span.clone());
+                    .close_upvalue(variable.slot as u8, block.span);
             }
         }
 
         // NOTE: If in context of a function, implicitly return the top item on the stack.
         // If the previous instruction was a return, this will never execute.
         if let BlockKind::Function(_) = kind {
-            self.context()?.assembler().ret(block.span.clone())
+            self.context()?.assembler().ret(block.span)
         }
 
         Ok(())

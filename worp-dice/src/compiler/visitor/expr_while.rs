@@ -17,11 +17,11 @@ impl NodeVisitor<&WhileLoop> for Compiler {
                 .push_scope(ScopeKind::Loop, Some(loop_start as usize));
             self.visit(*condition)?;
 
-            let loop_end = self.context()?.assembler().jump_if_false(span.clone());
+            let loop_end = self.context()?.assembler().jump_if_false(*span);
 
             self.visit((&block, BlockKind::<&str>::Loop))?;
 
-            self.context()?.assembler().jump_back(loop_start, span.clone());
+            self.context()?.assembler().jump_back(loop_start, *span);
             self.context()?.assembler().patch_jump(loop_end);
 
             let scope_close = self.context()?.scope_stack().pop_scope()?;
@@ -30,7 +30,7 @@ impl NodeVisitor<&WhileLoop> for Compiler {
                 self.context()?.assembler().patch_jump(*location as u64);
             }
 
-            self.context()?.assembler().push_unit(span.clone());
+            self.context()?.assembler().push_unit(*span);
         } else {
             return Err(CompilerError::InternalCompilerError(String::from(
                 "While loop bodies should only ever contain blocks.",

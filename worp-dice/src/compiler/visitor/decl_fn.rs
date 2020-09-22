@@ -38,8 +38,8 @@ impl NodeVisitor<&FnDecl> for Compiler {
             local.slot as u8
         };
 
-        context.assembler().closure(value, &upvalues, node.span.clone())?;
-        context.assembler().store_local(slot as u8, node.span.clone());
+        context.assembler().closure(value, &upvalues, node.span)?;
+        context.assembler().store_local(slot as u8, node.span);
 
         Ok(())
     }

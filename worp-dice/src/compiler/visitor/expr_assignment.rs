@@ -26,27 +26,27 @@ impl NodeVisitor<&Assignment> for Compiler {
                         // TODO: optimize in-place assignment operators to mutate their target, without needing to be loaded onto the stack.
                         match op {
                             AssignmentOperator::Assignment => {
-                                self.context()?.assembler().store_local(slot, span.clone());
+                                self.context()?.assembler().store_local(slot, *span);
                             }
                             AssignmentOperator::MulAssignment => {
-                                self.context()?.assembler().load_local(slot, span.clone());
-                                self.context()?.assembler().mul(span.clone());
-                                self.context()?.assembler().store_local(slot, span.clone());
+                                self.context()?.assembler().load_local(slot, *span);
+                                self.context()?.assembler().mul(*span);
+                                self.context()?.assembler().store_local(slot, *span);
                             }
                             AssignmentOperator::DivAssignment => {
-                                self.context()?.assembler().load_local(slot, span.clone());
-                                self.context()?.assembler().div(span.clone());
-                                self.context()?.assembler().store_local(slot, span.clone());
+                                self.context()?.assembler().load_local(slot, *span);
+                                self.context()?.assembler().div(*span);
+                                self.context()?.assembler().store_local(slot, *span);
                             }
                             AssignmentOperator::AddAssignment => {
-                                self.context()?.assembler().load_local(slot, span.clone());
-                                self.context()?.assembler().add(span.clone());
-                                self.context()?.assembler().store_local(slot, span.clone());
+                                self.context()?.assembler().load_local(slot, *span);
+                                self.context()?.assembler().add(*span);
+                                self.context()?.assembler().store_local(slot, *span);
                             }
                             AssignmentOperator::SubAssignment => {
-                                self.context()?.assembler().load_local(slot, span.clone());
-                                self.context()?.assembler().sub(span.clone());
-                                self.context()?.assembler().store_local(slot, span.clone());
+                                self.context()?.assembler().load_local(slot, *span);
+                                self.context()?.assembler().sub(*span);
+                                self.context()?.assembler().store_local(slot, *span);
                             }
                         }
 
@@ -62,27 +62,27 @@ impl NodeVisitor<&Assignment> for Compiler {
 
                         match op {
                             AssignmentOperator::Assignment => {
-                                self.context()?.assembler().store_upvalue(upvalue as u8, span.clone());
+                                self.context()?.assembler().store_upvalue(upvalue as u8, *span);
                             }
                             AssignmentOperator::MulAssignment => {
-                                self.context()?.assembler().load_upvalue(upvalue as u8, span.clone());
-                                self.context()?.assembler().mul(span.clone());
-                                self.context()?.assembler().store_upvalue(upvalue as u8, span.clone());
+                                self.context()?.assembler().load_upvalue(upvalue as u8, *span);
+                                self.context()?.assembler().mul(*span);
+                                self.context()?.assembler().store_upvalue(upvalue as u8, *span);
                             }
                             AssignmentOperator::DivAssignment => {
-                                self.context()?.assembler().load_upvalue(upvalue as u8, span.clone());
-                                self.context()?.assembler().div(span.clone());
-                                self.context()?.assembler().store_upvalue(upvalue as u8, span.clone());
+                                self.context()?.assembler().load_upvalue(upvalue as u8, *span);
+                                self.context()?.assembler().div(*span);
+                                self.context()?.assembler().store_upvalue(upvalue as u8, *span);
                             }
                             AssignmentOperator::AddAssignment => {
-                                self.context()?.assembler().load_upvalue(upvalue as u8, span.clone());
-                                self.context()?.assembler().add(span.clone());
-                                self.context()?.assembler().store_upvalue(upvalue as u8, span.clone());
+                                self.context()?.assembler().load_upvalue(upvalue as u8, *span);
+                                self.context()?.assembler().add(*span);
+                                self.context()?.assembler().store_upvalue(upvalue as u8, *span);
                             }
                             AssignmentOperator::SubAssignment => {
-                                self.context()?.assembler().load_upvalue(upvalue as u8, span.clone());
-                                self.context()?.assembler().sub(span.clone());
-                                self.context()?.assembler().store_upvalue(upvalue as u8, span.clone());
+                                self.context()?.assembler().load_upvalue(upvalue as u8, *span);
+                                self.context()?.assembler().sub(*span);
+                                self.context()?.assembler().store_upvalue(upvalue as u8, *span);
                             }
                         }
 

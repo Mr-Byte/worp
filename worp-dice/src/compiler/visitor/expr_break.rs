@@ -13,7 +13,7 @@ impl NodeVisitor<&Break> for Compiler {
             return Err(CompilerError::InvalidBreak);
         }
 
-        let patch_location = context.assembler().jump(span.clone());
+        let patch_location = context.assembler().jump(*span);
         context.scope_stack().add_loop_exit_point(patch_location as usize)?;
 
         Ok(())

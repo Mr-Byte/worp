@@ -7,7 +7,7 @@ impl NodeVisitor<&LitBool> for Compiler {
         self.compiler_stack
             .top_mut()?
             .assembler()
-            .push_bool(*value, span.clone());
+            .push_bool(*value, *span);
 
         Ok(())
     }

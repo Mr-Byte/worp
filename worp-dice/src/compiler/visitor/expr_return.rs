@@ -15,10 +15,10 @@ impl NodeVisitor<&Return> for Compiler {
 
         match expr_return.result {
             Some(expr) => self.visit(expr)?,
-            None => context.assembler().push_unit(expr_return.span.clone()),
+            None => context.assembler().push_unit(expr_return.span),
         }
 
-        self.context()?.assembler().ret(expr_return.span.clone());
+        self.context()?.assembler().ret(expr_return.span);
 
         Ok(())
     }
