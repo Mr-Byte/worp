@@ -1,5 +1,5 @@
 use crate::{
-    compiler::{scope::State, Compiler},
+    compiler::{scope_stack::State, Compiler},
     runtime::lib::FnScript,
     syntax::FnDecl,
     CompilerError, Symbol, Value,

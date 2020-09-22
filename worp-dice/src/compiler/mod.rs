@@ -2,15 +2,15 @@ use crate::{
     runtime::{core::Span, interpreter::bytecode::Bytecode},
     syntax::{Block, Parser, SyntaxNode, SyntaxTree},
 };
-use compiler::{CompilerContext, CompilerKind, CompilerStack};
+use compiler_stack::{CompilerContext, CompilerKind, CompilerStack};
 use error::CompilerError;
 use visitor::{BlockKind, NodeVisitor as _};
 
 mod assembler;
-mod compiler;
+mod compiler_stack;
 mod decl_scan;
 pub mod error;
-mod scope;
+mod scope_stack;
 mod upvalue;
 mod visitor;
 

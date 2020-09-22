@@ -1,6 +1,6 @@
 use super::NodeVisitor;
 use crate::{
-    compiler::{compiler::CompilerKind, Compiler},
+    compiler::{compiler_stack::CompilerKind, Compiler},
     syntax::Return,
     CompilerError,
 };

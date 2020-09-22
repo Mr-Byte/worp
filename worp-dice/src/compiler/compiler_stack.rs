@@ -1,6 +1,6 @@
 use super::{
     assembler::Assembler,
-    scope::{ScopeKind, ScopeStack},
+    scope_stack::{ScopeKind, ScopeStack},
     upvalue::UpvalueDescriptor,
 };
 use crate::{runtime::interpreter::bytecode::Bytecode, CompilerError};

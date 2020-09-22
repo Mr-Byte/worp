@@ -1,7 +1,7 @@
 use super::NodeVisitor;
 use crate::{
     compiler::{
-        scope::{ScopeKind, State},
+        scope_stack::{ScopeKind, State},
         Compiler,
     },
     syntax::Block,

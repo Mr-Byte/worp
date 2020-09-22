@@ -61,12 +61,7 @@ impl Runtime {
                 Instruction::PUSH_I1 => self.stack.push(Value::Int(1)),
                 Instruction::PUSH_F0 => self.stack.push(Value::Float(0.0)),
                 Instruction::PUSH_F1 => self.stack.push(Value::Float(1.0)),
-                Instruction::PUSH_CONST => {
-                    let const_pos = cursor.read_u8() as usize;
-                    let value = bytecode.constants()[const_pos].clone();
-                    self.stack.push(value);
-                }
-
+                Instruction::PUSH_CONST => self.post_const(bytecode, &mut cursor),
                 Instruction::POP => {
                     self.stack.pop();
                 }
@@ -74,23 +69,10 @@ impl Runtime {
                     let value = self.stack.peek(0).clone();
                     self.stack.push(value);
                 }
+                Instruction::BUILD_LIST => self.build_list(&mut cursor),
 
-                Instruction::BUILD_LIST => {
-                    let count = cursor.read_u8() as usize;
-                    let items = self.stack.pop_count(count);
-
-                    self.stack.push(Value::List(items.into()));
-                }
-
-                Instruction::NEG => match self.stack.peek(0) {
-                    Value::Int(value) => *value = -*value,
-                    Value::Float(value) => *value = -*value,
-                    _ => todo!(),
-                },
-                Instruction::NOT => match self.stack.peek(0) {
-                    Value::Bool(value) => *value = !*value,
-                    _ => todo!(),
-                },
+                Instruction::NEG => self.neg(),
+                Instruction::NOT => self.not(),
 
                 Instruction::MUL => arithmetic_op!(self.stack, OP_MUL),
                 Instruction::DIV => arithmetic_op!(self.stack, OP_DIV),
@@ -107,137 +89,19 @@ impl Runtime {
 
                 Instruction::JUMP => {
                     let offset = cursor.read_offset();
-                    cursor.offset_position(offset)
+                    cursor.offset_position(offset);
                 }
-                Instruction::JUMP_IF_FALSE => {
-                    let offset = cursor.read_offset();
-                    let value = match self.stack.pop() {
-                        Value::Bool(value) => value,
-                        _ => todo!(),
-                    };
+                Instruction::JUMP_IF_FALSE => self.jump_if_false(&mut cursor),
 
-                    if !value {
-                        cursor.offset_position(offset)
-                    }
-                }
+                Instruction::LOAD_LOCAL => self.load_local(&stack_frame, &mut cursor),
+                Instruction::STORE_LOCAL => self.store_local(&stack_frame, &mut cursor),
+                Instruction::LOAD_UPVALUE => self.load_upvalue(&mut closure, &mut cursor),
+                Instruction::STORE_UPVALUE => self.store_upvalue(&mut closure, &mut cursor),
+                Instruction::CLOSE_UPVALUE => self.close_upvalue(&stack_frame, &mut cursor),
 
-                Instruction::LOAD_LOCAL => {
-                    // TODO Bounds check the slot?
-                    let slot = cursor.read_u8() as usize;
-                    let frame = self.stack.slots(stack_frame.clone());
-                    let value = frame[slot].clone();
-                    self.stack.push(value);
-                }
-
-                Instruction::STORE_LOCAL => {
-                    // TODO Bounds check the slot?
-                    let slot = cursor.read_u8() as usize;
-                    let value = self.stack.pop();
-                    let frame = self.stack.slots(stack_frame.clone());
-
-                    frame[slot] = value;
-                    let result = frame[slot].clone();
-                    self.stack.push(result);
-                }
-
-                Instruction::LOAD_UPVALUE => {
-                    if let Some(closure) = closure.as_mut() {
-                        let upvalue_slot = cursor.read_u8() as usize;
-                        let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
-                        let value = match &*upvalue.state() {
-                            UpvalueState::Open(slot) => self.stack.slot(*slot).clone(),
-                            UpvalueState::Closed(value) => value.clone(),
-                        };
-
-                        self.stack.push(value);
-                    } else {
-                        unreachable!("LOAD_UPVALUE used in non-closure context.")
-                    }
-                }
-
-                Instruction::STORE_UPVALUE => {
-                    if let Some(closure) = closure.as_mut() {
-                        let upvalue_slot = cursor.read_u8() as usize;
-                        let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
-                        let value = self.stack.pop();
-                        let result = match &mut *upvalue.state() {
-                            UpvalueState::Open(slot) => {
-                                *self.stack.slot(*slot) = value.clone();
-                                value
-                            }
-                            UpvalueState::Closed(closed_value) => {
-                                *closed_value = value.clone();
-                                value
-                            }
-                        };
-
-                        self.stack.push(result)
-                    } else {
-                        unreachable!("STORE_UPVALUE used in non-closure context.")
-                    }
-                }
-
-                Instruction::CLOSURE => {
-                    let const_pos = cursor.read_u8() as usize;
-
-                    match bytecode.constants()[const_pos] {
-                        Value::FnScript(ref fn_script) => {
-                            let upvalue_count = fn_script.bytecode.upvalue_count();
-                            let mut upvalues = Vec::with_capacity(upvalue_count);
-
-                            for _ in 0..upvalue_count {
-                                let is_parent_local = cursor.read_u8() == 1;
-                                let index = cursor.read_u8() as usize;
-
-                                if is_parent_local {
-                                    let upvalue = Upvalue::new_open(stack_frame.start + index);
-                                    self.open_upvalues.push_back(upvalue.clone());
-                                    upvalues.push(upvalue);
-                                } else if let Some(closure) = closure.as_mut() {
-                                    let upvalue = closure.borrow().upvalues[index].clone();
-                                    upvalues.push(upvalue);
-                                } else {
-                                    // NOTE: Produce an unreachable here. This case should never execute, but this is a sanity check to ensure it doesn't.
-                                    unreachable!("No parent scope found.")
-                                }
-                            }
-
-                            let closure =
-                                Value::FnClosure(FnClosure::new(fn_script.clone(), upvalues.into_boxed_slice()));
-                            self.stack.push(closure);
-                        }
-                        _ => return Err(RuntimeError::NotAFunction),
-                    }
-                }
-
-                Instruction::CLOSE_UPVALUE => {
-                    let offset = cursor.read_u8() as usize;
-                    let value = std::mem::replace(&mut self.stack.slots(stack_frame.clone())[offset], Value::NONE);
-                    let offset = stack_frame.start + offset;
-                    let mut found_index = None;
-
-                    for (index, upvalue) in self.open_upvalues.iter_mut().enumerate() {
-                        if let UpvalueState::Open(upvalue_offset) = &*upvalue.state() {
-                            if *upvalue_offset == offset {
-                                found_index = Some(index);
-                            }
-                        }
-                    }
-
-                    if let Some(index) = found_index {
-                        if let Some(mut upvalue) = self.open_upvalues.remove(index) {
-                            upvalue.close(value);
-                        }
-                    }
-                }
-
-                Instruction::CALL => {
-                    self.call_fn(&mut cursor)?;
-                }
-
-                Instruction::RETURN => {
-                    break;
-                }
+                Instruction::CLOSURE => self.closure(bytecode, &stack_frame, &mut closure, &mut cursor)?,
+                Instruction::CALL => self.call_fn(&mut cursor)?,
+                Instruction::RETURN => break,
 
                 unknown => return Err(RuntimeError::UnknownInstruction(unknown.value())),
             }
@@ -246,14 +110,170 @@ impl Runtime {
         // NOTE: subtract 1 to compensate for the last item of the stack not yet being popped.
         let final_stack_depth = self.stack.len() - 1;
 
-        assert!(
-            initial_stack_depth == final_stack_depth,
+        assert_eq!(
+            initial_stack_depth, final_stack_depth,
             "Stack was left in a bad state. Initial depth {}, final depth {}",
-            initial_stack_depth,
-            final_stack_depth
+            initial_stack_depth, final_stack_depth
         );
 
         Ok(self.stack.pop())
+    }
+
+    fn not(&mut self) {
+        match self.stack.peek(0) {
+            Value::Bool(value) => *value = !*value,
+            _ => todo!(),
+        }
+    }
+
+    fn neg(&mut self) {
+        match self.stack.peek(0) {
+            Value::Int(value) => *value = -*value,
+            Value::Float(value) => *value = -*value,
+            _ => todo!(),
+        }
+    }
+
+    fn build_list(&mut self, cursor: &mut BytecodeCursor) {
+        let count = cursor.read_u8() as usize;
+        let items = self.stack.pop_count(count);
+
+        self.stack.push(Value::List(items.into()));
+    }
+
+    fn post_const(&mut self, bytecode: &Bytecode, cursor: &mut BytecodeCursor) {
+        let const_pos = cursor.read_u8() as usize;
+        let value = bytecode.constants()[const_pos].clone();
+        self.stack.push(value);
+    }
+
+    fn jump_if_false(&mut self, cursor: &mut BytecodeCursor) {
+        let offset = cursor.read_offset();
+        let value = match self.stack.pop() {
+            Value::Bool(value) => value,
+            _ => unreachable!("JUMP_IF_FALSE requires a boolean operand."),
+        };
+
+        if !value {
+            cursor.offset_position(offset)
+        }
+    }
+
+    fn load_local(&mut self, stack_frame: &Range<usize>, cursor: &mut BytecodeCursor) {
+        // TODO Bounds check the slot?
+        let slot = cursor.read_u8() as usize;
+        let frame = self.stack.slots(stack_frame.clone());
+        let value = frame[slot].clone();
+        self.stack.push(value);
+    }
+
+    fn store_local(&mut self, stack_frame: &Range<usize>, cursor: &mut BytecodeCursor) {
+        // TODO Bounds check the slot?
+        let slot = cursor.read_u8() as usize;
+        let value = self.stack.pop();
+        let frame = self.stack.slots(stack_frame.clone());
+
+        frame[slot] = value;
+        let result = frame[slot].clone();
+        self.stack.push(result);
+    }
+
+    fn load_upvalue(&mut self, closure: &mut Option<FnClosure>, cursor: &mut BytecodeCursor) {
+        if let Some(closure) = closure.as_mut() {
+            let upvalue_slot = cursor.read_u8() as usize;
+            let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
+            let value = match &*upvalue.state() {
+                UpvalueState::Open(slot) => self.stack.slot(*slot).clone(),
+                UpvalueState::Closed(value) => value.clone(),
+            };
+
+            self.stack.push(value);
+        } else {
+            unreachable!("LOAD_UPVALUE used in non-closure context.")
+        }
+    }
+
+    fn store_upvalue(&mut self, closure: &mut Option<FnClosure>, cursor: &mut BytecodeCursor) {
+        if let Some(closure) = closure.as_mut() {
+            let upvalue_slot = cursor.read_u8() as usize;
+            let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
+            let value = self.stack.pop();
+            let result = match &mut *upvalue.state() {
+                UpvalueState::Open(slot) => {
+                    *self.stack.slot(*slot) = value.clone();
+                    value
+                }
+                UpvalueState::Closed(closed_value) => {
+                    *closed_value = value.clone();
+                    value
+                }
+            };
+
+            self.stack.push(result)
+        } else {
+            unreachable!("STORE_UPVALUE used in non-closure context.")
+        }
+    }
+
+    fn close_upvalue(&mut self, stack_frame: &Range<usize>, cursor: &mut BytecodeCursor) {
+        let offset = cursor.read_u8() as usize;
+        let value = std::mem::replace(&mut self.stack.slots(stack_frame.clone())[offset], Value::NONE);
+        let offset = stack_frame.start + offset;
+        let mut found_index = None;
+
+        for (index, upvalue) in self.open_upvalues.iter_mut().enumerate() {
+            if let UpvalueState::Open(upvalue_offset) = &*upvalue.state() {
+                if *upvalue_offset == offset {
+                    found_index = Some(index);
+                }
+            }
+        }
+
+        if let Some(index) = found_index {
+            if let Some(mut upvalue) = self.open_upvalues.remove(index) {
+                upvalue.close(value);
+            }
+        }
+    }
+
+    fn closure(
+        &mut self,
+        bytecode: &Bytecode,
+        stack_frame: &Range<usize>,
+        closure: &mut Option<FnClosure>,
+        cursor: &mut BytecodeCursor,
+    ) -> Result<(), RuntimeError> {
+        let const_pos = cursor.read_u8() as usize;
+
+        match bytecode.constants()[const_pos] {
+            Value::FnScript(ref fn_script) => {
+                let upvalue_count = fn_script.bytecode.upvalue_count();
+                let mut upvalues = Vec::with_capacity(upvalue_count);
+
+                for _ in 0..upvalue_count {
+                    let is_parent_local = cursor.read_u8() == 1;
+                    let index = cursor.read_u8() as usize;
+
+                    if is_parent_local {
+                        let upvalue = Upvalue::new_open(stack_frame.start + index);
+                        self.open_upvalues.push_back(upvalue.clone());
+                        upvalues.push(upvalue);
+                    } else if let Some(closure) = closure.as_mut() {
+                        let upvalue = closure.borrow().upvalues[index].clone();
+                        upvalues.push(upvalue);
+                    } else {
+                        // NOTE: Produce an unreachable here. This case should never execute, but this is a sanity check to ensure it doesn't.
+                        unreachable!("No parent scope found.")
+                    }
+                }
+
+                let closure = Value::FnClosure(FnClosure::new(fn_script.clone(), upvalues.into_boxed_slice()));
+                self.stack.push(closure);
+            }
+            _ => return Err(RuntimeError::NotAFunction),
+        }
+
+        Ok(())
     }
 
     fn call_fn(&mut self, cursor: &mut BytecodeCursor<'_>) -> Result<(), RuntimeError> {

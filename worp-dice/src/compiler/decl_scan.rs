@@ -3,7 +3,7 @@ use crate::{
     CompilerError, Symbol,
 };
 
-use super::{scope::State, Compiler};
+use super::{scope_stack::State, Compiler};
 
 impl Compiler {
     /// Scan through all the declared items in a block and add slots for any functions and classes ahead of time.
