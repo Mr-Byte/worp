@@ -3,7 +3,13 @@ use crate::{compiler::Compiler, syntax::LitInt, CompilerError, Value};
 use super::NodeVisitor;
 
 impl NodeVisitor<&LitInt> for Compiler {
-    fn visit(&mut self, LitInt(value, span): &LitInt) -> Result<(), CompilerError> {
+    fn visit(
+        &mut self,
+        LitInt {
+            value,
+            span,
+        }: &LitInt,
+    ) -> Result<(), CompilerError> {
         let context = self.context()?;
 
         match value {

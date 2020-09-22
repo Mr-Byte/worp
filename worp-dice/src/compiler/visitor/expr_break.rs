@@ -6,7 +6,7 @@ use crate::{
 };
 
 impl NodeVisitor<&Break> for Compiler {
-    fn visit(&mut self, Break(span): &Break) -> Result<(), crate::CompilerError> {
+    fn visit(&mut self, Break { span }: &Break) -> Result<(), crate::CompilerError> {
         let context = self.context()?;
 
         if !context.scope_stack().in_context_of(ScopeKind::Loop) {

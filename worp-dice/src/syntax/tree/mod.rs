@@ -1,5 +1,8 @@
+mod node;
+
 use crate::runtime::core::Span;
 use id_arena::{Arena, Id};
+pub use node::*;
 use std::rc::Rc;
 
 pub type SyntaxNodeId = Id<SyntaxNode>;
@@ -72,142 +75,35 @@ pub enum SyntaxNode {
     FunctionCall(FunctionCall),
 }
 
-#[derive(Debug, Clone)]
-pub struct LitAnonymousFn {
-    pub args: Vec<String>,
-    pub body: SyntaxNodeId,
-    pub span: Span,
-}
-
-#[derive(Debug, Clone)]
-pub struct LitList(pub Vec<SyntaxNodeId>, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct LitObject(pub Vec<(SyntaxNodeId, SyntaxNodeId)>, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct LitIdent(pub String, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct LitUnit(pub Span);
-
-#[derive(Debug, Clone)]
-pub struct LitNone(pub Span);
-
-#[derive(Debug, Clone)]
-pub struct LitInt(pub i64, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct LitFloat(pub f64, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct LitString(pub String, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct LitBool(pub bool, pub Span);
-
-#[derive(Debug, Clone)]
-pub enum UnaryOperator {
-    Negate,
-    Not,
-    DiceRoll,
-}
-
-#[derive(Debug, Clone)]
-pub struct SafeAccess(pub SyntaxNodeId, pub String, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct FieldAccess(pub SyntaxNodeId, pub String, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct FunctionCall {
-    pub target: SyntaxNodeId,
-    pub args: Vec<SyntaxNodeId>,
-    pub span: Span,
-}
-
-#[derive(Debug, Clone)]
-pub struct Index(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Unary(pub UnaryOperator, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Binary(pub BinaryOperator, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub enum BinaryOperator {
-    DiceRoll,
-    Multiply,
-    Divide,
-    Remainder,
-    Add,
-    Subtract,
-    GreaterThan,
-    LessThan,
-    GreaterThanEquals,
-    LessThanEquals,
-    Equals,
-    NotEquals,
-    LogicalAnd,
-    LogicalOr,
-    RangeInclusive,
-    RangeExclusive,
-    Coalesce,
-}
-
-#[derive(Debug, Clone)]
-pub struct Assignment(pub AssignmentOperator, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub enum AssignmentOperator {
-    Assignment,
-    MulAssignment,
-    DivAssignment,
-    AddAssignment,
-    SubAssignment,
-}
-
-#[derive(Debug, Clone)]
-pub struct VarDecl {
-    pub name: String,
-    pub is_mutable: bool,
-    pub expr: SyntaxNodeId,
-    pub span: Span,
-}
-
-#[derive(Debug, Clone)]
-pub struct FnDecl {
-    pub name: String,
-    pub args: Vec<String>,
-    pub body: SyntaxNodeId,
-    pub span: Span,
-}
-
-#[derive(Debug, Clone)]
-pub struct IfExpression(pub SyntaxNodeId, pub SyntaxNodeId, pub Option<SyntaxNodeId>, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct WhileLoop(pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct ForLoop(pub String, pub SyntaxNodeId, pub SyntaxNodeId, pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Block {
-    pub expressions: Vec<SyntaxNodeId>,
-    pub trailing_expression: Option<SyntaxNodeId>,
-    pub span: Span,
-}
-
-#[derive(Debug, Clone)]
-pub struct Break(pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Continue(pub Span);
-
-#[derive(Debug, Clone)]
-pub struct Return {
-    pub result: Option<SyntaxNodeId>,
-    pub span: Span,
+impl SyntaxNode {
+    fn span(&self) -> Span {
+        match self {
+            SyntaxNode::LitIdent(LitIdent { span, .. }) => *span,
+            SyntaxNode::LitNone(LitNone { span, .. }) => *span,
+            SyntaxNode::LitUnit(LitUnit { span, .. }) => *span,
+            SyntaxNode::LitInt(LitInt { span, .. }) => *span,
+            SyntaxNode::LitFloat(LitFloat { span, .. }) => *span,
+            SyntaxNode::LitString(LitString { span, .. }) => *span,
+            SyntaxNode::LitBool(LitBool { span, .. }) => *span,
+            SyntaxNode::LitList(LitList { span, .. }) => *span,
+            SyntaxNode::LitObject(LitObject { span, .. }) => *span,
+            SyntaxNode::LitAnonymousFn(LitAnonymousFn { span, .. }) => *span,
+            SyntaxNode::SafeAccess(SafeAccess { span, .. }) => *span,
+            SyntaxNode::FieldAccess(FieldAccess { span, .. }) => *span,
+            SyntaxNode::Index(Index { span, .. }) => *span,
+            SyntaxNode::Unary(Unary { span, .. }) => *span,
+            SyntaxNode::Binary(Binary { span, .. }) => *span,
+            SyntaxNode::Assignment(Assignment { span, .. }) => *span,
+            SyntaxNode::VarDecl(VarDecl { span, .. }) => *span,
+            SyntaxNode::FnDecl(FnDecl { span, .. }) => *span,
+            SyntaxNode::IfExpression(IfExpression { span, .. }) => *span,
+            SyntaxNode::WhileLoop(WhileLoop { span, .. }) => *span,
+            SyntaxNode::ForLoop(ForLoop { span, .. }) => *span,
+            SyntaxNode::Block(Block { span, .. }) => *span,
+            SyntaxNode::Break(Break { span, .. }) => *span,
+            SyntaxNode::Return(Return { span, .. }) => *span,
+            SyntaxNode::Continue(Continue { span, .. }) => *span,
+            SyntaxNode::FunctionCall(FunctionCall { span, .. }) => *span,
+        }
+    }
 }

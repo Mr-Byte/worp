@@ -3,7 +3,7 @@ use crate::{compiler::Compiler, syntax::LitList, CompilerError};
 use super::NodeVisitor;
 
 impl NodeVisitor<&LitList> for Compiler {
-    fn visit(&mut self, LitList(value, span): &LitList) -> Result<(), CompilerError> {
+    fn visit(&mut self, LitList { items: value, span }: &LitList) -> Result<(), CompilerError> {
         for item in value {
             self.visit(*item)?;
         }

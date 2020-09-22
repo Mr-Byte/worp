@@ -6,7 +6,15 @@ use crate::{
 };
 
 impl NodeVisitor<&Binary> for Compiler {
-    fn visit(&mut self, Binary(op, lhs, rhs, span): &Binary) -> Result<(), CompilerError> {
+    fn visit(
+        &mut self,
+        Binary {
+            operator: op,
+            lhs_expression: lhs,
+            rhs_expression: rhs,
+            span,
+        }: &Binary,
+    ) -> Result<(), CompilerError> {
         // TODO: Decmpose this into multiple expressions.
         match op {
             BinaryOperator::LogicalAnd => {

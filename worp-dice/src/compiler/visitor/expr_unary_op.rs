@@ -6,7 +6,14 @@ use crate::{
 };
 
 impl NodeVisitor<&Unary> for Compiler {
-    fn visit(&mut self, Unary(op, expr, span): &Unary) -> Result<(), CompilerError> {
+    fn visit(
+        &mut self,
+        Unary {
+            operator: op,
+            expression: expr,
+            span,
+        }: &Unary,
+    ) -> Result<(), CompilerError> {
         self.visit(*expr)?;
 
         match op {

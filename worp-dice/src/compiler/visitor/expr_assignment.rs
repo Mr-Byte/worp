@@ -6,12 +6,20 @@ use crate::{
 };
 
 impl NodeVisitor<&Assignment> for Compiler {
-    fn visit(&mut self, Assignment(op, lhs, rhs, span): &Assignment) -> Result<(), CompilerError> {
+    fn visit(
+        &mut self,
+        Assignment {
+            operator: op,
+            lhs_expression: lhs,
+            rhs_expression: rhs,
+            span,
+        }: &Assignment,
+    ) -> Result<(), CompilerError> {
         let lhs = self.syntax_tree.get(*lhs).expect("Node should exist.");
 
         // TODO: Decompose this down into smaller functions.
         match lhs {
-            SyntaxNode::LitIdent(LitIdent(target, _)) => {
+            SyntaxNode::LitIdent(LitIdent { name: target, span: _ }) => {
                 let target = Symbol::new(target);
                 {
                     if let Some(local) = self.context()?.scope_stack().local(target.clone()) {

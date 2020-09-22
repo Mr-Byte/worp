@@ -6,7 +6,14 @@ use crate::{
 };
 
 impl NodeVisitor<&WhileLoop> for Compiler {
-    fn visit(&mut self, WhileLoop(condition, body, span): &WhileLoop) -> Result<(), CompilerError> {
+    fn visit(
+        &mut self,
+        WhileLoop {
+            condition,
+            body,
+            span,
+        }: &WhileLoop,
+    ) -> Result<(), CompilerError> {
         // TODO: Use the new block visitor with a special Loop kind to visit this block.
         if let Some(SyntaxNode::Block(block)) = self.syntax_tree.get(*body) {
             let block = block.clone();
