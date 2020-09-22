@@ -1,5 +1,4 @@
-use crate::runtime::core::Span;
-use crate::syntax::SyntaxNodeId;
+use crate::{runtime::core::Span, syntax::SyntaxNodeId};
 
 #[derive(Debug, Clone)]
 pub struct LitAnonymousFn {

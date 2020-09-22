@@ -10,9 +10,7 @@ impl NodeVisitor<&FunctionCall> for Compiler {
             self.visit(*arg)?;
         }
 
-        self.context()?
-            .assembler()
-            .call(node.args.len() as u8, node.span);
+        self.context()?.assembler().call(node.args.len() as u8, node.span);
 
         Ok(())
     }
