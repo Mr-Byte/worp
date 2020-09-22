@@ -2,10 +2,11 @@ use std::ops::Range;
 
 use crate::Value;
 
-const MAX_STACK_SIZE: usize = 512;
+// NOTE: When sizeof(Value) = 16-bytes, this is 4MB of stack space.
+const MAX_STACK_SIZE: usize = 262_144;
 
 pub struct Stack {
-    values: [Value; MAX_STACK_SIZE],
+    values: Box<[Value]>,
     stack_ptr: usize,
 }
 
@@ -80,7 +81,7 @@ impl Stack {
 impl Default for Stack {
     fn default() -> Self {
         Self {
-            values: [Value::NONE; MAX_STACK_SIZE],
+            values: vec![Value::NONE; MAX_STACK_SIZE].into_boxed_slice(),
             stack_ptr: 0,
         }
     }
