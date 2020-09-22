@@ -10,6 +10,7 @@ use crate::{
 
 pub enum BlockKind<'args, T: AsRef<str>> {
     Block,
+    Loop,
     Function(&'args [T]),
 }
 
@@ -37,8 +38,14 @@ impl<'args, T: AsRef<str>> NodeVisitor<(&Block, BlockKind<'args, T>)> for Compil
         }
 
         match block.trailing_expression {
-            Some(trailing_expression) => self.visit(trailing_expression)?,
+            Some(trailing_expression) => {
+                self.visit(trailing_expression)?;
+            }
             None => self.context()?.assembler().push_unit(block.span.clone()),
+        }
+
+        if let BlockKind::Loop = kind {
+            self.context()?.assembler().pop(block.span.clone());
         }
 
         let scope = self.context()?.scope_stack().pop_scope()?;

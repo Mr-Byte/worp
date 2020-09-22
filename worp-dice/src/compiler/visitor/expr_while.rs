@@ -1,4 +1,4 @@
-use super::NodeVisitor;
+use super::{BlockKind, NodeVisitor};
 use crate::{
     compiler::{scope_stack::ScopeKind, Compiler},
     syntax::{SyntaxNode, WhileLoop},
@@ -7,6 +7,7 @@ use crate::{
 
 impl NodeVisitor<&WhileLoop> for Compiler {
     fn visit(&mut self, WhileLoop(condition, body, span): &WhileLoop) -> Result<(), CompilerError> {
+        // TODO: Use the new block visitor with a special Loop kind to visit this block.
         if let Some(SyntaxNode::Block(block)) = self.syntax_tree.get(*body) {
             let block = block.clone();
             let loop_start = self.context()?.assembler().current_position();
@@ -14,34 +15,16 @@ impl NodeVisitor<&WhileLoop> for Compiler {
             self.context()?
                 .scope_stack()
                 .push_scope(ScopeKind::Loop, Some(loop_start as usize));
-            self.scan_item_decls(&block)?;
             self.visit(*condition)?;
 
             let loop_end = self.context()?.assembler().jump_if_false(span.clone());
 
-            for expression in block.expressions.iter() {
-                self.visit(*expression)?;
-                self.context()?.assembler().pop(span.clone());
-            }
-
-            // NOTE: While loops allow a trailing expression, but the value is discarded at the end of each iteration.
-            if let Some(trailing_expression) = block.trailing_expression {
-                self.visit(trailing_expression)?;
-                self.context()?.assembler().pop(span.clone());
-            }
+            self.visit((&block, BlockKind::<&str>::Loop))?;
 
             self.context()?.assembler().jump_back(loop_start, span.clone());
             self.context()?.assembler().patch_jump(loop_end);
 
             let scope_close = self.context()?.scope_stack().pop_scope()?;
-
-            for variable in scope_close.variables {
-                if variable.is_captured {
-                    self.context()?
-                        .assembler()
-                        .close_upvalue(variable.slot as u8, block.span.clone());
-                }
-            }
 
             for location in scope_close.exit_points.iter() {
                 self.context()?.assembler().patch_jump(*location as u64);
