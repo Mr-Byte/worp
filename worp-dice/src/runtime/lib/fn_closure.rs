@@ -1,6 +1,6 @@
 use std::{
-    cell::{Ref, RefCell, RefMut},
     fmt::{Debug, Display},
+    ops::Deref,
     rc::Rc,
 };
 
@@ -21,28 +21,28 @@ impl Debug for FnClosureInner {
 
 #[derive(Clone)]
 pub struct FnClosure {
-    inner: Rc<RefCell<FnClosureInner>>,
+    inner: Rc<FnClosureInner>,
 }
 
 impl FnClosure {
     pub fn new(fn_script: FnScript, upvalues: Box<[Upvalue]>) -> Self {
         Self {
-            inner: Rc::new(RefCell::new(FnClosureInner { fn_script, upvalues })),
+            inner: Rc::new(FnClosureInner { fn_script, upvalues }),
         }
     }
+}
 
-    pub fn borrow(&self) -> Ref<'_, FnClosureInner> {
-        self.inner.borrow()
-    }
+impl Deref for FnClosure {
+    type Target = FnClosureInner;
 
-    pub fn borrow_mut(&self) -> RefMut<'_, FnClosureInner> {
-        self.inner.borrow_mut()
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
 
 impl Debug for FnClosure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.inner.borrow())
+        write!(f, "{:?}", self.inner)
     }
 }
 
@@ -54,16 +54,16 @@ impl TypeInstance for FnClosure {}
 
 impl PartialEq for FnClosure {
     fn eq(&self, other: &Self) -> bool {
-        self.borrow().fn_script == other.borrow().fn_script
+        self.fn_script == other.fn_script
             && std::ptr::eq(
-                &*self.borrow().upvalues as *const [Upvalue] as *const u8,
-                &*other.borrow().upvalues as *const [Upvalue] as *const u8,
+                &*self.upvalues as *const [Upvalue] as *const u8,
+                &*other.upvalues as *const [Upvalue] as *const u8,
             )
     }
 }
 
 impl Display for FnClosure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "closure{{{}}}", self.borrow().fn_script)
+        write!(f, "closure{{{}}}", self.fn_script)
     }
 }

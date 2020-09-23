@@ -181,7 +181,7 @@ impl Runtime {
     fn load_upvalue(&mut self, closure: &mut Option<FnClosure>, cursor: &mut BytecodeCursor) {
         if let Some(closure) = closure.as_mut() {
             let upvalue_slot = cursor.read_u8() as usize;
-            let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
+            let mut upvalue = closure.upvalues[upvalue_slot].clone();
             let value = match &*upvalue.state() {
                 UpvalueState::Open(slot) => self.stack.slot(*slot).clone(),
                 UpvalueState::Closed(value) => value.clone(),
@@ -196,7 +196,7 @@ impl Runtime {
     fn store_upvalue(&mut self, closure: &mut Option<FnClosure>, cursor: &mut BytecodeCursor) {
         if let Some(closure) = closure.as_mut() {
             let upvalue_slot = cursor.read_u8() as usize;
-            let upvalue = &mut closure.borrow_mut().upvalues[upvalue_slot];
+            let mut upvalue = closure.upvalues[upvalue_slot].clone();
             let value = self.stack.pop();
             let result = match &mut *upvalue.state() {
                 UpvalueState::Open(slot) => {
@@ -278,7 +278,7 @@ impl Runtime {
                         self.open_upvalues.push_back(upvalue.clone());
                         upvalues.push(upvalue);
                     } else if let Some(closure) = closure.as_mut() {
-                        let upvalue = closure.borrow().upvalues[index].clone();
+                        let upvalue = closure.upvalues[index].clone();
                         upvalues.push(upvalue);
                     } else {
                         // NOTE: Produce an unreachable here. This case should never execute, but this is a sanity check to ensure it doesn't.
@@ -298,10 +298,10 @@ impl Runtime {
     // TODO: Replace this mutually recursive call with an execution stack to prevent the thread's stack from overflowing.
     fn call_fn(&mut self, cursor: &mut BytecodeCursor<'_>) -> Result<(), RuntimeError> {
         let arg_count = cursor.read_u8() as usize;
-        let mut target = self.stack.peek(arg_count).clone();
-        let (bytecode, closure) = match &mut target {
+        let target = self.stack.peek(arg_count);
+        let (bytecode, closure) = match target {
             Value::FnClosure(closure) => {
-                let fn_script = &closure.borrow().fn_script;
+                let fn_script = &closure.fn_script;
 
                 if arg_count != fn_script.arity {
                     return Err(RuntimeError::InvalidFunctionArgs(fn_script.arity, arg_count));
