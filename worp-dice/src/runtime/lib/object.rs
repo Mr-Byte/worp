@@ -9,7 +9,6 @@ decl_type! {
 }
 
 #[derive(Debug)]
-// TODO: Implement Trace on this.
 pub struct Object(HashMap<ValueKey, Value>);
 
 impl Object {

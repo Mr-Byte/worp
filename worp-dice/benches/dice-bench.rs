@@ -74,17 +74,15 @@ fn closure_called_outside_declaring_scope(criterion: &mut Criterion) {
 }
 
 criterion_group!(
-    loops,
-    loop_in_place_addition,
-    loop_addition_with_assignment,
-    loop_function_call,
-    loop_closure_call
+    name = loops;
+    config = Criterion::default().sample_size(1000);
+    targets = loop_in_place_addition, loop_addition_with_assignment, loop_function_call, loop_closure_call
 );
 
 criterion_group!(
-    closures,
-    closure_called_by_another_function_in_parent_scope,
-    closure_called_outside_declaring_scope
+    name = closures;
+    config = Criterion::default().sample_size(1000);
+    targets = closure_called_by_another_function_in_parent_scope, closure_called_outside_declaring_scope
 );
 
 criterion_main!(loops, closures);

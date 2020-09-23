@@ -30,9 +30,6 @@ pub struct Runtime {
 
 impl Runtime {
     pub fn run_script(&mut self, bytecode: Bytecode) -> Result<Value, RuntimeError> {
-        // self.globals
-        //     .insert(String::from("print"), Value::FnNative(FnNative::new(print_value)));
-
         let stack_frame = self.stack.reserve_slots(bytecode.slot_count());
         let result = self.execute_bytecode(&bytecode, stack_frame, None);
         self.stack.release_slots(bytecode.slot_count());
@@ -302,7 +299,6 @@ impl Runtime {
     fn call_fn(&mut self, cursor: &mut BytecodeCursor<'_>) -> Result<(), RuntimeError> {
         let arg_count = cursor.read_u8() as usize;
         let mut target = self.stack.peek(arg_count).clone();
-
         let (bytecode, closure) = match &mut target {
             Value::FnClosure(closure) => {
                 let fn_script = &closure.borrow().fn_script;
