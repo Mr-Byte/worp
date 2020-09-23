@@ -1,6 +1,7 @@
 mod bool;
 mod float;
 mod fn_closure;
+mod fn_native;
 mod fn_script;
 mod int;
 mod list;
@@ -11,6 +12,7 @@ mod string;
 mod unit;
 
 pub use fn_closure::*;
+pub use fn_native::*;
 pub use fn_script::*;
 pub use list::*;
 pub use none::*;

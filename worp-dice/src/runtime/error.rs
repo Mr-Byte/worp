@@ -8,6 +8,9 @@ use std::{
 #[derive(thiserror::Error, Debug)]
 #[error("Evaluation failed.")]
 pub enum RuntimeError {
+    #[error("Invalid global name type.")]
+    InvalidGlobalNameType,
+
     #[error("Runtime Error: Execution unexpectedly aborted.")]
     Aborted(#[from] Box<dyn Error>),
     #[error("Runtime Error: The target type {0} is not an object.")]

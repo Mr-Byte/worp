@@ -1,5 +1,5 @@
 use compiler::{CompilationKind, Compiler};
-use runtime::interpreter::Runtime;
+use runtime::{interpreter::Runtime, lib::NativeFn};
 
 #[macro_use]
 mod macros;
@@ -28,6 +28,10 @@ impl Dice {
     pub fn disassemble_script(&self, input: &str) -> Result<String, DiceError> {
         let bytecode = Compiler::compile_str(input, CompilationKind::Script)?;
         Ok(bytecode.to_string())
+    }
+
+    pub fn register_native_fn(&mut self, name: impl Into<String>, native_fn: NativeFn) {
+        self.runtime.register_native_fn(name.into(), native_fn);
     }
 }
 

@@ -249,6 +249,16 @@ impl Assembler {
         self.data.put_u8(index);
     }
 
+    pub fn load_global(&mut self, global: Value, span: Span) -> Result<(), CompilerError> {
+        let const_slot = self.make_constant(global)?;
+
+        self.source_map.insert(self.data.len() as u64, span);
+        self.data.put_u8(Instruction::LOAD_GLOBAL.value());
+        self.data.put_u8(const_slot);
+
+        Ok(())
+    }
+
     pub fn call(&mut self, arg_count: u8, span: Span) {
         self.source_map.insert(self.data.len() as u64, span);
         self.data.put_u8(Instruction::CALL.value());

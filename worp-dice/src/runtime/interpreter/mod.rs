@@ -7,39 +7,41 @@ pub(crate) mod instruction;
 
 use crate::{
     runtime::{core::Value, interpreter::bytecode::BytecodeCursor},
-    RuntimeError,
+    RuntimeError, Symbol,
 };
 use bytecode::Bytecode;
 use instruction::Instruction;
 use stack::Stack;
-use std::{collections::VecDeque, ops::Range};
+use std::{collections::HashMap, collections::VecDeque, ops::Range};
 
 use super::{
     core::{Upvalue, UpvalueState},
     lib::FnClosure,
+    lib::FnNative,
+    lib::NativeFn,
 };
 
+#[derive(Default)]
 pub struct Runtime {
     stack: Stack,
     open_upvalues: VecDeque<Upvalue>,
-}
-
-impl Default for Runtime {
-    fn default() -> Self {
-        Self {
-            stack: Stack::default(),
-            open_upvalues: VecDeque::default(),
-        }
-    }
+    globals: HashMap<String, Value>,
 }
 
 impl Runtime {
     pub fn run_script(&mut self, bytecode: Bytecode) -> Result<Value, RuntimeError> {
+        // self.globals
+        //     .insert(String::from("print"), Value::FnNative(FnNative::new(print_value)));
+
         let stack_frame = self.stack.reserve_slots(bytecode.slot_count());
         let result = self.execute_bytecode(&bytecode, stack_frame, None);
         self.stack.release_slots(bytecode.slot_count());
 
         Ok(result?)
+    }
+
+    pub fn register_native_fn(&mut self, name: String, native_fn: NativeFn) {
+        self.globals.insert(name, Value::FnNative(FnNative::new(native_fn)));
     }
 
     fn execute_bytecode(
@@ -61,7 +63,7 @@ impl Runtime {
                 Instruction::PUSH_I1 => self.stack.push(Value::Int(1)),
                 Instruction::PUSH_F0 => self.stack.push(Value::Float(0.0)),
                 Instruction::PUSH_F1 => self.stack.push(Value::Float(1.0)),
-                Instruction::PUSH_CONST => self.post_const(bytecode, &mut cursor),
+                Instruction::PUSH_CONST => self.push_const(bytecode, &mut cursor),
                 Instruction::POP => {
                     self.stack.pop();
                 }
@@ -98,6 +100,7 @@ impl Runtime {
                 Instruction::LOAD_UPVALUE => self.load_upvalue(&mut closure, &mut cursor),
                 Instruction::STORE_UPVALUE => self.store_upvalue(&mut closure, &mut cursor),
                 Instruction::CLOSE_UPVALUE => self.close_upvalue(&stack_frame, &mut cursor),
+                Instruction::LOAD_GLOBAL => self.load_global(bytecode, &mut cursor)?,
 
                 Instruction::CLOSURE => self.closure(bytecode, &stack_frame, &mut closure, &mut cursor)?,
                 Instruction::CALL => self.call_fn(&mut cursor)?,
@@ -141,7 +144,7 @@ impl Runtime {
         self.stack.push(Value::List(items.into()));
     }
 
-    fn post_const(&mut self, bytecode: &Bytecode, cursor: &mut BytecodeCursor) {
+    fn push_const(&mut self, bytecode: &Bytecode, cursor: &mut BytecodeCursor) {
         let const_pos = cursor.read_u8() as usize;
         let value = bytecode.constants()[const_pos].clone();
         self.stack.push(value);
@@ -236,6 +239,25 @@ impl Runtime {
         }
     }
 
+    fn load_global(&mut self, bytecode: &Bytecode, cursor: &mut BytecodeCursor) -> Result<(), RuntimeError> {
+        let const_pos = cursor.read_u8() as usize;
+        let value = &bytecode.constants()[const_pos];
+
+        if let Value::String(global) = value {
+            let value = self
+                .globals
+                .get(global)
+                .cloned()
+                .ok_or_else(|| RuntimeError::VariableNotFound(Symbol::new(global)))?;
+
+            self.stack.push(value);
+        } else {
+            return Err(RuntimeError::InvalidGlobalNameType);
+        }
+
+        Ok(())
+    }
+
     fn closure(
         &mut self,
         bytecode: &Bytecode,
@@ -297,6 +319,15 @@ impl Runtime {
                 }
 
                 (fn_script.bytecode.clone(), None)
+            }
+            Value::FnNative(fn_native) => {
+                let fn_native = fn_native.clone();
+
+                let result = fn_native.call(self.stack.peek_n(arg_count - 1))?;
+                self.stack.release_slots(arg_count + 1);
+                self.stack.push(result);
+
+                return Ok(());
             }
             _ => return Err(RuntimeError::NotAFunction),
         };

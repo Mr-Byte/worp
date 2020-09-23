@@ -1,4 +1,4 @@
-use lib::{FnClosure, FnScript};
+use lib::{FnClosure, FnNative, FnScript};
 
 use super::{Symbol, TypeInstance};
 use crate::runtime::{
@@ -17,6 +17,7 @@ pub enum Value {
     Float(f64),
     FnClosure(FnClosure),
     FnScript(FnScript),
+    FnNative(FnNative),
     List(List),
     String(String),
     Object(Rc<dyn TypeInstance>),
@@ -71,6 +72,7 @@ impl Display for Value {
             Value::Float(float) => float.fmt(fmt),
             Value::FnClosure(func) => func.fmt(fmt),
             Value::FnScript(func) => func.fmt(fmt),
+            Value::FnNative(func) => func.fmt(fmt),
             Value::List(list) => list.fmt(fmt),
             Value::String(string) => string.fmt(fmt),
             Value::Object(object) => object.fmt(fmt),
@@ -92,6 +94,7 @@ impl Deref for Value {
             Value::String(ref obj) => obj,
             Value::FnClosure(ref obj) => obj,
             Value::FnScript(ref obj) => obj,
+            Value::FnNative(ref obj) => obj,
             Value::Object(ref obj) => &**obj,
         }
     }

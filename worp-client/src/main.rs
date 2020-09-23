@@ -2,12 +2,13 @@ use anyhow::Result;
 use std::io::Write;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use worp_dice::Dice;
+use worp_dice::{Dice, RuntimeError, Value};
 
 fn main() -> Result<()> {
     FmtSubscriber::builder().with_max_level(Level::INFO).init();
 
     let mut runtime = Dice::default();
+    runtime.register_native_fn("print", print_value);
 
     loop {
         print!("Input: ");
@@ -37,4 +38,12 @@ fn main() -> Result<()> {
             Err(err) => eprintln!("{}", err),
         };
     }
+}
+
+fn print_value(args: &mut [Value]) -> Result<Value, RuntimeError> {
+    if let [arg, ..] = args {
+        println!("{}", arg);
+    }
+
+    return Ok(Value::UNIT);
 }

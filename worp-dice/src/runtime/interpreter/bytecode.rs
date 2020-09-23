@@ -75,6 +75,7 @@ impl Display for Bytecode {
             match instruction {
                 Instruction::JUMP | Instruction::JUMP_IF_FALSE => write!(f, "{}", cursor.read_offset())?,
                 Instruction::PUSH_CONST
+                | Instruction::LOAD_GLOBAL
                 | Instruction::LOAD_LOCAL
                 | Instruction::STORE_LOCAL
                 | Instruction::BUILD_LIST

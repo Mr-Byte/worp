@@ -72,6 +72,13 @@ impl Stack {
         &mut self.values[self.stack_ptr - offset - 1]
     }
 
+    pub fn peek_n(&mut self, offset: usize) -> &mut [Value] {
+        let start = self.stack_ptr - offset - 1;
+        let end = self.stack_ptr;
+
+        &mut self.values[start..end]
+    }
+
     #[inline]
     pub fn len(&self) -> usize {
         self.stack_ptr
