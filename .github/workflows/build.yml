@@ -2,13 +2,13 @@ name: Build
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths-ignore:
       - "docs/**"
       - "docs-old/**"
       - ".github/**"
   pull_request:
-    branches: [master]
+    branches: [main]
     paths-ignore:
       - "docs/**"
       - "docs-old/**"
