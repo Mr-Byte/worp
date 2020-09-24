@@ -1,31 +1,8 @@
-use crate::runtime::{
-    core::{TypeInstance, Value, ValueKey},
-    error::RuntimeError,
-};
+use crate::runtime::core::Value;
 use std::{fmt::Display, ops::Deref, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct List(Rc<Vec<Value>>);
-
-impl TypeInstance for List {
-    fn get_instance_member(&self, key: &ValueKey) -> Result<Value, RuntimeError> {
-        if let ValueKey::Index(index) = key {
-            let index = if *index >= 0 {
-                *index
-            } else {
-                (self.len() as i64) + *index
-            };
-
-            if (index as usize) >= self.len() || index < 0 {
-                Err(RuntimeError::IndexOutOfBounds(self.len(), index))
-            } else {
-                Ok(self[index as usize].clone())
-            }
-        } else {
-            Err(RuntimeError::MissingField(key.clone()))
-        }
-    }
-}
 
 impl Display for List {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -52,31 +29,4 @@ impl From<Vec<Value>> for List {
     fn from(value: Vec<Value>) -> Self {
         Self(Rc::new(value))
     }
-}
-
-decl_type! {
-    impl TypeList for List as "List";
-
-    // fn op_add(lhs: Value, rhs: Value) -> Result<Value, RuntimeError> {
-    //     let lhs = lhs.try_value::<List>()?;
-    //     let output: List = if let Some(list) = rhs.value::<List>() {
-    //         lhs.iter().chain(list.iter()).cloned().collect::<Vec<_>>().into()
-    //     } else {
-    //         lhs.iter().chain(iter::once(&rhs)).cloned().collect::<Vec<_>>().into()
-    //     };
-
-    //     Ok(Value::List(output))
-    // }
-
-    // fn length(this: Value) -> Result<Value, RuntimeError> {
-    //     let this = this.try_value::<List>()?;
-
-    //     Ok(Value::Int(this.len() as i64))
-    // }
-
-    // fn is_empty(this: Value) -> Result<Value, RuntimeError> {
-    //     let this = this.try_value::<List>()?;
-
-    //     Ok(Value::Bool(this.is_empty() as bool))
-    // }
 }

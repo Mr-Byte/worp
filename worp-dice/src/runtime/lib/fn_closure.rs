@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::runtime::core::{TypeInstance, Upvalue};
+use crate::runtime::core::Upvalue;
 
 use super::FnScript;
 
@@ -45,12 +45,6 @@ impl Debug for FnClosure {
         write!(f, "{:?}", self.inner)
     }
 }
-
-decl_type! {
-    impl TypeFnClosure for FnClosure as "FnClosure";
-}
-
-impl TypeInstance for FnClosure {}
 
 impl PartialEq for FnClosure {
     fn eq(&self, other: &Self) -> bool {

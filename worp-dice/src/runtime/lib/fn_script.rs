@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::Deref, rc::Rc};
 
-use crate::runtime::{core::TypeInstance, interpreter::bytecode::Bytecode};
+use crate::runtime::interpreter::bytecode::Bytecode;
 
 #[derive(Debug)]
 pub struct FnScriptInner {
@@ -27,12 +27,6 @@ impl FnScript {
         }
     }
 }
-
-decl_type! {
-    impl TypeFnScript for FnScript as "FnScript";
-}
-
-impl TypeInstance for FnScript {}
 
 impl Deref for FnScript {
     type Target = FnScriptInner;

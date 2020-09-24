@@ -1,4 +1,4 @@
-use crate::{runtime::core::TypeInstance, RuntimeError, Value};
+use crate::{RuntimeError, Value};
 use std::fmt::{Debug, Display};
 
 pub type NativeFn = fn(&mut [Value]) -> Result<Value, RuntimeError>;
@@ -16,12 +16,6 @@ impl FnNative {
         self.0(args)
     }
 }
-
-decl_type! {
-    impl TypeFnNative for FnNative as "FnNative";
-}
-
-impl TypeInstance for FnNative {}
 
 impl Display for FnNative {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

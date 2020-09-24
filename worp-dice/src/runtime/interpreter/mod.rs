@@ -1,10 +1,9 @@
-#[macro_use]
-mod macros;
-mod stack;
-
-pub(crate) mod bytecode;
-pub(crate) mod instruction;
-
+use super::{
+    core::{Upvalue, UpvalueState},
+    lib::FnClosure,
+    lib::FnNative,
+    lib::NativeFn,
+};
 use crate::{
     runtime::{core::Value, interpreter::bytecode::BytecodeCursor},
     RuntimeError, Symbol,
@@ -14,18 +13,17 @@ use instruction::Instruction;
 use stack::Stack;
 use std::{collections::HashMap, collections::VecDeque, ops::Range};
 
-use super::{
-    core::{Upvalue, UpvalueState},
-    lib::FnClosure,
-    lib::FnNative,
-    lib::NativeFn,
-};
+#[macro_use]
+mod macros;
+pub(crate) mod bytecode;
+pub(crate) mod instruction;
+mod stack;
 
 #[derive(Default)]
 pub struct Runtime {
     stack: Stack,
     open_upvalues: VecDeque<Upvalue>,
-    globals: HashMap<String, Value>,
+    globals: HashMap<Symbol, Value>,
 }
 
 impl Runtime {
@@ -38,7 +36,8 @@ impl Runtime {
     }
 
     pub fn register_native_fn(&mut self, name: String, native_fn: NativeFn) {
-        self.globals.insert(name, Value::FnNative(FnNative::new(native_fn)));
+        self.globals
+            .insert(Symbol::new(name), Value::FnNative(FnNative::new(native_fn)));
     }
 
     fn execute_bytecode(
@@ -243,7 +242,7 @@ impl Runtime {
         if let Value::String(global) = value {
             let value = self
                 .globals
-                .get(global)
+                .get(&Symbol::new(global))
                 .cloned()
                 .ok_or_else(|| RuntimeError::VariableNotFound(Symbol::new(global)))?;
 
