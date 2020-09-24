@@ -5,7 +5,6 @@ pub struct ScopeVariable {
     pub name: Symbol,
     pub slot: usize,
     pub is_captured: bool,
-    // NOTE: Unlike variables, functions cannot shadow.
     pub state: State,
 }
 
@@ -64,7 +63,6 @@ impl ScopeStack {
         Self {
             stack: vec![ScopeContext {
                 kind,
-                depth: 0,
                 ..Default::default()
             }],
             slot_count: 0,
@@ -93,13 +91,7 @@ impl ScopeStack {
     pub fn add_local(&mut self, name: Symbol, state: State) -> Result<usize, CompilerError> {
         self.top_mut()?.slot_count += 1;
 
-        let mut slot_count = 0;
-
-        // TODO: Revert this back to fancy sum()
-        for scope in self.stack.iter().rev() {
-            slot_count += scope.slot_count;
-        }
-
+        let slot_count = self.stack.iter().rev().map(|scope| scope.slot_count).sum();
         let slot = slot_count - 1;
         let local = ScopeVariable {
             name,
@@ -142,7 +134,9 @@ impl ScopeStack {
 
     /// Get the entry point of the first scope to match the specified kind.
     pub fn entry_point(&mut self, kind: ScopeKind) -> Result<usize, CompilerError> {
-        let scope = self.first_of_kind(kind).expect("Add error here.");
+        let scope = self
+            .first_of_kind(kind)
+            .ok_or_else(|| CompilerError::InternalCompilerError(String::from("Scope stack underflowed.")))?;
 
         scope
             .entry_point
