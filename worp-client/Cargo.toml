@@ -1,22 +1,21 @@
 [package]
-name = "worp-client"
-version = "0.1.0"
 authors = ["Joshua Rodgers <bytemr@gmail.com>"]
 edition = "2018"
+name = "worp-client"
+version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0"
+toml = "0.5"
 tracing = "0.1"
 tracing-attributes = "0.1"
 tracing-subscriber = "0.2"
-toml = "0.5"
 # tokio = { version = "0.2", features = [ "rt-threaded", "macros" ]}
 # winit = "0.22"
 
-worp-core = { path = "../worp-core" }
-worp-dice = { path = "../worp-dice" }
+worp-core = {path = "../worp-core"}
 
 # renderer = { path = "../worp-renderer" }
 # gui = { path = "../worp-gui" }

@@ -1,14 +1,13 @@
 [workspace]
-members = [
-    "worp-client",
-    "worp-core",
-    "worp-dice",
-    "worp-gui",
-    "worp-net",
-    "worp-renderer",
-    "worp-scroll",
-]
 default-members = ["worp-client"]
+members = [
+  "worp-client",
+  "worp-core",
+  "worp-gui",
+  "worp-net",
+  "worp-renderer",
+  "worp-scroll",
+]
 
 [profile.release]
 lto = true
